@@ -1,0 +1,25 @@
+{
+    "mode": "all",
+    "policyRule": {
+        "if": {
+            "allOf": [{
+                    "field": "tags.Environment",
+                    "exists": "false"
+                },
+                {
+                    "not": {
+                        "field": "tags.Environment",
+                        "match": "Development|Test|QA|Staging|UAT|PreProduction|Production"
+                    }
+                },
+                {
+                    "field": "type",
+                    "equals": "Microsoft.Resources/subscriptions/resourceGroups"
+                }
+            ]
+        },
+        "then": {
+            "effect": "audit"
+        }
+    }
+}
