@@ -37,7 +37,7 @@ try {
         $targetManagementGroup = $mgmtGroups | Where-Object { $orphan.DisplayName -match ('^' + ($_.Name -replace '-mg')) }
         if($targetManagementGroup) {
             Write-Output ('Moving subscription [{0}] to group [{1}]' -f $orphan.DisplayName, $targetManagementGroup.DisplayName)
-            New-AzManagementGroupSubscription -GroupName $targetManagementGroup.Id -SubscriptionId $orphan.Name
+            New-AzManagementGroupSubscription -GroupName $targetManagementGroup.Name -SubscriptionId $orphan.Name
         } else {
             Write-Output ('Could not find a matching management group for subscription: {0}' -f $orphan.DisplayName)
         }
