@@ -693,11 +693,11 @@
       }
     }
   },
-  "name": "azureinventorydashboard",
+  "name": "azureresourceinventory",
   "type": "Microsoft.Portal/dashboards",
   "location": "INSERT LOCATION",
   "tags": {
-    "hidden-title": "Azure Inventory Dashboard"
+    "hidden-title": "Azure Resource Inventory"
   },
   "apiVersion": "2015-08-01-preview"
 }

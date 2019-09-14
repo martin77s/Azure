@@ -1,0 +1,29 @@
+{
+  "properties": {
+    "displayName": "Audit Resource Locks on Virtual Network (VNET)",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "Audits all VNETs that do not have CanNotDelete Resource Lock.",
+    "parameters": {},
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Network/virtualNetworks"
+          }
+        ]
+      },
+      "then": {
+        "effect": "auditIfNotExists",
+        "details": {
+          "type": "Microsoft.Authorization/locks",
+          "existenceCondition": {
+            "field": "Microsoft.Authorization/locks/level",
+            "equals": "CanNotDelete"
+          }
+        }
+      }
+    }
+  }
+}

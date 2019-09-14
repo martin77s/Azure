@@ -1,0 +1,76 @@
+{
+  "properties": {
+    "displayName": "Audit enabling of diagnostic logs in Application Gateways",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "Audit enabling of diagnostic logs. This enables you to recreate activity trails to use for investigation purposes",
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "AuditIfNotExists",
+          "Disabled"
+        ],
+        "defaultValue": "AuditIfNotExists"
+      },
+      "requiredRetentionDays": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Required retention (days)",
+          "description": "The required diagnostic logs retention in days"
+        },
+        "defaultValue": "365"
+      }
+    },
+    "policyRule": {
+      "if": {
+        "field": "type",
+        "equals": "microsoft.network/applicationgateways"
+      },
+      "then": {
+        "effect": "[parameters('effect')]",
+        "details": {
+          "type": "Microsoft.Insights/diagnosticSettings",
+          "existenceCondition": {
+            "anyOf": [
+              {
+                "allOf": [
+                  {
+                    "field": "Microsoft.Insights/diagnosticSettings/logs[*].retentionPolicy.enabled",
+                    "equals": "true"
+                  },
+                  {
+                    "field": "Microsoft.Insights/diagnosticSettings/logs[*].retentionPolicy.days",
+                    "equals": "[parameters('requiredRetentionDays')]"
+                  },
+                  {
+                    "field": "Microsoft.Insights/diagnosticSettings/logs.enabled",
+                    "equals": "true"
+                  }
+                ]
+              },
+              {
+                "allOf": [
+                  {
+                    "not": {
+                      "field": "Microsoft.Insights/diagnosticSettings/logs[*].retentionPolicy.enabled",
+                      "equals": "true"
+                    }
+                  },
+                  {
+                    "field": "Microsoft.Insights/diagnosticSettings/logs.enabled",
+                    "equals": "true"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
