@@ -3,14 +3,14 @@
 
 <#
     Name        : Move-AzVmToRegion.ps1
-    Version     : 1.0.0.2
-    Last Update : 2019/09/17
-    Keywords	: Azure, VM, Move
+    Version     : 1.0.0.3
+    Last Update : 2019/09/19
+    Keywords    : Azure, VM, Move
     Created by  : Martin Schvartzman, Microsoft
-    Description	: This script moves a virtual machine and all it's dependencies to a different region
+    Description : This script moves a virtual machine and all it's dependencies to a different region
     Process     :
-                    1. Verify target region can contain the VM size
-                    2. Create the target resource group if needed
+                    1. Verify target region can host the VM size
+                    2. Create the target resource group (if needed)
                     3. Read the VM's networking configuration
                     4. Stop the virtual machine
                     5. Create a temp storage account and vhds container in the target region
@@ -20,25 +20,25 @@
                     9. Create the networking components (vnet, subnet, NSG, IP, etc.)
                     6. Recreate the virtual machine
     Todo        :
-                    1. Handle diagnostic settings and it's storage account
-                    2. Better error handling and logging
+                    1. Handle the diagnostic settings and it's storage account
+                    2. Handle the Public IP's FQDN
+                    3. Handle the VM Extensions
+                    4. Better error handling and logging
 #>
 
 function Move-AzVmToRegion {
-
 
     [CmdletBinding(SupportsShouldProcess = $true)]
 
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachineList] $VM,
+        [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VM,
 
         [Parameter(Mandatory = $true)] $TargetLocation,
 
         [Parameter(Mandatory = $true)] $TargetResourceGroup,
 
         [int]    $SasTokenDuration = 3600,
-        [string] $StorageType = 'Premium_LRS',
         [string] $AzCopyPath = '.\azcopy.exe',
         [switch] $UseAzCopy
     )
@@ -70,7 +70,6 @@ function Move-AzVmToRegion {
     }
     #endregion
 
-
     #region verify copy mode
     if ($UseAzCopy -and (-not (Test-Path -Path $AzCopyPath))) {
         Write-Warning 'AzCopy.exe was not found in the specified path. The Start-AzStorageBlobCopy cmdlet will be used instead'
@@ -78,10 +77,9 @@ function Move-AzVmToRegion {
     }
     #endregion
 
-
     if ($PSCmdlet.ShouldProcess($VM.Name, "Move to $TargetLocation")) {
 
-        #region ResourceGroup
+        #region Verify the ResourceGroup
         Write-Verbose -Message ('{0:HH:mm:ss} - Verifying the resource group' -f (Get-Date))
         if (-not $TargetResourceGroup) {
             $TargetResourceGroup = '{0}-new' -f $VM.ResourceGroupName
@@ -91,8 +89,7 @@ function Move-AzVmToRegion {
         }
         #endregion
 
-
-        #region Networking
+        #region Get Networking details
         Write-Verbose -Message ('{0:HH:mm:ss} - Collecting network configuration' -f (Get-Date))
         $nic = Get-AzNetworkInterface -ResourceId $VM.NetworkProfile.NetworkInterfaces.Id
         $pubIp = Get-AzPublicIpAddress | Where-Object { $_.Id -eq $nic.IpConfigurations.PublicIpAddress.Id }
@@ -102,8 +99,7 @@ function Move-AzVmToRegion {
         $targetVnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $TargetResourceGroup -ErrorAction SilentlyContinue
         #endregion
 
-
-        #region VM Status
+        #region Verify VM status
         Write-Verbose -Message ('{0:HH:mm:ss} - Verifying VM is shutdown' -f (Get-Date))
         $vmStatus = $VM | Get-AzVM -Status
         if ($vmStatus.PowerState -ne 'VM deallocated') {
@@ -111,13 +107,12 @@ function Move-AzVmToRegion {
         }
         #endregion
 
-
         #region Create a temp target storage account and container
         Write-Verbose -Message ('{0:HH:mm:ss} - Creating a temporary storage account' -f (Get-Date))
         $storageAccountParams = @{
             ResourceGroupName = $TargetResourceGroup
             Location          = $TargetLocation
-            SkuName           = $StorageType
+            SkuName           = 'Standard_LRS'
             Name              = 'tempstrg{0:yyyyMMddHHmmssff}' -f (Get-Date)
         }; $targetStorage = New-AzStorageAccount @storageAccountParams
 
@@ -131,29 +126,27 @@ function Move-AzVmToRegion {
         New-AzStorageContainer -Name vhds -Context $storageContext | Out-Null
         #endregion
 
-
         #region Export the managed disks
         Write-Verbose -Message ('{0:HH:mm:ss} - Generating SASAccess for the OSDisk' -f (Get-Date))
         $osDiskAccessParams = @{
-            ResourceGroupName = $vm.ResourceGroupName
-            DiskName          = $vm.StorageProfile.OsDisk.Name
+            ResourceGroupName = $VM.ResourceGroupName
+            DiskName          = $VM.StorageProfile.OsDisk.Name
             DurationInSecond  = $SasTokenDuration
             Access            = 'Read'
         }; $osDiskSAS = Grant-AzDiskAccess @osDiskAccessParams
 
-        $sourceDataDisks = $vm.StorageProfile.DataDisks
+        $sourceDataDisks = $VM.StorageProfile.DataDisks
         $dataDisksSAS = @{ }
         foreach ($dataDisk in $sourceDataDisks) {
             Write-Verbose -Message ('{0:HH:mm:ss} - Generating SASAccess for DataDisk: {1}' -f (Get-Date), $dataDisk.Name)
             $dataDiskAccessParams = @{
-                ResourceGroupName = $vm.ResourceGroupName
+                ResourceGroupName = $VM.ResourceGroupName
                 DiskName          = $dataDisk.Name
                 DurationInSecond  = $SasTokenDuration
                 Access            = 'Read'
             }; $dataDisksSAS.Add($dataDisk.Name, (Grant-AzDiskAccess @dataDiskAccessParams))
         }
         #endregion
-
 
         #region Copy the vhds
         Write-Verbose -Message ('{0:HH:mm:ss} - Copying the vhds to the target container' -f (Get-Date))
@@ -198,22 +191,42 @@ function Move-AzVmToRegion {
         }
         #endregion
 
+        #region Get the storage properties for the new managed disks
+        $disksDetails = @{ }
+        $oldOsDisk = Get-AzResource -ResourceId ($VM.StorageProfile.OsDisk.ManagedDisk.Id)
+        $disksDetails.Add(($oldOsDisk.Name),
+            [PSCustomObject]@{
+                SkuName = $oldOsDisk.Sku.Name
+                Caching = $VM.StorageProfile.OsDisk.Caching
+            }
+        )
+        foreach ($dataDisk in $sourceDataDisks) {
+            $oldDisk = Get-AzResource -ResourceId ($dataDisk.ManagedDisk.Id)
+            $disksDetails.Add(($dataDisk.Name),
+                [PSCustomObject]@{
+                    SkuName = $oldDisk.Sku.Name
+                    Caching = $dataDisk.Caching
+                    Lun     = $dataDisk.Lun
+                }
+            )
+        }
+        #endregion
 
         #region Create the new managed disks
         Write-Verbose -Message ('{0:HH:mm:ss} - Creating the new OS managed disk from the vhd' -f (Get-Date))
         $newDiskConfigParams = @{
-            AccountType      = $StorageType
-            Location         = $TargetLocation
             CreateOption     = 'Import'
             StorageAccountId = $targetStorage.Id
-            OsType           = $vm.StorageProfile.OsDisk.OsType
+            SkuName          = ($disksDetails[($oldOsDisk.Name)]).SkuName
+            OsType           = $VM.StorageProfile.OsDisk.OsType
+            Location         = $TargetLocation
             SourceUri        = 'https://{0}.blob.core.windows.net/vhds/{1}_OsDisk.vhd' -f $targetStorage.StorageAccountName, $VM.Name
         }; $newOsDiskConfig = New-AzDiskConfig @newDiskConfigParams
 
         $newDiskParams = @{
             Disk              = $newOsDiskConfig
             ResourceGroupName = $TargetResourceGroup
-            DiskName          = ('{0}_OsDisk' -f $VM.Name)
+            DiskName          = $oldOsDisk.Name
         }; $newOsDisk = New-AzDisk @newDiskParams
 
         Write-Verbose -Message ('{0:HH:mm:ss} - Creating the new data managed disks from the vhds' -f (Get-Date))
@@ -221,10 +234,10 @@ function Move-AzVmToRegion {
         foreach ($dataDisk in $sourceDataDisks) {
             Write-Verbose -Message ('{0:HH:mm:ss} - Generating data managed disk: {1}' -f (Get-Date), $dataDisk.Name)
             $newDiskConfigParams = @{
-                AccountType      = $datadisk.ManagedDisk.StorageAccountType
-                Location         = $TargetLocation
                 CreateOption     = 'Import'
                 StorageAccountId = $targetStorage.Id
+                SkuName          = ($disksDetails[($dataDisk.Name)]).SkuName
+                Location         = $TargetLocation
                 SourceUri        = 'https://{0}.blob.core.windows.net/vhds/{1}.vhd' -f $targetStorage.StorageAccountName, $dataDisk.Name
             }; $newDataDiskConfig = New-AzDiskConfig @newDiskConfigParams
             $newDiskParams = @{
@@ -235,9 +248,8 @@ function Move-AzVmToRegion {
         }
         #endregion
 
-
-        #region Create the new VM (networking, disks, etc.)
-        Write-Verbose -Message ('{0:HH:mm:ss} - Creating the new VM config' -f (Get-Date))
+        #region VM config: Storage
+        Write-Verbose -Message ('{0:HH:mm:ss} - Creating the new basic VM config' -f (Get-Date))
         $vmConfigParams = @{
             VMName      = $VM.Name
             VMSize      = $VM.HardwareProfile.VmSize
@@ -245,29 +257,34 @@ function Move-AzVmToRegion {
             Tags        = $VM.Tags
         }; $newVmConfig = New-AzVMConfig @vmConfigParams
 
+        Write-Verbose -Message ('{0:HH:mm:ss} - Updating the VM config with the storage details' -f (Get-Date))
         $newVmConfig.FullyQualifiedDomainName = $VM.FullyQualifiedDomainName
         $newVmConfig.Location = $TargetLocation
-        if ($vm.StorageProfile.OsDisk.OsType -eq 'Windows') {
-            $newVmConfig = Set-AzVMOSDisk -VM $newVmConfig -ManagedDiskId $newOsDisk.Id -CreateOption Attach -Windows
-        } else {
-            $newVmConfig = Set-AzVMOSDisk -VM $newVmConfig -ManagedDiskId $newOsDisk.Id -CreateOption Attach -Linux
+        $azVMOSDiskParams = @{
+            VM                 = $newVmConfig
+            ManagedDiskId      = $newOsDisk.Id
+            CreateOption       = 'Attach'
+            Caching            = ($disksDetails[($oldOsDisk.Name)]).Caching
+            StorageAccountType = ($disksDetails[($oldOsDisk.Name)]).SkuName
         }
+        if ($VM.StorageProfile.OsDisk.OsType -eq 'Windows') { $azVMOSDiskParams.Add('Windows', $true) }
+        else { $azVMOSDiskParams.Add('Linux', $true) }
+        $newVmConfig = Set-AzVMOSDisk @azVMOSDiskParams
 
         for ($i = 0; $i -lt $newDataDisks.Count; $i++) {
-            $sourceDataDisk = $sourceDataDisks | Where-Object { $_.Name -eq $newDataDisks[$i].Name }
             $newDataDiskAttachConfig = @{
-                Lun                = $i
                 CreateOption       = 'Attach'
                 Name               = $newDataDisks[$i].Name
                 ManagedDiskId      = $newDataDisks[$i].Id
-                Caching            = $sourceDataDisk.Caching
-                StorageAccountType = $sourceDataDisk.ManagedDisk.StorageAccountType
+                Lun                = ($disksDetails[($newDataDisks[$i].Name)]).Lun
+                Caching            = ($disksDetails[($newDataDisks[$i].Name)]).Caching
+                StorageAccountType = ($disksDetails[($newDataDisks[$i].Name)]).SkuName
             }
             $newVmConfig = Add-AzVMDataDisk -VM $newVmConfig @newDataDiskAttachConfig
         }
+        #endregion
 
-
-        #region Networking
+        #region VM config: Networking
         Write-Verbose -Message ('{0:HH:mm:ss} - Verifying network configuration' -f (Get-Date))
         $targetSubnetName = $nic.IpConfigurations[0].Subnet.Id -replace '.*\/(\w+)$', '$1'
         if (-not $targetVnet) {
@@ -337,7 +354,7 @@ function Move-AzVmToRegion {
                 ResourceGroupName    = $TargetResourceGroup
                 Location             = $TargetLocation
                 AllocationMethod     = $pubIp.PublicIpAllocationMethod
-                DomainNameLabel      = $pubIp.DnsSettings.DomainNameLabel
+                #DomainNameLabel      = $pubIp.DnsSettings.DomainNameLabel
                 Sku                  = $pubIp.Sku.Name
                 IdleTimeoutInMinutes = $pubIp.IdleTimeoutInMinutes
                 IpAddressVersion     = $pubIp.PublicIpAddressVersion
@@ -349,21 +366,51 @@ function Move-AzVmToRegion {
             $newNic = $newNic | Set-AzNetworkInterfaceIpConfig -Name $newIpConfig -PublicIpAddress $newPubIp | Set-AzNetworkInterface
         }
 
+        Write-Verbose -Message ('{0:HH:mm:ss} - Updating the VM config with the network details' -f (Get-Date))
         $newVmConfig = $newVmConfig | Add-AzVMNetworkInterface -Id $newNic.Id
         #endregion
 
+        #region VM config: Diagnostics
+        if ($VM.DiagnosticsProfile.BootDiagnostics.Enabled) {
+            Write-Verbose -Message ('{0:HH:mm:ss} - Using the temp storage account for boot diagnostics' -f (Get-Date))
+            $newVmConfig.DiagnosticsProfile = $VM.DiagnosticsProfile
+            $newVmConfig.DiagnosticsProfile.BootDiagnostics.StorageUri = $storageContext.BlobEndPoint
+        }
+        #endregion
 
+        #region Create the new VM
         Write-Verbose -Message ('{0:HH:mm:ss} - Creating the VM' -f (Get-Date))
         $newVmConfig | New-AzVM -Location $TargetLocation -ResourceGroupName $TargetResourceGroup
+        #endregion
+
+        #region Cleanup
+        if ($newVmConfig.DiagnosticsProfile.BootDiagnostics.Enabled) {
+            Write-Verbose -Message ('{0:HH:mm:ss} - Cleanning up the vhds container from the temp storage account' -f (Get-Date))
+            Remove-AzStorageContainer -Name vhds -Context $storageContext -Force
+        } else {
+            Write-Verbose -Message ('{0:HH:mm:ss} - Removing the temp storage account' -f (Get-Date))
+            Remove-AzStorageAccount -Name $storageContext.StorageAccountName -ResourceGroupName $TargetResourceGroup
+        }
+        #endregion
+
+        #region Final messages
+        if ($pubIp) {
+            Write-Host ("IMPORTANT: The VM's OLD public IP was: {0}" -f $pubIp.IpAddress) -ForegroundColor DarkMagenta
+            if ($pubIp.DnsSettings.Fqdn) {
+                Write-Host ('IMPORTANT: The VM had an FQDN: {0}' -f $pubIp.DnsSettings.Fqdn) -ForegroundColor DarkMagenta
+            }
+        }
+        if ($newPubIp) {
+            Write-Host ("IMPORTANT: The VM's NEW IP Address is: {0}" -f $newPubIp.IpAddress) -ForegroundColor DarkMagenta
+        }
         #endregion
 
     }
 }
 
 
-
 # Login-AzAccount
 $TargetLocation = 'north europe'
-$TargetResourceGroup = 'rg-vms-northeurope'
+$TargetResourceGroup = 'rg-vms-northeurope-3'
 $vm = Get-AzVM -ResourceGroupName 'rg-test-vms' -Name 'akada-vm'
-$vm | Move-AzVmToRegion -TargetLocation 'north europe' -TargetResourceGroup 'rg-vms-northeurope' -Verbose
+$vm | Move-AzVmToRegion -TargetLocation $TargetLocation -TargetResourceGroup $TargetResourceGroup -Verbose
