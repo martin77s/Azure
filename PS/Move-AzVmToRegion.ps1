@@ -1,10 +1,10 @@
-﻿#Requires -Version 5
+﻿#Requires -Version 5.1
 #Requires -Module Az.Accounts, Az.Compute, Az.Network, Az.Storage, Az.Resources
 
 <#
     Name        : Move-AzVmToRegion.ps1
-    Version     : 1.0.0.3
-    Last Update : 2019/09/19
+    Version     : 1.0.0.4
+    Last Update : 2019/09/20
     Keywords    : Azure, VM, Move
     Created by  : Martin Schvartzman, Microsoft
     Description : This script moves a virtual machine and all it's dependencies to a different region
