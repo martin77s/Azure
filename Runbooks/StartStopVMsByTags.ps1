@@ -3,7 +3,7 @@
     param (
         [string]$ConnectionName = 'AzureRunAsConnection'
         ,
-        [string]$SubscriptionNamePattern = '^SUB_DEV-.*' # '^SUB_DEV-.*|^SUB_SANDBOX-.*'
+        [string]$SubscriptionNamePattern = 'maschvar.*' # '^SUB_DEV-.*|^SUB_SANDBOX-.*'
         ,
         [boolean]$DryRun = $true
     )
@@ -25,17 +25,6 @@
     Write-Output ('Found {0} VMs to work on' -f $AzVms.Count)
     #endregion
 
-    #region Create the UTC datetime object
-    function Get-DateTimeInUTC {
-        param([string]$Time)
-        if ([datetime]$Time) {
-            Get-Date -Date ('{0} {1}' -f [datetime]::UtcNow.ToShortDateString(), $Time)
-        } else {
-            throw
-        }
-    }
-    #endregion
-
     foreach -parallel ($AzVm in $AzVms) {
 
         #region Initialize variables
@@ -45,8 +34,17 @@
         #endregion
 
         #region Normalize PowerOn/Off tag values
-        try { $AzVmPowerOn = (Get-DateTimeInUTC -Time ($VM.Tags.PowerOn)) } catch { $AzVmPowerOn = $null }
-        try { $AzVmPowerOff = (Get-DateTimeInUTC -Time ($VM.Tags.PowerOff)) } catch { $AzVmPowerOff = $null }
+        $AzVmPowerOn = $null; $AzVmPowerOff = $null
+        try {
+            if ([datetime] ($AzVm.Tags.PowerOn)) {
+                $AzVmPowerOn = Get-Date -Date ('{0} {1}' -f [datetime]::UtcNow.ToShortDateString(), ($AzVm.Tags.PowerOn))
+            }
+        } catch { }
+        try {
+            if ([datetime] ($AzVm.Tags.PowerOff)) {
+                $AzVmPowerOff = Get-Date -Date ('{0} {1}' -f [datetime]::UtcNow.ToShortDateString(), ($AzVm.Tags.PowerOff))
+            }
+        } catch { }
         #endregion
 
         #region Handle the "night shift" VMs
