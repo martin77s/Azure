@@ -102,11 +102,13 @@
         switch -CaseSensitive ($AzVmActionRequired) {
 
             'Start' {
+                $context = Set-AzContext -SubscriptionName $AzVm.SubscriptionName -Force
                 $AzVmActionStatusCode = (
                     Start-AzVM -Name $AzVm.Name -ResourceGroupName $AzVm.ResourceGroupName -WhatIf:$DryRun).Status
             }
 
             'Stop' {
+                $context = Set-AzContext -SubscriptionName $AzVm.SubscriptionName -Force
                 $AzVmActionStatusCode = (
                     Stop-AzVM -Name $AzVm.Name -ResourceGroupName $AzVm.ResourceGroupName -Force -WhatIf:$DryRun).Status
             }
