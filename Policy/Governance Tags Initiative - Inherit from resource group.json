@@ -1,0 +1,38 @@
+[
+    {
+        "policyDefinitionReferenceId": "4004249866711673111",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/cd3aa116-8754-49c9-a813-ad46512ece54",
+        "parameters": {
+            "tagName": {
+                "value": "CostCenter"
+            }
+        }
+    },
+    {
+        "policyDefinitionReferenceId": "4702458578447885259",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/cd3aa116-8754-49c9-a813-ad46512ece54",
+        "parameters": {
+            "tagName": {
+                "value": "Owner"
+            }
+        }
+    },
+    {
+        "policyDefinitionReferenceId": "13461474555568198027",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/cd3aa116-8754-49c9-a813-ad46512ece54",
+        "parameters": {
+            "tagName": {
+                "value": "Environment"
+            }
+        }
+    },
+    {
+        "policyDefinitionReferenceId": "13410114149344880243",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/cd3aa116-8754-49c9-a813-ad46512ece54",
+        "parameters": {
+            "tagName": {
+                "value": "Application"
+            }
+        }
+    }
+]
