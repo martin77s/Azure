@@ -1,0 +1,58 @@
+{
+  "properties": {
+    "displayName": "Enforce Naming Convention - Subnet",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "Enforce Naming Convention - Subnet",
+    "metadata": {
+      "category": "Compliance",
+      "createdBy": "",
+      "createdOn": "2019-08-27T07:55:00.3483919Z",
+      "updatedBy": "",
+      "updatedOn": "2019-08-29T05:16:35.3616346Z"
+    },
+    "parameters": {},
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Network/virtualNetworks/subnets"
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "field": "name",
+                  "match": "?????##-??-subnet"
+                },
+                {
+                  "field": "name",
+                  "match": "?????##-???-subnet"
+                },
+                {
+                  "field": "name",
+                  "match": "?????##-????-subnet"
+                },
+                {
+                  "field": "name",
+                  "match": "?????##-?????-subnet"
+                },
+                {
+                  "field": "name",
+                  "match": "?????##-??????-subnet"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "then": {
+        "effect": "deny"
+      }
+    }
+  },
+  "id": "/providers/Microsoft.Management/managementGroups/ ",
+  "type": "Microsoft.Authorization/policyDefinitions",
+  "name": ""
+}
