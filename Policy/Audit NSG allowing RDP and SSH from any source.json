@@ -3,7 +3,7 @@
         "displayName": "Audit NSG allowing RDP and SSH from Any source",
         "policyType": "Custom",
         "mode": "All",
-        "description": "This policy audit the existence of rules on NSGs allowing RDP and/or SSH from ANY source",
+        "description": "This policy audits the existence of rules on NSGs allowing RDP and/or SSH from ANY source",
         "metadata": {
             "category": "Network"
         },

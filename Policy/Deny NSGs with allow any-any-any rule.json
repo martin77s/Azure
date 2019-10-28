@@ -3,7 +3,7 @@
         "displayName": "Deny NSGs with allow any-any-any rule",
         "policyType": "Custom",
         "mode": "All",
-        "description": "Prevent the use of allow any-any-any rules in NSGs",
+        "description": "This policy prevents the use of allow any-any-any rules in NSGs",
         "metadata": {
             "category": "Network"
         },
