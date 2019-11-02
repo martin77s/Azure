@@ -3,16 +3,16 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "storagePrefix": {
-            "value": "armdemodata"
+            "value": "prdstrg114"
         },
         "storageSKU": {
             "value": "Standard_GRS"
         },
         "appServicePlanName": {
-            "value": "armdemoplan"
+            "value": "prdplan114"
         },
         "webAppName": {
-            "value": "armdemowebapp"
+            "value": "prdweb114"
         },
         "resourceTags": {
             "value": {

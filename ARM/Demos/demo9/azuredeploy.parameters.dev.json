@@ -3,16 +3,16 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "storagePrefix": {
-            "value": "armdemodevdata"
+            "value": "devstrg114"
         },
         "storageSKU": {
             "value": "Standard_LRS"
         },
         "appServicePlanName": {
-            "value": "armdemodevplan"
+            "value": "devplan114"
         },
         "webAppName": {
-            "value": "armdemodevwebapp"
+            "value": "devweb114"
         },
         "resourceTags": {
             "value": {

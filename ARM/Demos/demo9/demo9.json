@@ -5,7 +5,7 @@
     "storagePrefix": {
       "type": "string",
       "minLength": 3,
-      "maxLength": 11
+      "maxLength": 10
     },
     "storageSKU": {
       "type": "string",
