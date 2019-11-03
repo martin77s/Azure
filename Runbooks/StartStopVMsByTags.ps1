@@ -5,7 +5,7 @@
         ,
         [string]$SubscriptionNamePattern = 'maschvar.*' # '^SUB_DEV-.*|^SUB_SANDBOX-.*'
         ,
-        [boolean]$DryRun = $true
+        [boolean]$DryRun = $false
     )
 
     #region Login to Azure
@@ -31,6 +31,7 @@
         $AzVmNightShift = $false
         $AzVMCurrentTimeStamp = [datetime]::UtcNow
         $AzVmActionRequired = $null
+        $AzVmDesiredState = -1
         #endregion
 
         #region Normalize PowerOn/Off tag values
@@ -65,15 +66,11 @@
         } elseif ($AzVmPowerOn) {
             if ($AzVmPowerOn -lt $AzVmCurrentTimeStamp) {
                 $AzVmDesiredState = 1
-            } else {
-                $AzVmDesiredState = 0
             }
 
         } elseif ($AzVmPowerOff) {
             if ($AzVmPowerOff -lt $AzVmCurrentTimeStamp) {
                 $AzVmDesiredState = 0
-            } else {
-                $AzVmDesiredState = 1
             }
         }
         #endregion
@@ -116,7 +113,8 @@
         #endregion
 
         #region Output the full details object
-        $output = New-Object -TypeName PSObject -Property @{
+        $output = [pscustomobject]@{
+            Separator         = '----------------------------------------'
             Name              = $AzVm.Name
             ResourceGroupName = $AzVm.ResourceGroupName
             PowerState        = $AzVm.PowerState
@@ -134,3 +132,4 @@
         #endregion
     }
 }
+
