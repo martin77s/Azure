@@ -1,0 +1,1 @@
+https://docs.microsoft.com/en-us/azure/templates/microsoft.consumption/2019-10-01/budgets
