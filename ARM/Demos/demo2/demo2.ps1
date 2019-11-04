@@ -5,11 +5,11 @@
 # Define some variables:
 $location = 'West Europe'
 $resourceGroup = 'armdemos-rg'
-$templateFile = '.\demo2.json'
+$templateFile = '.\demo2\demo2.json'
 
 
 # Create the target resource group:
-if(-not (Get-AzResourceGroup -Name $resourceGroup -ErrorAction SilentlyContinue)) {
+if (-not (Get-AzResourceGroup -Name $resourceGroup -ErrorAction SilentlyContinue)) {
 	New-AzResourceGroup -Name $resourceGroup -Location $location
 }
 
