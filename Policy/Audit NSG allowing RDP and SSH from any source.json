@@ -1,75 +1,66 @@
 {
-    "properties": {
-        "displayName": "Audit NSG allowing RDP and SSH from Any source",
-        "policyType": "Custom",
-        "mode": "All",
-        "description": "This policy audits the existence of rules on NSGs allowing RDP and/or SSH from ANY source",
-        "metadata": {
-            "category": "Network"
+    "mode": "All",
+    "policyRule": {
+        "if": {
+            "allOf": [
+                {
+                    "field": "type",
+                    "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
+                },
+                {
+                    "allOf": [
+                        {
+                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+                            "equals": "Allow"
+                        },
+                        {
+                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
+                            "equals": "Inbound"
+                        },
+                        {
+                            "anyOf": [
+                                {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+                                    "equals": "3389"
+                                },
+                                {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+                                    "equals": "22"
+                                },
+                                {
+                                    "not": {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                        "notEquals": "3389"
+                                    }
+                                },
+                                {
+                                    "not": {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                        "notEquals": "22"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "anyOf": [
+                                {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefix",
+                                    "equals": "*"
+                                },
+                                {
+                                    "not": {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
+                                        "notEquals": "*"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
         },
-        "parameters": {},
-        "policyRule": {
-            "if": {
-                "allOf": [
-                    {
-                        "field": "type",
-                        "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
-                    },
-                    {
-                        "allOf": [
-                            {
-                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
-                                "equals": "Allow"
-                            },
-                            {
-                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
-                                "equals": "Inbound"
-                            },
-                            {
-                                "anyOf": [
-                                    {
-                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
-                                        "equals": "3389"
-                                    },
-                                    {
-                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
-                                        "equals": "22"
-                                    },
-                                    {
-                                        "not": {
-                                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
-                                            "notEquals": "3389"
-                                        }
-                                    },
-                                    {
-                                        "not": {
-                                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
-                                            "notEquals": "22"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "anyOf": [
-                                    {
-                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefix",
-                                        "equals": "*"
-                                    },
-                                    {
-                                        "not": {
-                                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
-                                            "notEquals": "*"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            },
-            "then": {
-                "effect": "audit"
-            }
+        "then": {
+            "effect": "audit"
         }
     }
 }

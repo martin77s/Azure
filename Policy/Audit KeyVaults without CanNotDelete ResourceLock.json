@@ -1,27 +1,21 @@
 {
-  "properties": {
-    "displayName": "Audit Resource Locks on Key Vaults",
-    "policyType": "Custom",
-    "mode": "All",
-    "description": "Audits all Key Vaults that do not have CanNotDelete Resource Lock",
-    "parameters": {},
-    "policyRule": {
-      "if": {
-        "allOf": [
-          {
-            "field": "type",
-            "equals": "Microsoft.KeyVault/vaults"
-          }
-        ]
-      },
-      "then": {
-        "effect": "auditIfNotExists",
-        "details": {
-          "type": "Microsoft.Authorization/locks",
-          "existenceCondition": {
-            "field": "Microsoft.Authorization/locks/level",
-            "equals": "CanNotDelete"
-          }
+  "mode": "All",
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "type",
+          "equals": "Microsoft.KeyVault/vaults"
+        }
+      ]
+    },
+    "then": {
+      "effect": "auditIfNotExists",
+      "details": {
+        "type": "Microsoft.Authorization/locks",
+        "existenceCondition": {
+          "field": "Microsoft.Authorization/locks/level",
+          "equals": "CanNotDelete"
         }
       }
     }

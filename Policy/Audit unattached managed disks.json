@@ -1,8 +1,9 @@
 {
-    "mode": "indexed",
+    "mode": "Indexed",
     "policyRule": {
         "if": {
-            "allOf": [{
+            "allOf": [
+                {
                     "field": "type",
                     "equals": "Microsoft.Compute/disks"
                 },

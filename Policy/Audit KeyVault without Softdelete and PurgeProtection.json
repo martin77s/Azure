@@ -1,36 +1,31 @@
 {
-   "properties": {
-      "displayName": "Audit SoftDelete & PurgeProtection enabled for KeyVault",
-      "description": "Audits Key Vault vaults if they do not have SoftDelete or PurgeProtection enabled",
-      "mode": "Indexed",
-      "parameters": {},
-      "policyRule": {
+	"mode": "Indexed",
+	"policyRule": {
 		"if": {
 			"allOf": [
-			  {
-				"field": "type",
-				"equals": "Microsoft.KeyVault/vaults"
-			  }
+				{
+					"field": "type",
+					"equals": "Microsoft.KeyVault/vaults"
+				}
 			]
-		  },
-		  "then": {
+		},
+		"then": {
 			"effect": "auditIfNotExists",
 			"details": {
-			  "type": "Microsoft.KeyVault/vaults",
-			  "existenceCondition": {
-				"allOf": [
-				  {
-					"field": "Microsoft.KeyVault/vaults/enableSoftDelete",
-					"equals": "true"
-				  },
-				  {
-					"field": "Microsoft.KeyVault/vaults/enablePurgeProtection",
-					"equals": "true"
-				  }
-				]
-			  }
+				"type": "Microsoft.KeyVault/vaults",
+				"existenceCondition": {
+					"allOf": [
+						{
+							"field": "Microsoft.KeyVault/vaults/enableSoftDelete",
+							"equals": "true"
+						},
+						{
+							"field": "Microsoft.KeyVault/vaults/enablePurgeProtection",
+							"equals": "true"
+						}
+					]
+				}
 			}
-		  }
-      }
-   }
+		}
+	}
 }

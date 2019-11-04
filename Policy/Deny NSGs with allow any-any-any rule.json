@@ -1,65 +1,56 @@
 {
-    "properties": {
-        "displayName": "Deny NSGs with allow any-any-any rule",
-        "policyType": "Custom",
-        "mode": "All",
-        "description": "This policy prevents the use of allow any-any-any rules in NSGs",
-        "metadata": {
-            "category": "Network"
+    "mode": "All",
+    "policyRule": {
+        "if": {
+            "allOf": [
+                {
+                    "field": "type",
+                    "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
+                },
+                {
+                    "allOf": [
+                        {
+                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
+                            "equals": "Allow"
+                        },
+                        {
+                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
+                            "equals": "Inbound"
+                        },
+                        {
+                            "anyOf": [
+                                {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
+                                    "equals": "*"
+                                },
+                                {
+                                    "not": {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
+                                        "notEquals": "*"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "anyOf": [
+                                {
+                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefix",
+                                    "equals": "*"
+                                },
+                                {
+                                    "not": {
+                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
+                                        "notEquals": "*"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
         },
-        "parameters": {},
-        "policyRule": {
-            "if": {
-                "allOf": [
-                    {
-                        "field": "type",
-                        "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
-                    },
-                    {
-                        "allOf": [
-                            {
-                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
-                                "equals": "Allow"
-                            },
-                            {
-                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
-                                "equals": "Inbound"
-                            },
-                            {
-                                "anyOf": [
-                                    {
-                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
-                                        "equals": "*"
-                                    },
-                                    {
-                                        "not": {
-                                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
-                                            "notEquals": "*"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "anyOf": [
-                                    {
-                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefix",
-                                        "equals": "*"
-                                    },
-                                    {
-                                        "not": {
-                                            "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefixes[*]",
-                                            "notEquals": "*"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            },
-            "then": {
-                "effect": "deny"
-            }
+        "then": {
+            "effect": "deny"
         }
     }
 }
