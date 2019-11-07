@@ -7,7 +7,7 @@ function Get-AccesTokenFromServicePrincipal {
     )
 
     $TokenEndpoint = 'https://login.windows.net/{0}/oauth2/token' -f $TenantID
-    $ARMResource = "https://management.core.windows.net/"
+    $ARMResource = 'https://management.core.windows.net/'
 
     $Body = @{
         'resource'      = $ARMResource
