@@ -1,6 +1,4 @@
-﻿# Get-AzResourceProvider | Where-Object { $_.ResourceTypes.ResourceTypeName -match 'checkNameAvailability' } | Select-Object ProviderNamespace
-
-
+﻿
 function Get-AccesTokenFromServicePrincipal {
     param(
         [string] $TenantID,
@@ -72,19 +70,34 @@ function Test-AzNameAvailability {
     $response = (Invoke-WebRequest -Uri $uri -Method Post -Body "{$body}" -ContentType "application/json" -Headers @{Authorization = $AuthorizationToken }).content
     $response | ConvertFrom-Json |
         Select-Object @{N = 'Name'; E = { $Name } }, @{N = 'Type'; E = { $ServiceType } }, @{N = 'Available'; E = { $_ | Select-Object -ExpandProperty *available } }, Reason, Message
-
 }
 
 <#
+
+Get-AzResourceProvider | 
+    Where-Object { $_.ResourceTypes.ResourceTypeName -eq 'checkNameAvailability' } | 
+        Select-Object ProviderNamespace
+		
+
+Get-AzResourceProvider -ProviderNamespace Microsoft.Web |
+    Where-Object { $_.ResourceTypes.ResourceTypeName -eq 'checkNameAvailability' } |
+        Select-Object -ExpandProperty ResourceTypes | 
+            Select-Object -ExpandProperty ApiVersions
+
+
+# Bougus variables:
 $tenantId = '72f988bf-86f1-4400-91ab-2d7cd011db47'
 $clientID = 'c9e2e0c9-af17-41af-9977-5e17e5b9b762'
 $clientSecret = ':B:yHOVO0qlx.w9j-4UCHt6Ug/1UpJK!'
 $subscriptionId = 'd75b13e4-2bf5-4c6d-86ad-c7a943a137f6'
+
+# Get the bearer token for a service principal:
 $AuthorizationToken = Get-AccesTokenFromServicePrincipal -TenantID $tenantId -ClientID $clientID -ClientSecret $clientSecret
 
+# Get the bearer token for the current logged on user:
 $AuthorizationToken = Get-AccesTokenFromCurrentUser
-#>
 
+# Test for the name availability for some of the services:
 Test-AzNameAvailability -AuthorizationToken $AuthorizationToken -SubscriptionId $subscriptionId -Name martin -ServiceType ApiManagement
 Test-AzNameAvailability -AuthorizationToken $AuthorizationToken -SubscriptionId $subscriptionId -Name kv -ServiceType KeyVault
 Test-AzNameAvailability -AuthorizationToken $AuthorizationToken -SubscriptionId $subscriptionId -Name root -ServiceType ManagementGroup
@@ -92,3 +105,15 @@ Test-AzNameAvailability -AuthorizationToken $AuthorizationToken -SubscriptionId 
 Test-AzNameAvailability -AuthorizationToken $AuthorizationToken -SubscriptionId $subscriptionId -Name storage -ServiceType StorageAccount
 Test-AzNameAvailability -AuthorizationToken $AuthorizationToken -SubscriptionId $subscriptionId -Name www -ServiceType WebApp
 
+# In a script:
+$params = @{
+    Name               = 'myCoolWebSite'
+    ServiceType        = 'WebApp'
+    AuthorizationToken = Get-AccesTokenFromCurrentUser
+    SubscriptionId     = $subscriptionId
+}
+if((Test-AzNameAvailability @params).Available) {
+    # Continue with the deployment
+}
+
+#>
