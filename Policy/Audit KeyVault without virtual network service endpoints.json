@@ -1,0 +1,33 @@
+{
+   "mode": "Indexed",
+   "parameters": {},
+   "policyRule": {
+      "if": {
+         "allOf": [
+            {
+               "field": "type",
+               "equals": "Microsoft.KeyVault/vaults"
+            },
+            {
+               "anyOf": [
+                  {
+                     "field": "Microsoft.KeyVault/vaults/networkAcls.virtualNetworkRules[*].id",
+                     "exists": "false"
+                  },
+                  {
+                     "field": "Microsoft.KeyVault/vaults/networkAcls.virtualNetworkRules[*].id",
+                     "notLike": "*"
+                  },
+                  {
+                     "field": "Microsoft.KeyVault/vaults/networkAcls.defaultAction",
+                     "equals": "Allow"
+                  }
+               ]
+            }
+         ]
+      },
+      "then": {
+         "effect": "audit"
+      }
+   }
+}

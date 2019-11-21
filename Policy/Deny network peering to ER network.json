@@ -1,0 +1,32 @@
+{
+    "mode": "All",
+    "parameters": {
+        "resourceGroupName": {
+            "type": "String",
+            "metadata": {
+                "description": "Name of the resource group with ER/HUB Network",
+                "displayName": "ER/HUB Network Resource Group Name",
+                "strongType": "ExistingResourceGroups"
+            }
+        }
+    },
+    "displayName": "No network peering to ER/HUB network",
+    "description": "No network peering can be associated to networks in network in a resource group containing central managed network infrastructure.",
+    "policyRule": {
+        "if": {
+            "allOf": [
+                {
+                    "field": "type",
+                    "equals": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+                },
+                {
+                    "field": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/remoteVirtualNetwork.id",
+                    "contains": "[concat('resourceGroups/',parameters('resourceGroupName'))]"
+                }
+            ]
+        },
+        "then": {
+            "effect": "deny"
+        }
+    }
+}
