@@ -1,7 +1,6 @@
 $sub = (Get-AzSubscription | Out-GridView -Title 'Select Subscription' -OutputMode Single | Set-AzContext)
-$role = Get-AzRoleDefinition 'Virtual Machine Operator'
-$role.Id = $null
-$role.Name = 'Virtual Machine Operator'
+$role = [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleDefinition]::new()
+$role.Name = 'CONTOSO Virtual Machine Operator'
 $role.Description = 'Can stop and start virtual machines'
 $role.Actions.Clear()
 $role.Actions.Add('Microsoft.Compute/*/Read')
