@@ -32,7 +32,7 @@ Set-AzKeyVaultAccessPolicy -ResourceGroupName $keyVaultResourceGroupName -VaultN
 Write-Host "Get Secret Access to account $loginId has been granted from the KeyVault, please check and remove the policy after exporting the certificate"
 
 ## Getting the secret from the KeyVault
-$secret = Get-AzureKeyVaultSecret -VaultName $keyVaultName -Name $keyVaultSecretName
+$secret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $keyVaultSecretName
 $pfxCertObject = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList @([Convert]::FromBase64String($secret.SecretValueText), "", [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
 $pfxPassword = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 50 | ForEach-Object { [char]$_ })
 
