@@ -12,6 +12,7 @@ param(
 	[string] $Name
 )
 
+## Change context to the correct subscription
 Set-AzContext -Subscription $SubscriptionId
 
 ## Get the KeyVault Resource Url and KeyVault Secret Name were the certificate is stored
