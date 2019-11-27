@@ -125,7 +125,8 @@
 		}
 	},
 	"variables": {
-		"subnetRef": "[concat(parameters('virtualNetworkReference'), '/subnets/', parameters('subnetName'))]"
+		"subnetRef": "[concat(parameters('virtualNetworkReference'), '/subnets/', parameters('subnetName'))]",
+		"isWindowsOS": "[equals(parameters('osOffer'), 'WindowsServer')]"
 	},
 	"resources": [
 		{
@@ -204,9 +205,11 @@
 			"name": "[parameters('vmName')]",
 			"location": "[parameters('location')]",
 			"dependsOn": [
-				"[resourceId('Microsoft.Network/networkinterfaces/', concat(parameters('vmName'), '-nic'))]"
+				"[resourceId('Microsoft.Network/networkinterfaces/', concat(parameters('vmName'), '-nic'))]",
+				"[resourceId('Microsoft.Storage/storageAccounts/', parameters('diagnosticsStorageAccountName'))]"
 			],
 			"properties": {
+				"licenseType": "[if(variables('isWindowsOS'), 'Windows_Server', json('null'))]",
 				"availabilitySet": {
 					"id": "[if(not(equals(parameters('availabilitySetName'), 'None')), resourceId('Microsoft.Compute/availabilitySets',parameters('availabilitySetName')), json('null'))]"
 				},
