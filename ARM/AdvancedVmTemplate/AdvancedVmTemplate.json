@@ -148,7 +148,7 @@
 			"name": "[parameters('diagnosticsStorageAccountName')]",
 			"location": "[parameters('location')]",
 			"sku": {
-				"name": "Premium_LRS",
+				"name": "Standard_LRS",
 				"tier": "Standard"
 			},
 			"kind": "Storage",
@@ -204,8 +204,7 @@
 			"name": "[parameters('vmName')]",
 			"location": "[parameters('location')]",
 			"dependsOn": [
-				"[resourceId('Microsoft.Network/networkinterfaces/', concat(parameters('vmName'), '-nic'))]",
-				"[if(equals(parameters('availabilitySetName'), 'None'), parameters('availabilitySetName'), json('null'))]"
+				"[resourceId('Microsoft.Network/networkinterfaces/', concat(parameters('vmName'), '-nic'))]"
 			],
 			"properties": {
 				"availabilitySet": {
