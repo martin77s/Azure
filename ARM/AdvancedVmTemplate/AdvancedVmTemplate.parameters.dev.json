@@ -1,0 +1,42 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"vmName": {
+			"value": "VmName"
+		},
+		"vmSize": {
+			"value": "Standard_D2s_V3"
+		},
+		"osPlatform": {
+			"value": "Windows"
+		},
+		"osPublisher": {
+			"value": "MicrosoftWindowsServer"
+		},
+		"osOffer": {
+			"value": "WindowsServer"
+		},
+		"osImageSku": {
+			"value": "2016-Datacenter"
+		},
+		"adminUsername": {
+			"value": "vmadmin"
+		},
+		"diagnosticsStorageAccountName": {
+			"value": "thestoragediag"
+		},
+		"virtualNetworkReference": {
+			"value": "/subscriptions/12345678-aaaa-bbbb-cccc-1234567890ab/resourceGroups/rg-name/providers/Microsoft.Network/virtualNetworks/vnet-name"
+		},
+		"subnetName": {
+			"value": "default"
+		},
+		"staticIP": {
+			"value": "10.2.2.35"
+		},
+		"availabilitySetName": {
+			"value": "None"
+		}
+	}
+}
