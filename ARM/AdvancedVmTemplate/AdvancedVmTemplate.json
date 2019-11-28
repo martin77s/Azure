@@ -11,7 +11,7 @@
 		},
 		"vmSize": {
 			"type": "string",
-			"defaultValue": "Standard_D2s_V3",
+			"defaultValue": "Standard_D2s_v3",
 			"metadata": {
 				"description": "The virtual machine size"
 			}
@@ -129,8 +129,7 @@
 		"isWindowsOS": "[equals(parameters('osOffer'), 'WindowsServer')]",
 		"availabilitySetProperty": {
 			"id": "[resourceId('Microsoft.Compute/availabilitySets',parameters('availabilitySetName'))]"
-		},
-		"vmAvailabilitySet": "[if(equals(parameters('availabilitySetName'), 'None'), json('null'), variables('availabilitySetProperty')) ]"
+		}
 	},
 	"resources": [
 		{
@@ -214,7 +213,7 @@
 			],
 			"properties": {
 				"licenseType": "[if(variables('isWindowsOS'), 'Windows_Server', json('null'))]",
-				"availabilitySet": "[variables('vmAvailabilitySet')]",
+				"availabilitySet": "[if(equals(parameters('availabilitySetName'), 'None'), json('null'), variables('availabilitySetProperty'))]",
 				"hardwareProfile": {
 					"vmSize": "[parameters('vmSize')]"
 				},

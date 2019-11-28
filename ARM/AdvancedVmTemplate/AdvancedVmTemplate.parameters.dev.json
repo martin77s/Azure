@@ -6,7 +6,7 @@
 			"value": "VmName"
 		},
 		"vmSize": {
-			"value": "Standard_D2s_V3"
+			"value": "Standard_D2s_v3"
 		},
 		"osPlatform": {
 			"value": "Windows"
