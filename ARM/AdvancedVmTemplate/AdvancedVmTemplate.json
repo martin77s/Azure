@@ -126,7 +126,11 @@
 	},
 	"variables": {
 		"subnetRef": "[concat(parameters('virtualNetworkReference'), '/subnets/', parameters('subnetName'))]",
-		"isWindowsOS": "[equals(parameters('osOffer'), 'WindowsServer')]"
+		"isWindowsOS": "[equals(parameters('osOffer'), 'WindowsServer')]",
+		"availabilitySetProperty": {
+			"id": "[resourceId('Microsoft.Compute/availabilitySets',parameters('availabilitySetName'))]"
+		},
+		"vmAvailabilitySet": "[if(equals(parameters('availabilitySetName'), 'None'), json('null'), variables('availabilitySetProperty')) ]"
 	},
 	"resources": [
 		{
@@ -210,9 +214,7 @@
 			],
 			"properties": {
 				"licenseType": "[if(variables('isWindowsOS'), 'Windows_Server', json('null'))]",
-				"availabilitySet": {
-					"id": "[if(not(equals(parameters('availabilitySetName'), 'None')), resourceId('Microsoft.Compute/availabilitySets',parameters('availabilitySetName')), json('null'))]"
-				},
+				"availabilitySet": "[variables('vmAvailabilitySet')]",
 				"hardwareProfile": {
 					"vmSize": "[parameters('vmSize')]"
 				},
