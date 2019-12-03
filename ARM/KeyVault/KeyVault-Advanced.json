@@ -1,0 +1,178 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+  "parameters": {
+    "key-vault-name": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault Name"
+      }
+    },
+    "access-policies": {
+      "type": "array",
+      "metadata": {
+        "description": "Access policies object"
+      }
+    },
+    "enable-vault-for-deployment": {
+      "type": "bool",
+      "defaultValue": true,
+      "allowedValues": [ true, false ],
+      "metadata": {
+        "description": "Specifies if the vault is enabled for deployment by script or compute"
+      }
+    },
+    "enable-vault-for-templateDeployment": {
+      "type": "bool",
+      "defaultValue": true,
+      "allowedValues": [ true, false ],
+      "metadata": {
+        "description": "Specifies if the vault is enabled for a template deployment"
+      }
+    },
+    "enable-vault-for-diskEncryption": {
+      "type": "bool",
+      "defaultValue": true,
+      "allowedValues": [ true, false ],
+      "metadata": {
+        "description": "Specifies if the azure platform has access to the vault for enabling disk encryption scenarios."
+      }
+    },
+    "vault-sku": {
+      "type": "string",
+      "defaultValue": "Premium",
+      "allowedValues": [ "Premium" ],
+      "metadata": {
+        "description": "Specifies the SKU for the vault"
+      }
+    },
+    "lock-level": {
+      "type": "string",
+      "defaultValue": "CannotDelete",
+      "allowedValues": [ "CannotDelete", "None" ],
+      "metadata": {
+        "description": "Specifies the lock type for the vault.  Note: if a lock is already applied to a resource, then it cannot be removed with an arm template.  Instead set the arm template param value to None and delete the lock via portal or powershell."
+      }
+    },
+    "logs-retention-in-days": {
+      "type": "int",
+      "defaultValue": 365,
+      "minValue": 0,
+      "maxValue": 365,
+      "metadata": {
+        "description": "Specifies the number of days that logs will be kept for; a value of 0 will retain data indefinitely."
+      }
+    },
+    "oms-workspace-resourceGroup": {
+      "type": "string",
+      "minLength": 1,
+      "metadata": {
+        "description": "Name of the Resource Group housing the OMS workspace."
+      }
+    },
+    "oms-workspace-name": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource name of the Log Analytics workspace used for diagnostic log integration."
+      }
+    },
+    "diagnostic-storageAccount-name": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource name of the storage account used for diagnostic log integration."
+      }
+    },
+    "diagnostic-storageAccount-resourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Resource Group housing the SA diagnostics account"
+      }
+    },
+    "wwsubscriptionid": {
+      "type": "string",
+      "metadata": {
+        "description": "WW Subscription ID"
+      }
+    }
+
+  },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[parameters('key-vault-name')]",
+            "apiVersion": "2016-10-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "properties": {
+                "enabledForDeployment": "[parameters('enable-vault-for-deployment')]",
+                "enabledForTemplateDeployment": "[parameters('enable-vault-for-templateDeployment')]",
+                "enabledForDiskEncryption": "[parameters('enable-vault-for-diskEncryption')]",
+                "enableSoftDelete": true,
+                "enablePurgeProtection": true,
+                "tenantId": "[subscription().tenantId]",
+                "accessPolicies": "[parameters('access-policies')]",
+                "sku": {
+                    "name": "[parameters('vault-sku')]",
+                    "family": "A"
+                }
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.KeyVault/vaults/providers/diagnosticsettings",
+                    "name": "[concat(parameters('key-vault-name'), '/Microsoft.Insights/service')]",
+                    "apiVersion": "2016-09-01",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.KeyVault/vaults/', parameters('key-vault-name'))]"
+                    ],
+                  "properties": {
+                    "workspaceId": "[resourceId(parameters('wwsubscriptionid'), parameters('oms-workspace-resourceGroup'), 'Microsoft.OperationalInsights/workspaces', parameters('oms-workspace-name'))]",
+                    "storageAccountId": "[resourceId(parameters('diagnostic-storageAccount-resourceGroup'), 'Microsoft.Storage/storageAccounts', parameters('diagnostic-storageAccount-name'))]",
+                    "logs": [
+                      {
+                        "category": "AuditEvent",
+                        "enabled": true,
+                        "retentionPolicy": {
+                          "enabled": true,
+                          "days": "[parameters('logs-retention-in-days')]"
+                        }
+                      }
+                    ]
+                  }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/providers/locks",
+            "apiVersion": "2016-09-01",
+            "condition": "[not(equals(parameters('lock-level'),'None'))]",
+            "name": "[concat(parameters('key-vault-name'), '/Microsoft.Authorization/keyVault', parameters('lock-level'))]",
+            "dependsOn": [
+                "[concat('Microsoft.KeyVault/vaults/', parameters('key-vault-name'))]"
+            ],
+            "comments": "Resource lock on key vault",
+            "properties": {
+                "level": "[parameters('lock-level')]"
+            }
+        }
+    ],
+    "outputs": {
+        "kv-id": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('key-vault-name'))]"
+        },
+        "kv-name": {
+            "type": "string",
+            "value": "[parameters('key-vault-name')]"
+        },
+        "kv-resourceGroup": {
+            "type": "string",
+            "value": "[resourceGroup().name]"
+        },
+        "kv-uri": {
+            "type": "string",
+            "value": "[reference(concat('Microsoft.KeyVault/vaults/', parameters('key-vault-name')), '2016-10-01').vaultUri]"
+        }
+    }
+}

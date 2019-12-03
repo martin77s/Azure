@@ -1,0 +1,155 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "prefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Deployment prefix. E.g. Organization-DeploymentType"
+      }
+    },
+    "servicetier": {
+      "type": "string",
+      "allowedValues": [
+        "Free",
+        "Standalone",
+        "PerNode"
+      ],
+      "metadata": {
+        "description": "Service Tier: Free, Standalone, or PerNode for log analytics"
+      }
+    },
+    "dataretention": {
+      "type": "int",
+      "defaultValue": 30,
+      "minValue": 7,
+      "maxValue": 730,
+      "metadata": {
+        "description": "Number of days data will be retained for."
+      }
+    },
+    "laworkspacelocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Region used when establishing the workspace."
+      }
+    },
+    "automationaccountlocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Region used when establishing the automation account."
+      }
+    },
+    "solutionTypes": {
+      "type": "array",
+      "allowedValues": [
+        "AzureAutomation",
+        "ChangeTracking",
+        "Updates",
+        "NetworkMonitoring",
+        "Security"
+      ],
+      "metadata": {
+        "description": "Types of solutions that will be enabled."
+      }
+    }
+  },
+  "variables": {
+    "laworkspacename": "[concat(parameters('prefix'), '-la1')]",
+    "laAutomationAccountName": "[concat(parameters('prefix'), '-mgmtaa1')]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2015-10-31",
+      "type": "Microsoft.Automation/automationAccounts",
+      "name": "[variables('laAutomationAccountName')]",
+      "location": "[parameters('automationaccountlocation')]",
+      "properties": {
+        "sku": {
+          "name": "Basic"
+        }
+      },
+      "resources": [
+        {
+          "type": "providers/diagnosticSettings",
+          "name": "Microsoft.Insights/service",
+          "apiVersion": "2015-07-01",
+          "dependsOn": [
+            "[variables('laAutomationAccountName')]"
+          ],
+          "properties": {
+            "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces/', variables('laworkspacename'))]",
+            "logs": [
+              {
+                "category": "JobLogs",
+                "enabled": true
+              },
+              {
+                "category": "DscNodeStatus",
+                "enabled": true
+              },
+              {
+                "category": "JobStreams",
+                "enabled": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "apiVersion": "2015-11-01-preview",
+      "location": "[parameters('laworkspacelocation')]",
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "name": "[variables('laworkspacename')]",
+      "properties": {
+        "features": {
+          "enableLogAccessUsingOnlyResourcePermissions": true
+        },
+        "sku": {
+          "Name": "[parameters('servicetier')]"
+        },
+        "retentionInDays": "[parameters('dataretention')]"
+      },
+      "resources": [
+      ]
+    },
+    {
+      "name": "[concat(variables('laworkspacename'), '/' , 'Automation')]",
+      "type": "Microsoft.OperationalInsights/workspaces/linkedServices",
+      "apiVersion": "2015-11-01-preview",
+      "location": "[parameters('laworkspacelocation')]",
+      "dependsOn": [
+        "[concat('Microsoft.OperationalInsights/workspaces/', variables('laworkspacename'))]",
+        "[concat('Microsoft.Automation/automationAccounts/', variables('laAutomationAccountName'))]"
+      ],
+      "properties": {
+        "resourceId": "[resourceId('Microsoft.Automation/automationAccounts/', variables('laAutomationAccountName'))]"
+      }
+    },
+    {
+      "apiVersion": "2015-11-01-preview",
+      "type": "Microsoft.OperationsManagement/solutions",
+      "location": "[parameters('laworkspacelocation')]",
+      "name": "[Concat(parameters('solutionTypes')[copyIndex()], '(', variables('laworkspacename'), ')')]",
+      "properties": {
+        "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces/', variables('laworkspacename'))]"
+      },
+      "plan": {
+        "name": "[Concat(parameters('solutionTypes')[copyIndex()], '(', variables('laworkspacename'), ')')]",
+        "product": "[Concat('OMSGallery/', parameters('solutionTypes')[copyIndex()])]",
+        "promotionCode": "",
+        "publisher": "Microsoft"
+      },
+      "copy": {
+        "name": "solutionsCopy",
+        "count": "[length(parameters('solutionTypes'))]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.OperationalInsights/workspaces/',variables('laworkspacename'))]"
+      ]
+    }
+  ],
+  "outputs": {
+  }
+}

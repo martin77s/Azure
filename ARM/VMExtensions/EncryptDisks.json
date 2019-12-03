@@ -1,0 +1,62 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "vmName": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM Name"
+      }
+    },
+    "adeKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "ADE Key Vault name"
+      }
+    },
+    "keyVaultResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "ADE Key Vault Resource Group"
+      }
+    }
+  },
+
+  "variables": {
+    "extensionVersion": "2.2",
+    "encryptionOperation": "EnableEncryption",
+    "keyEncryptionAlgorithm": "RSA-OAEP",
+    "forceUpdateTag": "1.0",
+    "keyVaultResourceID": "[resourceId(parameters('keyVaultResourceGroup'), 'Microsoft.KeyVault/vaults/', parameters('adeKeyVaultName'))]"
+  },
+  "resources": [
+
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('vmName'),'/AzureDiskEncryption')]",
+      "apiVersion": "2017-03-30",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "publisher": "Microsoft.Azure.Security",
+        "type": "AzureDiskEncryption",
+        "typeHandlerVersion": "[variables('extensionVersion')]",
+        "autoUpgradeMinorVersion": true,
+        "forceUpdateTag": "[variables('forceUpdateTag')]",
+        "settings": {
+
+          "KeyVaultURL": "[reference(variables('keyVaultResourceID'),'2016-10-01').vaultUri]",
+          "KeyEncryptionAlgorithm": "[variables('keyEncryptionAlgorithm')]",
+          "VolumeType": "All",
+          "EncryptionOperation": "[variables('encryptionOperation')]",
+          "KeyVaultResourceId": "[variables('keyVaultResourceID')]"
+        },
+        "protectedSettings": {
+
+        }
+      }
+    }
+  ],
+  "outputs": {
+  }
+}

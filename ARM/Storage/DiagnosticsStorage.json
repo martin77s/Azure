@@ -1,0 +1,118 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"prefix": {
+			"type": "string",
+			"metadata": {
+				"description": "Deployment prefix. E.g. Organization-DeploymentType"
+			}
+		},
+		"logginglaworkspacename": {
+			"type": "string",
+			"metadata": {
+				"description": "Name of the log analytics workspace"
+			}
+		},
+		"laworkspacesubscriptionid": {
+			"type": "string",
+			"metadata": {
+				"description": "SubscriptionID of the analytics workspace"
+			}
+		},
+		"logginglargname": {
+			"type": "string",
+			"metadata": {
+				"description": "Resource Group Name of the log analytics workspace"
+			}
+		},
+		"diagnosticsStorageAccountType": {
+			"type": "string",
+			"defaultValue": "Standard_LRS",
+			"allowedValues": [
+				"Standard_LRS",
+				"Standard_ZRS",
+				"Standard_GRS",
+				"Standard_RAGRS",
+				"Premium_LRS"
+			]
+		}
+	},
+	"variables": {
+		"storage-account-name": "[concat(parameters('prefix'), 'logdiagsa1')]",
+		"nsg-storage-account-name": "[concat(parameters('prefix'), 'lognsgflowsa1')]"
+	},
+	"resources": [
+		{
+			"apiVersion": "2017-05-10",
+			"name": "nestedDeploySharedServicesWorkloadPeering",
+			"type": "Microsoft.Resources/deployments",
+			"resourceGroup": "[parameters('logginglargname')]",
+			"subscriptionId": "[parameters('laworkspacesubscriptionid')]",
+			"properties": {
+				"mode": "Incremental",
+				"template": {
+					"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+					"contentVersion": "1.0.0.0",
+					"parameters": {
+					},
+					"variables": {
+					},
+					"resources": [
+						{
+							"apiVersion": "2015-03-20",
+							"name": "[concat(parameters('logginglaworkspacename'),'/',variables('storage-account-name'),parameters('logginglaworkspacename'))]",
+							"type": "Microsoft.OperationalInsights/workspaces/storageInsightConfigs",
+							"properties": {
+								"containers": [
+								],
+								"tables": [
+									"WADWindowsEventLogsTable",
+									"WADETWEventTable",
+									"WADServiceFabric*EventTable",
+									"LinuxsyslogVer2v0"
+								],
+								"storageAccount": {
+									"id": "[resourceId(resourceGroup().Name,'Microsoft.Storage/storageaccounts/', variables('storage-account-name'))]",
+									"key": "[listKeys(resourceId(resourceGroup().Name,'Microsoft.Storage/storageAccounts', variables('storage-account-name')),'2015-06-15').key1]"
+								}
+							}
+						}
+					]
+				}
+			}
+		},
+		{
+			"apiVersion": "2018-02-01",
+			"kind": "Storage",
+			"location": "[resourceGroup().location]",
+			"name": "[variables('storage-account-name')]",
+			"properties": {
+				"supportsHttpsTrafficOnly": true
+			},
+			"sku": {
+				"name": "[parameters('diagnosticsStorageAccountType')]"
+			},
+			"type": "Microsoft.Storage/storageAccounts"
+		},
+		{
+			"apiVersion": "2018-02-01",
+			"kind": "Storage",
+			"location": "[resourceGroup().location]",
+			"name": "[variables('nsg-storage-account-name')]",
+			"properties": {
+				"networkAcls": {
+					"bypass": "AzureServices",
+					"defaultAction": "Deny"
+				},
+				"supportsHttpsTrafficOnly": true
+			},
+			"sku": {
+				"name": "[parameters('diagnosticsStorageAccountType')]"
+			},
+			"type": "Microsoft.Storage/storageAccounts"
+		}
+	],
+	"outputs": {
+	}
+}
