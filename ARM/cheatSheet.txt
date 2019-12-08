@@ -1,0 +1,52 @@
+// Using parameters 
+"parameters": {
+    "environmentName": {
+        "type": "string",
+        "allowedValues": [
+            "dev",
+            "test",
+            "prod"
+        ]
+    }
+}
+
+// Using variables 
+"variables": {
+    "environmentSettings": {
+        "dev": {
+            "appSvcPlanSku": "F1",
+            "storageAccountSku": "Standard_LRS"
+        },
+        "test": {
+            "appSvcPlanSku": "F1",
+            "storageAccountSku": "Standard_LRS"
+        },
+        "prod": {
+            "appSvcPlanSku": "B1",
+            "storageAccountSku": "Standard_ZRS"
+        }
+    }
+ "currentEnvironmentSettings": "[variables('environmentSettings')[parameters('environmentName')]]"
+}
+
+// Calculating specific environment values
+"sku": {
+    "name": "[variables('currentEnvironmentSettings').storageAccountSku]"
+}
+
+
+// Get the location of the resouce group you’re deploying to
+[resourceGroup().location]
+
+
+// Get the subscription id
+[subscription().subscriptionId]
+
+
+// Get the tenant id
+[subscription().tenantId]
+
+
+// Get the access key of a just created Storage account
+[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]
+
