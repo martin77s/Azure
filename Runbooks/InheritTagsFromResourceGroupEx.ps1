@@ -2,7 +2,7 @@ PARAM(
     [string] $SubscriptionNamePattern = 'maschvar.*',
     [string] $ConnectionName = 'AzureRunAsConnection',
     [string[]] $ExcludeResourceTypes = @(
-        'microsoft.visualstudio/account', 'Microsoft.DevOps/pipelines', 'microsoft.insights/activityLogAlerts', 'microsoft.insights/actiongroups'
+        'microsoft.visualstudio/*', 'Microsoft.DevOps/*', 'microsoft.insights/*', 'Microsoft.Classic*'
     )
 )
 
@@ -42,8 +42,8 @@ try {
             foreach ($resource in $allResources) {
 
                 # Exclude specific resources by type or all sub-resources
-                if (($ExcludeResourceTypes -contains $resource.ResourceType) -or ($resource.Name -match '/')) {
-                    Write-Output ('Skipping resource {0}/{1}' -f $_.ResourceGroupName, $resource.Name)
+                if (($ExcludeResourceTypes | Where-Object { $resource.ResourceType -like $_ }) -or ($resource.Name -match '/')) {
+                    Write-Output ('Skipping resource {0}/{1} ({2})' -f $_.ResourceGroupName, $resource.Name, $resource.ResourceType)
                 } else {
                     Write-Output ('Verifying tags for {0}/{1}' -f $_.ResourceGroupName, $resource.Name)
                     $resourceid = $resource.resourceId
