@@ -1,6 +1,9 @@
 PARAM(
-    [string]$SubscriptionNamePattern = 'maschvar.*',
-    [string]$ConnectionName = 'AzureRunAsConnection'
+    [string] $SubscriptionNamePattern = 'maschvar.*',
+    [string] $ConnectionName = 'AzureRunAsConnection',
+    [string[]] $ExcludeResourceTypes = @(
+        'microsoft.visualstudio/account', 'Microsoft.DevOps/pipelines', 'microsoft.insights/activityLogAlerts', 'microsoft.insights/actiongroups'
+    )
 )
 
 Write-Output ('{0:yyyy-MM-dd HH:mm:ss.f} - Starting' -f (Get-Date))
@@ -38,26 +41,34 @@ try {
             # Iterate the resources and apply the missing tags
             foreach ($resource in $allResources) {
 
-                Write-Output ('Verifying tags for {0}/{1}' -f $_.ResourceGroupName, $resource.Name)
-                $resourceid = $resource.resourceId
-                $resourcetags = $resource.Tags
-                $tagsSet = $null
-
-                if ($resourcetags -eq $null) {
-                    $tagsSet = Set-AzResource -ResourceId $resourceid -Tag $resourceGroupTags -Force -WhatIf
+                # Exclude specific resources by type or all sub-resources
+                if (($ExcludeResourceTypes -contains $resource.ResourceType) -or ($resource.Name -match '/')) {
+                    Write-Output ('Skipping resource {0}/{1}' -f $_.ResourceGroupName, $resource.Name)
                 } else {
-                    $tagsToSet = $resourceGroupTags.Clone()
-                    if (-not (Compare-TagCollection -Reference $tagsToSet -Difference $resourcetags)) {
-                        foreach ($tag in $resourcetags.GetEnumerator()) {
-                            if ($tagsToSet.Keys -inotcontains $tag.Key) {
-                                $tagsToSet.Add($tag.Key, $tag.Value)
+                    Write-Output ('Verifying tags for {0}/{1}' -f $_.ResourceGroupName, $resource.Name)
+                    $resourceid = $resource.resourceId
+                    $resourcetags = $resource.Tags
+                    $tagsSet = $null
+
+                    if ((-not $resourcetags) -or $resourcetags.Count -eq 0) {
+                        $tagsSet = (Set-AzResource -ResourceId $resourceid -Tag $resourceGroupTags -Force).Tags
+
+                    } else {
+                        if ($resourceGroupTags) {
+                            $tagsToSet = $resourceGroupTags.Clone()
+                            foreach ($tag in $resourcetags.GetEnumerator()) {
+                                if ($tagsToSet.Keys -inotcontains $tag.Key) {
+                                    $tagsToSet.Add($tag.Key, $tag.Value)
+                                }
+                            }
+                            if (-not (Compare-TagCollection -Reference $tagsToSet -Difference $resourcetags)) {
+                                $tagsSet = (Set-AzResource -ResourceId $resourceid -Tag $tagsToSet -Force).Tags
                             }
                         }
-                        $tagsSet = Set-AzResource -ResourceId $resourceid -Tag $tagsToSet -Force -WhatIf
                     }
-                }
-                if ($tagsSet) {
-                    Write-Output ('Tags updated for {0}/{1}' -f $_.ResourceGroupName, $resource.Name)
+                    if ($tagsSet) {
+                        Write-Output ('Tags updated for {0}/{1}' -f $_.ResourceGroupName, $resource.Name)
+                    }
                 }
             }
         }
