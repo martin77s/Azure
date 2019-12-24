@@ -1,0 +1,90 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "actionGroupName": {
+      "maxLength": 12,
+      "defaultValue": "AdvisorAlert",
+      "type": "string"
+    },
+    "activityLogAlertName": {
+      "defaultValue": "AzureAdvisorAlerts",
+      "type": "string"
+    },
+    "emailAddress": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "alertScope": "[concat('/','subscriptions','/',subscription().subscriptionId)]"
+  },
+  "resources": [
+    {
+      "comments": "Action Group",
+      "type": "microsoft.insights/actionGroups",
+      "name": "[parameters('actionGroupName')]",
+      "apiVersion": "2017-04-01",
+      "location": "Global",
+      "tags": {
+      },
+      "scale": null,
+      "properties": {
+        "groupShortName": "[parameters('actionGroupName')]",
+        "enabled": true,
+        "emailReceivers": [
+          {
+            "name": "[parameters('actionGroupName')]",
+            "emailAddress": "[parameters('emailAddress')]"
+          }
+        ],
+        "smsReceivers": [
+        ],
+        "webhookReceivers": [
+        ]
+      },
+      "dependsOn": [
+      ]
+    },
+    {
+      "comments": "Azure Advisor Activity Log Alert",
+      "type": "microsoft.insights/activityLogAlerts",
+      "name": "[parameters('activityLogAlertName')]",
+      "apiVersion": "2017-04-01",
+      "location": "Global",
+      "tags": {
+      },
+      "scale": null,
+      "properties": {
+        "scopes": [
+          "[variables('alertScope')]"
+        ],
+        "condition": {
+          "allOf": [
+            {
+              "field": "category",
+              "equals": "Recommendation"
+            },
+            {
+              "field": "operationName",
+              "equals": "Microsoft.Advisor/recommendations/available/action"
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            {
+              "actionGroupId": "[resourceId('microsoft.insights/actionGroups', parameters('actionGroupName'))]",
+              "webhookProperties": {
+              }
+            }
+          ]
+        },
+        "enabled": true,
+        "description": ""
+      },
+      "dependsOn": [
+        "[resourceId('microsoft.insights/actionGroups', parameters('actionGroupName'))]"
+      ]
+    }
+  ]
+}
