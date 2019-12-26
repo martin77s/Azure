@@ -42,12 +42,20 @@ namespace MSGraphTest
             var clientId = config["applicationId"];
             var clientSecret = config["applicationSecret"];
             var redirectUri = config["redirectUri"];
+            var tenantId = config["tenantId"];
             var authority = $"https://login.microsoftonline.com/{config["tenantId"]}/v2.0";
 
             List<string> scopes = new List<string>();
             scopes.Add("https://graph.microsoft.com/.default");
 
-            var cca = new ConfidentialClientApplication(clientId, authority, redirectUri, new ClientCredential(clientSecret), null, null);
+            //var cca = new ConfidentialClientApplication(clientId, authority, redirectUri, new ClientCredential(clientSecret), null, null);
+
+            IConfidentialClientApplication cca = ConfidentialClientApplicationBuilder.Create(clientId)
+                .WithClientSecret(clientSecret)
+                .WithRedirectUri(redirectUri)
+                .WithAuthority(AzureCloudInstance.AzurePublic, tenantId)
+                .Build();
+
             return new MsalAuthenticationProvider(cca, scopes.ToArray());
         }
 
