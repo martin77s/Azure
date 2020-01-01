@@ -4,7 +4,7 @@
   "parameters": {
     "actionGroupName": {
       "maxLength": 12,
-      "defaultValue": "AdvisorAlert",
+      "defaultValue": "AzueAlerts",
       "type": "string"
     },
     "activityLogAlertName": {
@@ -80,7 +80,7 @@
           ]
         },
         "enabled": true,
-        "description": ""
+        "description": "Report on Advisor Recommendations"
       },
       "dependsOn": [
         "[resourceId('microsoft.insights/actionGroups', parameters('actionGroupName'))]"
