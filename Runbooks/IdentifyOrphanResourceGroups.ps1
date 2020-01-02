@@ -7,7 +7,6 @@ PARAM(
 
 Write-Output ('{0:yyyy-MM-dd HH:mm:ss.f} - Starting' -f (Get-Date))
 
-
 try {
 
     # Login to Azure
@@ -24,35 +23,37 @@ try {
     $orphanResourceGroups = @()
 
     # Iterate all subscriptions and get all resource groups
-    $allResourceGroups = Get-AzSubscription | Where-Object { $_.Name -match $SubscriptionNamePattern } | ForEach-Object {
+    $allResourceGroups = Get-AzSubscription -PipelineVariable sub | Where-Object { $_.Name -match $SubscriptionNamePattern } | ForEach-Object {
         Write-Verbose ('Switching to subscription: {0}' -f $_.Name) -Verbose
-        $null = Set-AzContext -SubscriptionId $_.SubscriptionId -Tenant $servicePrincipalConnection.TenantId -Force
-        Get-AzResourceGroup | Where-Object { $_.ResourceGroupName -notmatch $excludeResourceGroupNames } |
-            Select-Object ResourceGroupName, @{N = 'IsOrphan'; E = { $true } }, @{N = 'TaggedOwner'; E = { $_.Tags.Owner } }
+        $context = Set-AzContext -SubscriptionObject $_ -Force
+        if ($context.Subscription.Id -eq $_.SubscriptionId) {
+            Get-AzResourceGroup | Where-Object { $_.ResourceGroupName -notmatch $excludeResourceGroupNames } |
+                Select-Object  @{N = 'Subscription'; E = { $sub.Name } }, ResourceGroupName, @{N = 'IsOrphan'; E = { $true } }, @{N = 'TaggedOwner'; E = { $_.Tags.Owner } }
+        } else {
+            Write-Output ('There was an error changing the context to {0}' -f $sub.Name)
+        }
     }
 
     # Verify the owners exist in azure Active Directory (by DisplayName or UPN)
     $owners = $allResourceGroups | Where-Object { $_.TaggedOwner } | Group-Object TaggedOwner -NoElement | Select-Object Name, @{N = 'Exists'; E = { $false } }
     foreach ($owner in $owners) {
-        $exists = $(
-            try {
-                if ($owner.Name -match '@') {
-                    Get-AzureADUser -ObjectId $owner.Name -ErrorAction SilentlyContinue |
-                        Where-Object { @($_.DisplayName, $_.UserPrincipalName) -contains $owner.Name }
-                } else {
-                    Get-AzureADUser -SearchString $owner.Name -ErrorAction SilentlyContinue |
-                        Where-Object { @($_.DisplayName, $_.UserPrincipalName) -contains $owner.Name }
-                }
-            } catch {
-                Write-Output ($_.Exception.Message)
-                $false
+        try {
+            if ($owner.Name -match '@') {
+                $exists = @(Get-AzureADUser -Filter "userPrincipalName eq '$($owner.Name)'" -ErrorAction Stop |
+                        Where-Object { @($_.DisplayName, $_.UserPrincipalName) -contains $owner.Name }).Count -eq 1
+            } else {
+                $exists = @(Get-AzureADUser -SearchString $owner.Name -ErrorAction Stop |
+                        Where-Object { @($_.DisplayName, $_.UserPrincipalName) -contains $owner.Name }).Count -eq 1
             }
-        )
+        } catch {
+            Write-Output ($_.Exception.Message)
+            $exists = 'Unable to determine'
+        }
         $allResourceGroups | Where-Object { $_.TaggedOwner -eq $owner.Name } | ForEach-Object {
-            $_.IsOrphan = (-not [bool]($exists))
+            $_.IsOrphan = $exists.ToString()
         }
     }
-    $orphanResourceGroups = $allResourceGroups | Where-Object { $_.IsOrphan }
+    $orphanResourceGroups = @($allResourceGroups | Where-Object { (-not ($_.IsOrphan -eq $false)) })
 
     # Send report by email
     if ($orphanResourceGroups.Count -gt 0 -and $SendToEmailAddress) {
@@ -60,10 +61,10 @@ try {
         .\Send-GridMailMessage.ps1 -Subject 'Orphan resource groups identified' -content $body -bodyAsHtml `
             -FromEmailAddress AzureAutomation@azure.com -destEmailAddress $SendToEmailAddress
     }
-    Write-Output ($orphanResourceGroups)
 
 } catch {
-    Write-Output ($_)
+    Write-Output ($_.Exception.Message)
 } finally {
+    Write-Output ($orphanResourceGroups)
     Write-Output ('{0:yyyy-MM-dd HH:mm:ss.f} - Completed' -f (Get-Date))
 }
