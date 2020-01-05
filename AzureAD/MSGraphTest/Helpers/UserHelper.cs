@@ -46,6 +46,7 @@ namespace MSGraphTest
                 UserPrincipalName = $@"{alias}@{domain}",
                 MailNickname = alias,
                 AccountEnabled = true,
+				UsageLocation = "IL",
                 PasswordProfile = passwordProfile
             };
             return user;
