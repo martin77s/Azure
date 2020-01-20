@@ -1,0 +1,10 @@
+$sub = (Get-AzSubscription | Out-GridView -Title 'Select Subscription' -OutputMode Single | Set-AzContext)
+$role = [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleDefinition]::new()
+$role.Name = 'CONTOSO Just-In-Time Access User'
+$role.Description = 'Users that can enable access to Virtual Machines'
+$role.Actions.Clear()
+$role.Actions.Add("Microsoft.Security/locations/jitNetworkAccessPolicies/read")
+$role.Actions.Add("Microsoft.Security/locations/jitNetworkAccessPolicies/initiate/action")
+$role.AssignableScopes.Clear()
+$role.AssignableScopes.Add("/subscriptions/$($sub.Subscription.Id)")
+New-AzRoleDefinition -Role $role
