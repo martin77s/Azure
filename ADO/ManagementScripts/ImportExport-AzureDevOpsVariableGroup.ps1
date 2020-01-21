@@ -8,7 +8,7 @@ function Export-AzureDevOpsVariableGroup {
     )
     $uri = "https://dev.azure.com/$Organization/$Project/_apis/distributedtask/variablegroups?api-version=5.1-preview.1"
     $auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes((':{0}' -f $PAT)))
-    $all = Invoke-RestMethod -Uri $uri -Method Get -ContentType 'application/json' -Headers @{Authorization=("Basic {0}" -f $auth)} | 
+    $all = Invoke-RestMethod -Uri $uri -Method Get -ContentType 'application/json' -Headers @{Authorization=("Basic {0}" -f $auth)} |
         ConvertTo-Json -Depth 100 | ConvertFrom-Json
     $all.value | Where-Object { $_.name -eq $GroupName }
 }
@@ -22,7 +22,7 @@ function Import-AzureDevOpsVariableGroup {
     )
     $uri = "https://dev.azure.com/$Organization/$Project/_apis/distributedtask/variablegroups?api-version=5.1-preview.1"
     $auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes((':{0}' -f $PAT)))
-    Invoke-RestMethod -Uri $uri -Method POST -Body (ConvertTo-Json -InputObject $Json) -ContentType 'application/json' -Headers @{Authorization=("Basic {0}" -f $auth)} | 
+    Invoke-RestMethod -Uri $uri -Method POST -Body (ConvertTo-Json -InputObject $Json) -ContentType 'application/json' -Headers @{Authorization=("Basic {0}" -f $auth)} |
         ConvertTo-Json -Depth 100
 }
 
@@ -50,7 +50,7 @@ function Update-AzureDevOpsVariableGroup {
 $PAT = '<Insert the personal access token (PAT) value here />'
 
 $params = @{
-     Organization = 'maschvar' 
+     Organization = 'maschvar'
      Project      = 'Olamot'
      PAT          = $PAT
      GroupName    = 'Dev Environment'
@@ -59,13 +59,13 @@ $params = @{
 
 $params = @{
     FromEnvironment = 'dev'
-    ToEnvironment   = 'akada2' 
+    ToEnvironment   = 'uat'
     Json            = $output
 }; $json = Update-AzureDevOpsVariableGroup @params
 
 
 $params = @{
-     Organization = 'maschvar' 
+     Organization = 'maschvar'
      Project      = 'Olamot'
      PAT          = $PAT
      Json         = $json
