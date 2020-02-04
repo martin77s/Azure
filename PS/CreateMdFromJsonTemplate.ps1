@@ -10,7 +10,9 @@ param (
 $json = ConvertFrom-Json -InputObject (Get-Content $Path -Raw) -ErrorAction Stop
 $OutputPath = Join-Path -Path (Split-Path -Path $Path -Parent) -ChildPath 'readme.md'
 $parameters = $resources = $outputs = $null
-$resourceType = ((Split-Path -Path $Path -Leaf) -replace '(\.deploy)?(\.json)')
+
+$resourceType = ($json.resources.type -ne 'Microsoft.Resources/deployments')[0]
+$resourceTitle = '[{0}](https://docs.microsoft.com/en-us/azure/templates/{0})' -f $resourceType
 
 if($json.parameters) {
     $parameters = @'
@@ -67,5 +69,5 @@ if($json.outputs) {
 ## Outputs
 
 {3}
-'@ -f $resourceType, $parameters, $resources, $outputs | Out-File -FilePath $OutputPath -Force
+'@ -f $resourceTitle, $parameters, $resources, $outputs | Out-File -FilePath $OutputPath -Force
 if($PassThru) { Get-Item -Path $OutputPath }
