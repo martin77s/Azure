@@ -22,7 +22,7 @@ try {
 
     # Get AzureAD users list
     Write-Verbose ('Retrieving AzureAD users list') -Verbose
-    $UsersList = Get-AzureADUser -All | Select-Object UserPrincipalName, @{N = 'Name'; E = { '{0} {1}' -f $_.GivenName, $_.Surname } }
+    $UsersList = Get-AzureADUser -All $true | Select-Object UserPrincipalName, @{N = 'Name'; E = { '{0} {1}' -f $_.GivenName, $_.Surname } }
     $orphanResourceGroups = @()
 
     # Iterate all subscriptions and get all resource groups
