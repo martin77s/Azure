@@ -18,12 +18,7 @@ try {
     # Login to AzureAD
     $null = Connect-AzureAD -TenantId $servicePrincipalConnection.TenantId `
         -ApplicationId $servicePrincipalConnection.ApplicationId `
-        -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint
-
-    # Get AzureAD users list
-    Write-Verbose ('Retrieving AzureAD users list') -Verbose
-    $UsersList = Get-AzureADUser -All $true | Select-Object UserPrincipalName, @{N = 'Name'; E = { '{0} {1}' -f $_.GivenName, $_.Surname } }
-    $orphanResourceGroups = @()
+        -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint -AzureEnvironmentName AzureCloud -Verbose
 
     # Iterate all subscriptions and get all resource groups
     $allResourceGroups = Get-AzSubscription -PipelineVariable sub | Where-Object { $_.Name -match $SubscriptionNamePattern } | ForEach-Object {
@@ -32,36 +27,48 @@ try {
         if ($context.Subscription.Id -eq $_.SubscriptionId) {
             Get-AzResourceGroup | Where-Object { $_.ResourceGroupName -notmatch $excludeResourceGroupNames } |
                 Select-Object  @{N = 'Subscription'; E = { $sub.Name } }, ResourceGroupName, @{N = 'IsOrphan'; E = { $true } }, @{N = 'TaggedOwner'; E = { $_.Tags.Owner } }
+    } else {
+        Write-Output ('There was an error changing the context to {0}' -f $sub.Name)
+    }
+}
+
+# Get AzureAD users list
+Write-Verbose ('Retrieving AzureAD users list') -Verbose
+$UsersList = Get-AzureADUser -All $true | Select-Object UserPrincipalName, @{N = 'Name'; E = { '{0} {1}' -f $_.GivenName, $_.Surname } } |
+    Where-Object { $_.Name -ne ' ' }
+$orphanResourceGroups = @()
+
+# Verify the owners exist in azure Active Directory (by FullName or UPN)
+$owners = $allResourceGroups | Where-Object { $_.TaggedOwner } | Group-Object TaggedOwner -NoElement | Select-Object Name, @{N = 'OrphanDetails'; E = { $true } }
+foreach ($owner in $owners) {
+    try {
+        if ($owner.Name -match '@') {
+            $OrphanDetails = @($UsersList.UserPrincipalName -contains $owner.Name).Count -eq 0
         } else {
-            Write-Output ('There was an error changing the context to {0}' -f $sub.Name)
+            $OrphanDetails = @($UsersList.Name -contains $owner.Name).Count -eq 0
         }
+    } catch {
+        Write-Output ($_.Exception.Message)
+        $OrphanDetails = 'Unable to determine'
     }
+    $owner.OrphanDetails = $OrphanDetails.ToString()
+}
 
-    # Verify the owners exist in azure Active Directory (by FullName or UPN)
-    $owners = $allResourceGroups | Where-Object { $_.TaggedOwner } | Group-Object TaggedOwner -NoElement | Select-Object Name, @{N = 'Exists'; E = { $false } }
-    foreach ($owner in $owners) {
-        try {
-            if ($owner.Name -match '@') {
-                $exists = $UsersList.UserPrincipalName -contains $owner.Name
-            } else {
-                $exists = $UsersList.Name -contains $owner.Name
-            }
-        } catch {
-            Write-Output ($_.Exception.Message)
-            $exists = 'Unable to determine'
-        }
-        $allResourceGroups | Where-Object { $_.TaggedOwner -eq $owner.Name } | ForEach-Object {
-            $_.IsOrphan = $exists.ToString()
-        }
-    }
-    $orphanResourceGroups = @($allResourceGroups | Where-Object { (-not ($_.IsOrphan -eq $false)) })
+# Update the ResourceGroups list
+foreach ($rg in $allResourceGroups) {
+    $ownerDetails = $owners.Where( { $_.Name -eq $rg.TaggedOwner })
+    if ($ownerDetails) { $rg.IsOrphan = $ownerDetails.OrphanDetails }
+}
 
-    # Send report by email
-    if ($orphanResourceGroups.Count -gt 0 -and $SendToEmailAddress) {
-        $body = ($orphanResourceGroups | ConvertTo-Html -Fragment) -join ''
-        .\Send-GridMailMessage.ps1 -Subject 'Orphan resource groups identified' -content $body -bodyAsHtml `
-            -FromEmailAddress AzureAutomation@azure.com -destEmailAddress $SendToEmailAddress
-    }
+# Filter out the ResourceGroup with owners
+$orphanResourceGroups = @($allResourceGroups | Where-Object { (-not ($_.IsOrphan -eq $false)) })
+
+# Send report by email
+if ($orphanResourceGroups.Count -gt 0 -and $SendToEmailAddress) {
+    $body = ($orphanResourceGroups | ConvertTo-Html -Fragment) -join ''
+    .\Send-GridMailMessage.ps1 -Subject 'Orphan resource groups identified' -content $body -bodyAsHtml `
+        -FromEmailAddress AzureAutomation@azure.com -destEmailAddress $SendToEmailAddress
+}
 
 } catch {
     Write-Output ($_.Exception.Message)
