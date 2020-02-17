@@ -5,7 +5,7 @@
         {
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2019-04-01",
-            "name": "{unique-name-all-lowercase}",
+            "name": "martinstorage1234",
             "location": "eastus",
             "sku": {
                 "name": "Standard_LRS"
