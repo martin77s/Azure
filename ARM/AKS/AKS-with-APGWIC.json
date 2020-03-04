@@ -2,6 +2,18 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "environment": {
+            "type": "string",
+            "allowedValues": [
+                "dev",
+                "test",
+                "prod"
+            ],
+            "defaultValue": "dev",
+            "metadata": {
+                "description": "Required. Environment code (dev/test/prod)"
+            }
+        },
         "aksServicePrincipalAppId": {
             "type": "string",
             "metadata": {
@@ -325,23 +337,39 @@
             "metadata": {
                 "description": "The sku of the Application Gateway. Default: WAF_v2 (Detection mode). In order to further customize WAF, use azure portal or cli."
             }
+        },
+        "applicationName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Optional. Used as a suffix for the resource names"
+            }
+        },
+        "cuaId": {
+            "type": "string",
+            "defaultValue": "00000000-0000-0000-0000-000000000000",
+            "metadata": {
+                "description": "Optional. Customer Usage Attribution id (GUID). This GUID must be previously registered"
+            }
         }
     },
     "variables": {
-        "resgpguid": "[substring(replace(guid(resourceGroup().id), '-', ''), 0, 4)]",
+        "pidName": "[concat('pid-', parameters('cuaId'))]",
+        "suffix": "[if(empty(parameters('applicationName')), '', concat('-', parameters('applicationName')))]",
 
-        "vnetName": "[concat('virtualnetwork' , variables('resgpguid'))]",
-        "applicationGatewayName": "[concat('applicationgateway' , variables('resgpguid'))]",
-        "identityName": "[concat('appgwContrIdentity' , variables('resgpguid'))]",
-        "applicationGatewayPublicIpName": "[concat('appgwpublicip' , variables('resgpguid'))]",
+        "aksClusterName": "[concat('aks-', parameters('environment'), variables('suffix'))]",
+        "vnetName": "[concat('vnet-', parameters('environment'), variables('suffix'))]",
+        "applicationGatewayName": "[concat('appgw-', parameters('environment'), variables('suffix'))]",
+        "identityName": "[concat('appgwid-', parameters('environment'), variables('suffix'))]",
+        "publicIpName": "[concat('pip-', parameters('environment'), variables('suffix'))]",
+
         "kubernetesSubnetName": "kubesubnet",
         "applicationGatewaySubnetName": "appgwsubnet",
-        "aksClusterName": "[concat('aks' , variables('resgpguid'))]",
 
         "vnetId": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
         "kubernetesSubnetId": "[concat(variables('vnetID'),'/subnets/', variables('kubernetesSubnetName'))]",
         "applicationGatewaySubnetId": "[concat(variables('vnetID'),'/subnets/', variables('applicationGatewaySubnetName'))]",
-        "applicationGatewayPublicIpId": "[resourceId('Microsoft.Network/publicIPAddresses',variables('applicationGatewayPublicIpName'))]",
+        "applicationGatewayPublicIpId": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIpName'))]",
         "applicationGatewayId": "[resourceId('Microsoft.Network/applicationGateways', variables('applicationGatewayName'))]",
         "identityId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]",
         "aksClusterId": "[resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName'))]",
@@ -356,8 +384,9 @@
     },
     "resources": [
         {
+            "condition": "[not(empty(parameters('cuaId')))]",
             "apiVersion": "2018-02-01",
-            "name": "pid-adb8eac6-989a-5354-8580-19055546ec74",
+            "name": "[variables('pidName')]",
             "type": "Microsoft.Resources/deployments",
             "properties": {
                 "mode": "Incremental",
@@ -404,7 +433,7 @@
         },
         {
             "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[variables('applicationGatewayPublicIpName')]",
+            "name": "[variables('publicIpName')]",
             "apiVersion": "2018-08-01",
             "location": "[resourceGroup().location]",
             "sku": {
@@ -513,7 +542,7 @@
             },
             "dependsOn": [
                 "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
-                "[concat('Microsoft.Network/publicIPAddresses/', variables('applicationGatewayPublicIpName'))]"
+                "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIpName'))]"
             ]
         },
         {
@@ -626,8 +655,8 @@
                         "vmSize": "[parameters('aksAgentVMSize')]",
                         "osType": "Linux",
                         "storageProfile": "ManagedDisks",
-                        "vnetSubnetID": "[variables('kubernetesSubnetId')]",
-                        "dnsPrefix": "agents"
+                        "type": "VirtualMachineScaleSets",
+                        "vnetSubnetID": "[variables('kubernetesSubnetId')]"
                     }
                 ],
                 "servicePrincipalProfile": {
