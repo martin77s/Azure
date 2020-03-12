@@ -1,0 +1,47 @@
+{
+    "properties": {
+        "displayName": "Enforce Naming Convention - Suffix by Resource Type",
+        "policyType": "Custom",
+        "mode": "All",
+        "description": "Enforce Naming Convention - Suffix by Resource Type",
+        "metadata": {
+            "category": "Compliance"
+        },
+        "parameters": {
+            "resourceType": {
+                "type": "string",
+                "metadata": {
+                    "displayName": "Resource Type",
+                    "description": "The resource type for this policy",
+                    "strongType": "resourceTypes"
+                }
+            },
+            "nameSuffix": {
+                "type": "string",
+                "metadata": {
+                    "displayName": "Resource Name Suffix",
+                    "description": "The suffix that must be appended"
+                }
+            }
+        },
+        "policyRule": {
+            "if": {
+                "allof": [
+                {
+                    "field": "type",
+                    "equals": "[parameters('resourceType')]"
+                },
+                {
+                    "not": {
+                    "field": "name",
+                    "like": "[concat('*-', parameters('nameSuffix'))]"
+                    }
+                }
+                ]
+            },
+            "then": {
+                "effect": "deny"
+            }
+        }
+    }
+}
