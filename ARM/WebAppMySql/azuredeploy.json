@@ -1,0 +1,434 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ApplicationName": {
+      "defaultValue": "",
+      "type": "string"
+    },
+    "WebSiteName": {
+      "defaultValue": "",
+      "type": "string"
+    },
+    "MySqlServerLoginUser": {
+      "defaultValue": "",
+      "type": "string"
+    },
+    "MySqlServerLoginPassword": {
+      "defaultValue": "",
+      "type": "securestring"
+    },
+    "KeyVaultOwnerId": {
+      "defaultValue": "",
+      "type": "string"
+    }
+  },
+  "variables": {
+    "vNetName": "Common-Infra-vNet",
+    "WafSubnet": "WAF-subnet",
+    "WafName": "Common-Infra-WAF",
+    "WafIP": "[concat(variables('WafName'),'-IP')]",
+    "StorageAccountName": "[toLower(substring(concat(parameters('ApplicationName'),'storageaccount',uniqueString(resourceGroup().id)),0,24))]",
+    "MediaServicesName": "[toLower(substring(concat(parameters('ApplicationName'),'mediaservices',uniqueString(resourceGroup().id)),0,24))]",
+    "MySqlServerName": "[toLower(substring(concat(parameters('ApplicationName'),'-mysql',uniqueString(resourceGroup().id)),0,24))]",
+    "AppServicePlanName": "[concat(parameters('WebSiteName'),'-appplan')]",
+    "KeyVaultName": "[toLower(substring(concat(parameters('ApplicationName'),'-keyvault',uniqueString(resourceGroup().id)),0,24))]",
+    "KeyVaultSecrets": [{
+        "secretName": "MySqlServerLoginUser",
+        "secretValue": "[parameters('MySqlServerLoginUser')]"
+      },
+      {
+        "secretName": "MySqlServerLoginPassword",
+        "secretValue": "[parameters('MySqlServerLoginPassword')]"
+      }
+    ]
+  },
+  "resources": [
+	{
+		"apiVersion": "2018-02-01",
+		"name": "pid-adb8eac6-989a-5354-8580-19055546ec74",
+		"type": "Microsoft.Resources/deployments",
+		"properties": {
+			"mode": "Incremental",
+			"template": {
+			"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+			"contentVersion": "1.0.0.0",
+			"resources": []
+			}
+		}
+    },
+	{
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('vNetName')]",
+      "apiVersion": "2018-10-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.1.0.0/16"
+          ]
+        },
+        "subnets": [{
+          "name": "[variables('WafSubnet')]",
+          "properties": {
+            "addressPrefix": "10.1.4.0/24",
+            "delegations": []
+          }
+        }],
+        "virtualNetworkPeerings": [],
+        "enableDdosProtection": false,
+        "enableVmProtection": false
+      },
+      "dependsOn": []
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "name": "[concat(variables('vNetName'), '/', variables('WafSubnet'))]",
+      "apiVersion": "2018-10-01",
+      "properties": {
+        "addressPrefix": "10.1.4.0/24",
+        "delegations": []
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vNetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('WafIP')]",
+      "apiVersion": "2018-10-01",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Regional"
+      },
+      "properties": {
+        "publicIPAddressVersion": "IPv4",
+        "publicIPAllocationMethod": "Static",
+        "idleTimeoutInMinutes": 4,
+        "ipTags": []
+      },
+      "dependsOn": []
+    },
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "name": "[variables('WafName')]",
+      "apiVersion": "2018-10-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "sku": {
+          "name": "WAF_v2",
+          "tier": "WAF_v2"
+        },
+        "gatewayIPConfigurations": [{
+          "type": "Microsoft.Network/applicationGateways/gatewayIPConfigurations",
+          "name": "appGatewayIpConfig",
+          "properties": {
+            "subnet": {
+              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vNetName'), variables('WafSubnet'))]"
+            }
+          }
+        }],
+        "frontendIPConfigurations": [{
+          "type": "Microsoft.Network/applicationGateways/frontendIPConfigurations",
+          "name": "appGatewayFrontendIP",
+          "properties": {
+            "privateIPAllocationMethod": "Dynamic",
+            "publicIPAddress": {
+              "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('WafIP'))]"
+            }
+          }
+        }],
+        "frontendPorts": [{
+          "type": "Microsoft.Network/applicationGateways/frontendPorts",
+          "name": "appGatewayFrontendPort",
+          "properties": {
+            "port": 80
+          }
+        }],
+        "backendAddressPools": [{
+          "type": "Microsoft.Network/applicationGateways/backendAddressPools",
+          "name": "appGatewayBackendPool",
+          "properties": {
+            "backendAddresses": [{
+              "fqdn": "[concat(parameters('WebSiteName'),'.azurewebsites.net')]"
+            }]
+          }
+        }],
+        "httpListeners": [{
+          "type": "Microsoft.Network/applicationGateways/httpListeners",
+          "name": "appGatewayHttpListener",
+          "properties": {
+            "frontendIPConfiguration": {
+              "id": "[concat(resourceId('Microsoft.Network/applicationGateways',variables('WafName')),'/frontendIPConfigurations/appGatewayFrontendIP')]"
+            },
+            "frontendPort": {
+              "id": "[concat(resourceId('Microsoft.Network/applicationGateways',variables('WafName')),'/frontendPorts/appGatewayFrontendPort')]"
+            },
+            "protocol": "Http",
+            "requireServerNameIndication": false
+          }
+        }],
+        "urlPathMaps": [],
+        "requestRoutingRules": [{
+          "type": "Microsoft.Network/applicationGateways/requestRoutingRules",
+          "name": "rule1",
+          "properties": {
+            "ruleType": "Basic",
+            "httpListener": {
+              "id": "[concat(resourceId('Microsoft.Network/applicationGateways',variables('WafName')),'/httpListeners/appGatewayHttpListener')]"
+            },
+            "backendAddressPool": {
+              "id": "[concat(resourceId('Microsoft.Network/applicationGateways',variables('WafName')),'/backendAddressPools/appGatewayBackendPool')]"
+            },
+            "backendHttpSettings": {
+              "id": "[concat(resourceId('Microsoft.Network/applicationGateways',variables('WafName')),'/backendHttpSettingsCollection/appGatewayBackendHttpSettings')]"
+            }
+          }
+        }],
+        "probes": [{
+          "type": "Microsoft.Network/applicationGateways/probes",
+          "name": "appGatewayProbe",
+          "properties": {
+            "protocol": "Http",
+            "path": "/",
+            "interval": 30,
+            "timeout": 30,
+            "unhealthyThreshold": 3,
+            "pickHostNameFromBackendHttpSettings": true,
+            "minServers": 0,
+            "match": {
+              "body": "",
+              "statusCodes": [
+                "200-399"
+              ]
+            }
+          }
+        }],
+        "backendHttpSettingsCollection": [{
+          "type": "Microsoft.Network/applicationGateways/backendHttpSettingsCollection",
+          "name": "appGatewayBackendHttpSettings",
+          "properties": {
+            "port": 80,
+            "protocol": "Http",
+            "cookieBasedAffinity": "Disabled",
+            "pickHostNameFromBackendAddress": true,
+            "affinityCookieName": "ApplicationGatewayAffinity",
+            "path": "/",
+            "requestTimeout": 30,
+            "probe": {
+              "id": "[concat(resourceId('Microsoft.Network/applicationGateways',variables('WafName')),'/probes/appGatewayProbe')]"
+            }
+          }
+        }],
+        "rewriteRuleSets": [],
+        "webApplicationFirewallConfiguration": {
+          "enabled": true,
+          "firewallMode": "Prevention",
+          "ruleSetType": "OWASP",
+          "ruleSetVersion": "3.0",
+          "disabledRuleGroups": [],
+          "exclusions": [],
+          "requestBodyCheck": false,
+          "fileUploadLimitInMb": 100
+        },
+        "enableHttp2": true,
+        "autoscaleConfiguration": {
+          "minCapacity": 2
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vNetName'), variables('WafSubnet'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('WafIP'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('StorageAccountName')]",
+      "apiVersion": "2018-07-01",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "kind": "StorageV2",
+      "tags": {},
+      "scale": null,
+      "properties": {
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "virtualNetworkRules": [],
+          "ipRules": [],
+          "defaultAction": "Allow"
+        },
+        "supportsHttpsTrafficOnly": false,
+        "encryption": {
+          "services": {
+            "file": {
+              "enabled": true
+            },
+            "blob": {
+              "enabled": true
+            }
+          },
+          "keySource": "Microsoft.Storage"
+        },
+        "accessTier": "Hot"
+      },
+      "dependsOn": []
+    },
+    {
+      "type": "Microsoft.Media/mediaservices",
+      "name": "[variables('MediaServicesName')]",
+      "apiVersion": "2015-10-01",
+      "location": "[resourceGroup().location]",
+      "scale": null,
+      "properties": {
+        "storageAccounts": [{
+          "id": "[resourceId('Microsoft.Storage/storageAccounts', variables('StorageAccountName'))]",
+          "isPrimary": true
+        }]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('StorageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforMySQL/servers",
+      "name": "[variables('mySqlServerName')]",
+      "apiVersion": "2017-12-01-preview",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "GP_Gen5_2",
+        "tier": "GeneralPurpose",
+        "family": "Gen5",
+        "capacity": 2
+      },
+      "scale": null,
+      "properties": {
+        "administratorLogin": "[parameters('MySqlServerLoginUser')]",
+        "administratorLoginPassword": "[parameters('MySqlServerLoginPassword')]",
+        "storageProfile": {
+          "storageMB": 102400,
+          "backupRetentionDays": 7,
+          "geoRedundantBackup": "Disabled"
+        },
+        "version": "5.7",
+        "sslEnforcement": "Enabled",
+        "createMode": "Default"
+      },
+      "dependsOn": []
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "name": "[variables('AppServicePlanName')]",
+      "apiVersion": "2016-09-01",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "P1v2",
+        "tier": "PremiumV2",
+        "size": "P1v2",
+        "family": "Pv2",
+        "capacity": 1
+      },
+      "kind": "linux",
+      "scale": null,
+      "properties": {
+        "name": "[variables('AppServicePlanName')]",
+        "perSiteScaling": false,
+        "reserved": true,
+        "targetWorkerCount": 0,
+        "targetWorkerSizeId": 0
+      },
+      "dependsOn": []
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "name": "[parameters('WebSiteName')]",
+      "apiVersion": "2018-02-01",
+      "location": "[resourceGroup().location]",
+      "kind": "app,linux",
+      "scale": null,
+      "properties": {
+        "enabled": true,
+        "hostNameSslStates": [{
+            "name": "[concat(parameters('WebSiteName'),'.azurewebsites.net')]",
+            "hostType": "Standard"
+          },
+          {
+            "name": "[concat(parameters('WebSiteName'),'.scm.azurewebsites.net')]",
+            "hostType": "Repository"
+          }
+        ],
+        "siteConfig": {
+          "ipSecurityRestrictions": [{
+              "ipAddress": "[concat(reference(resourceId('Microsoft.Network/publicIPAddresses', variables('WafIP'))).ipAddress, '/32')]",
+              "action": "Allow",
+              "tag": "Default",
+              "priority": 200,
+              "name": "WAF",
+              "description": "Allow access from the WAF"
+            },
+            {
+              "ipAddress": "0.0.0.0/0",
+              "action": "Deny",
+              "tag": "Default",
+              "priority": 6500,
+              "name": "World",
+              "description": "Deny access from the rest of the world"
+            }
+          ]
+        },
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('AppServicePlanName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('AppServicePlanName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "name": "[variables('KeyVaultName')]",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2018-02-14",
+      "properties": {
+        "enabledForDeployment": false,
+        "enabledForTemplateDeployment": false,
+        "enabledForDiskEncryption": false,
+        "tenantId": "[subscription().tenantId]",
+        "accessPolicies": [{
+          "objectId": "[parameters('KeyVaultOwnerId')]",
+          "tenantId": "[subscription().tenantId]",
+          "permissions": {
+            "secrets": ["all"]
+          }
+        }],
+        "sku": {
+          "name": "standard",
+          "family": "A"
+        },
+        "networkAcls": {
+          "value": {
+            "defaultAction": "Allow",
+            "bypass": "AzureServices"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "name": "[concat(variables('KeyVaultName'), '/', variables('KeyVaultSecrets')[copyIndex()].secretName)]",
+      "apiVersion": "2018-02-14",
+      "dependsOn": [
+        "[concat('Microsoft.KeyVault/vaults/', variables('KeyVaultName'))]"
+      ],
+      "copy": {
+        "name": "secretsCopy",
+        "count": "[length(variables('KeyVaultSecrets'))]"
+      },
+      "properties": {
+        "value": "[variables('KeyVaultSecrets')[copyIndex()].secretValue]"
+      }
+    }
+  ],
+  "outputs": {}
+}
