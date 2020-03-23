@@ -1,4 +1,6 @@
-﻿function Get-ADUserExtendedAttribute {
+﻿break;
+
+function Get-ADUserExtendedAttribute {
     param($Path, $Attribute = 'extensionAttribute10')
     if( -not (Test-Path -Path $Path)) {
         throw 'input file does not exist!'
