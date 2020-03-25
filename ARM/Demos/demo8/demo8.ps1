@@ -16,9 +16,9 @@ if(-not (Get-AzResourceGroup -Name $resourceGroup -ErrorAction SilentlyContinue)
 
 # Deploy the template:
 New-AzResourceGroupDeployment -Name FromTemplateUriUsingDefaults -ResourceGroupName $resourceGroup `
-	-TemplateUri $templateUri 
+	-TemplateUri $templateUri
 
-	
+
 New-AzResourceGroupDeployment -Name FromTemplateUriUsingParams -ResourceGroupName $resourceGroup `
 	-TemplateUri $templateUri `
 	-storageAccountName strgrandomstr789 `
