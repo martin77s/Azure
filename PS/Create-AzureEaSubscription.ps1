@@ -20,6 +20,11 @@ PARAM(
 
 
 # Verify the module is installed:
+$psGetVersion = ((Get-Module -Name PowerShellGet -ListAvailable) | Sort-Object Version -Descending)[0].Version
+if ($psGetVersion -lt [version]"2.0.4") {
+    Install-Module PowerShellGet -Force -Verbose
+}
+
 if (-not (Get-Command -Name Get-AzEnrollmentAccount)) {
     Install-Module Az.Subscription -AllowPrerelease -Force -Verbose
 }
