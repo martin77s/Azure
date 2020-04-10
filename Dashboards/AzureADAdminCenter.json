@@ -166,7 +166,7 @@
       }
     }
   },
-  "name": "Dashboard",
+  "name": "Azure AD Admin Center",
   "type": "Microsoft.Portal/dashboards",
   "location": "INSERT LOCATION",
   "tags": {

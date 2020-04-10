@@ -16,4 +16,4 @@ if (-not (Get-AzResourceGroup -Name $resourceGroup -ErrorAction SilentlyContinue
 
 # Deploy the template:
 New-AzResourceGroupDeployment -Name TemplateWithParam -ResourceGroupName $resourceGroup `
-	-TemplateFile $templateFile -storageName strgrandomstr127
+	-TemplateFile $templateFile -storageName strgrandomstr127 -Mode Complete
