@@ -29,7 +29,7 @@ if($TenantId -and $SubscriptionId) {
 # List resources with System Managed Identities:
 Get-AzResource | Where-Object { $_.Identity } |
     Select-Object ResourceType, @{N='ResourceGroup';E={$_.ResourceGroupName}}, @{N='ResourceName';E={$_.Name}},
-        @{N='IdentityType';E={@($_.Identity.Type)}}, @{N='TenantId';E={$_.Identity.TenantId}}, @{N='PrincipalId';E={$_.Identity.PrincipalId}}
+        @{N='IdentityType';E={$_.Identity.Type}}, @{N='TenantId';E={$_.Identity.TenantId}}, @{N='PrincipalId';E={$_.Identity.PrincipalId}}
 
 
 # List User Managed Identities
