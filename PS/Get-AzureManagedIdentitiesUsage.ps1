@@ -1,7 +1,7 @@
 ﻿<#
 
 Script Name	: Get-AzureManagedIdentitiesUsage.ps1
-Description	: List Azure resources that use Managed Identities
+Description	: List Azure resources that use Managed Identities and User Managed Identities
 Author		: Martin Schvartzman, Microsoft
 Last Update	: 2020/04/28 22:05
 Keywords	: Azure, ManagedIdentity, MSI
@@ -36,4 +36,3 @@ Get-AzResource | Where-Object { $_.Identity } |
 Get-AzUserAssignedIdentity |
     Select-Object @{N='ResourceType';E={$_.Type}}, @{N='ResourceGroup';E={$_.ResourceGroupName}}, @{N='ResourceName';E={$_.Name}}, 
         @{N='IdentityType';E={'UserAssigned'}}, TenantId, PrincipalId
-
