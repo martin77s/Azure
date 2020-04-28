@@ -1,7 +1,7 @@
 ﻿<#
 
 Script Name	: Get-AzureManagedIdentitiesUsage.ps1
-Description	: List Azure resources that use Managed Identities and User Managed Identities
+Description	: List Azure resources that use System Managed Identities and User Managed Identities
 Author		: Martin Schvartzman, Microsoft
 Last Update	: 2020/04/28 22:05
 Keywords	: Azure, ManagedIdentity, MSI
