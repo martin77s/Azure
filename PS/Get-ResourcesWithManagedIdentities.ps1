@@ -1,6 +1,6 @@
 ﻿<#
 
-Script Name	: Get-ResourcesWithManagedIdentities.ps1
+Script Name	: Get-AzureManagedIdentitiesUsage.ps1
 Description	: List Azure resources that use Managed Identities
 Author		: Martin Schvartzman, Microsoft
 Last Update	: 2020/04/28 20:05
@@ -31,3 +31,7 @@ Get-AzVmss | Where-Object { $_.Identity } |
 Get-AzWebApp | Where-Object { $_.Identity } | 
     Select-Object @{N='ResouceType';E={$_.Type}}, ResourceGroup, Name -ExpandProperty Identity
 
+
+# List User Managed Identities
+Get-AzResource -ResourceType Microsoft.ManagedIdentity/userAssignedIdentities |
+    Select-Object ResourceType, @{N='ResourceGroup';E={$_.ResourceGroupName}}, Name
