@@ -1,0 +1,23 @@
+{
+  "mode": "All",
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "tags['CreationDateTime']",
+          "exists": "false"
+        }
+      ]
+    },
+    "then": {
+      "effect": "append",
+      "details": [
+        {
+          "field": "tags['CreationDateTime']",
+          "value": "[utcNow()]"
+        }
+      ]
+    }
+  },
+  "parameters": {}
+}
