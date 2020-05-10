@@ -1,7 +1,8 @@
 ﻿PARAM(
     [string] $SubscriptionNamePattern = 'maschvar.*',
     [string] $ConnectionName = 'AzureRunAsConnection',
-    [string] $SendToEmailAddress = $null
+    [string] $SendToEmailAddress = $null,
+    [switch] $ClassicDiskDepthCheck = $false
 )
 
 Write-Output ('{0:yyyy-MM-dd HH:mm:ss.f} - Starting' -f (Get-Date))
@@ -18,7 +19,7 @@ try {
     $orphanDisks = @()
 
     # Iterate all subscriptions
-    Get-AzSubscription | Where-Object { $_.Name -match $SubscriptionNamePattern } | ForEach-Object {
+    Get-AzSubscription | Where-Object { ($_.Name -match $SubscriptionNamePattern) -and ($_.State -eq 'Enabled') } | ForEach-Object {
 
         Write-Verbose ('Switching to subscription: {0}' -f $_.Name) -Verbose
         $null = Set-AzContext -SubscriptionObject $_ -Force
@@ -37,20 +38,23 @@ try {
         }
 
         # Get orphan unmanaged disks
-        $storageAccounts = Get-AzStorageAccount
-        $orphanDisks += foreach ($storageAccount in $storageAccounts) {
-            $storageKey = (Get-AzStorageAccountKey -ResourceGroupName $storageAccount.ResourceGroupName -Name $storageAccount.StorageAccountName)[0].Value
-            $context = New-AzStorageContext -StorageAccountName $storageAccount.StorageAccountName -StorageAccountKey $storageKey
-            $containers = Get-AzStorageContainer -Context $context
-            foreach ($container in $containers) {
-                $blobs = Get-AzStorageBlob -Container $container.Name -Context $context
-                $blobs | Where-Object { $_.BlobType -eq 'PageBlob' -and $_.Name.EndsWith('.vhd') } | ForEach-Object {
-                    if ($_.ICloudBlob.Properties.LeaseStatus -eq 'Unlocked') {
-                        New-Object -TypeName PSObject -Property ([ordered]@{
-                                DiskType = 'UnManaged'
-                                Id       = $_.ICloudBlob.Uri.AbsoluteUri
-                            }
-                        )
+        if($ClassicDiskDepthCheck)
+        {
+            $storageAccounts = Get-AzStorageAccount
+            $orphanDisks += foreach ($storageAccount in $storageAccounts) {
+                $storageKey = (Get-AzStorageAccountKey -ResourceGroupName $storageAccount.ResourceGroupName -Name $storageAccount.StorageAccountName)[0].Value
+                $context = New-AzStorageContext -StorageAccountName $storageAccount.StorageAccountName -StorageAccountKey $storageKey
+                $containers = Get-AzStorageContainer -Context $context
+                foreach ($container in $containers) {
+                    $blobs = Get-AzStorageBlob -Container $container.Name -Context $context
+                    $blobs | Where-Object { $_.BlobType -eq 'PageBlob' -and $_.Name.EndsWith('.vhd') } | ForEach-Object {
+                        if ($_.ICloudBlob.Properties.LeaseStatus -eq 'Unlocked') {
+                            New-Object -TypeName PSObject -Property ([ordered]@{
+                                    DiskType = 'UnManaged'
+                                    Id       = $_.ICloudBlob.Uri.AbsoluteUri
+                                }
+                            )
+                        }
                     }
                 }
             }
