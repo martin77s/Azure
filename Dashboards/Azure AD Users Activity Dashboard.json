@@ -1,0 +1,703 @@
+{
+  "properties": {
+    "lenses": {
+      "0": {
+        "order": 0,
+        "parts": {
+          "0": {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "colSpan": 6,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "userObjectId",
+                  "isOptional": true
+                },
+                {
+                  "name": "startDate",
+                  "isOptional": true
+                },
+                {
+                  "name": "endDate",
+                  "isOptional": true
+                },
+                {
+                  "name": "fromAppsTile",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_AAD_IAM/PartType/UsersActivitySummaryReportPart"
+            }
+          },
+          "1": {
+            "position": {
+              "x": 6,
+              "y": 0,
+              "colSpan": 4,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "ComponentId",
+                  "value": {
+                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
+                    "ResourceGroup": "general-monitor-rg",
+                    "Name": "general-audit-la",
+                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                  }
+                },
+                {
+                  "name": "Query",
+                  "value": "SigninLogs | summarize LoginCount = count() by AppDisplayName| sort by LoginCount desc\r\n"
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D"
+                },
+                {
+                  "name": "Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "PartId",
+                  "value": "11f51da3-2c14-487a-8c5c-95f5b417f39d"
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics"
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "general-audit-la"
+                },
+                {
+                  "name": "resourceTypeMode",
+                  "value": "workspace"
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid"
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "User SignIns by Application",
+                  "PartSubTitle": "Azure Active Directory"
+                }
+              },
+              "asset": {
+                "idInputName": "ComponentId",
+                "type": "ApplicationInsights"
+              }
+            }
+          },
+          "2": {
+            "position": {
+              "x": 10,
+              "y": 0,
+              "colSpan": 4,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "ComponentId",
+                  "value": {
+                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
+                    "ResourceGroup": "general-monitor-rg",
+                    "Name": "general-audit-la",
+                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                  }
+                },
+                {
+                  "name": "Query",
+                  "value": "SigninLogs\n| extend OS= DeviceDetail.operatingSystem\n| extend Browser =extract(\"([a-zA-Z]+)\",1,tostring(DeviceDetail.browser))\n| where OS!=\"\"\n| where Browser !=\"\"\n| where AppDisplayName !=\"\"\n| summarize LoginCount=count() by tostring(Browser)\n| sort by LoginCount desc\n"
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D"
+                },
+                {
+                  "name": "Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "PartId",
+                  "value": "86a4e537-1569-47f3-9111-3c720d712057"
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics"
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "general-audit-la"
+                },
+                {
+                  "name": "resourceTypeMode",
+                  "value": "workspace"
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid"
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "User SignIns by Application",
+                  "PartSubTitle": "Azure Active Directory"
+                }
+              },
+              "asset": {
+                "idInputName": "ComponentId",
+                "type": "ApplicationInsights"
+              }
+            }
+          },
+          "3": {
+            "position": {
+              "x": 14,
+              "y": 0,
+              "colSpan": 6,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "ComponentId",
+                  "value": {
+                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
+                    "ResourceGroup": "general-monitor-rg",
+                    "Name": "general-audit-la",
+                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                  }
+                },
+                {
+                  "name": "Query",
+                  "value": "SigninLogs\n| extend OS= DeviceDetail.operatingSystem\n| extend Browser =extract(\"([a-zA-Z]+)\",1,tostring(DeviceDetail.browser))\n| where OS!=\"\"\n| where Browser !=\"\"\n| where AppDisplayName !=\"\"\n| summarize LoginCount=count() by tostring(Browser)\n| sort by LoginCount desc\n"
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D"
+                },
+                {
+                  "name": "Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "PartId",
+                  "value": "11fd5987-1512-4fad-a470-59433b58c6bf"
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics"
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "general-audit-la"
+                },
+                {
+                  "name": "resourceTypeMode",
+                  "value": "workspace"
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid"
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "User SignIns blocked by Conditional Access",
+                  "PartSubTitle": "Azure Active Directory",
+                  "Query": "SigninLogs | where ConditionalAccessStatus == 1 |summarize LoginCount = dcount(Id) by UserDisplayName, AppDisplayName | sort by LoginCount, UserDisplayName, AppDisplayName desc\n"
+                }
+              },
+              "asset": {
+                "idInputName": "ComponentId",
+                "type": "ApplicationInsights"
+              }
+            }
+          },
+          "4": {
+            "position": {
+              "x": 0,
+              "y": 4,
+              "colSpan": 7,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "ComponentId",
+                  "value": {
+                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
+                    "ResourceGroup": "general-monitor-rg",
+                    "Name": "general-audit-la",
+                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                  }
+                },
+                {
+                  "name": "Query",
+                  "value": "AuditLogs\n| where OperationName == \"Add group\"\n"
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D"
+                },
+                {
+                  "name": "Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "PartId",
+                  "value": "1909f42f-f2d8-4db3-b158-a0a1e8139439"
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics"
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "general-audit-la"
+                },
+                {
+                  "name": "resourceTypeMode",
+                  "value": "workspace"
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid"
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "New Groups ",
+                  "PartSubTitle": "New groups created",
+                  "Query": "AuditLogs\n| where OperationName like \"Add group\"\n| extend InitiatedBy_ = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName) \n| extend displayName_ = tostring(TargetResources[0].displayName) \n| project InitiatedBy_, displayName_, Result, ResultReason"
+                }
+              },
+              "asset": {
+                "idInputName": "ComponentId",
+                "type": "ApplicationInsights"
+              }
+            }
+          },
+          "5": {
+            "position": {
+              "x": 7,
+              "y": 4,
+              "colSpan": 7,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "ComponentId",
+                  "value": {
+                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
+                    "ResourceGroup": "general-monitor-rg",
+                    "Name": "general-audit-la",
+                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                  }
+                },
+                {
+                  "name": "Query",
+                  "value": "AuditLogs\n| where OperationName == \"Add group\"\n"
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P7D"
+                },
+                {
+                  "name": "Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "PartId",
+                  "value": "11e1ee9f-ea92-43f6-b4b9-4e9c417f637b"
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics"
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "general-audit-la"
+                },
+                {
+                  "name": "resourceTypeMode",
+                  "value": "workspace"
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid"
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "New Users",
+                  "PartSubTitle": "New users created",
+                  "Query": "AuditLogs\n| where OperationName like \"Add user\"\n| extend InitiatedBy_ = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName) \n| extend displayName_ = tostring(TargetResources[0].userPrincipalName) \n| project InitiatedBy_, displayName_, Result, ResultReason"
+                }
+              },
+              "asset": {
+                "idInputName": "ComponentId",
+                "type": "ApplicationInsights"
+              }
+            }
+          },
+          "6": {
+            "position": {
+              "x": 14,
+              "y": 4,
+              "colSpan": 6,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "ComponentId",
+                  "value": {
+                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
+                    "ResourceGroup": "general-monitor-rg",
+                    "Name": "general-audit-la",
+                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                  }
+                },
+                {
+                  "name": "Query",
+                  "value": "AuditLogs\n| summarize count() by OperationName\n"
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "PT12H"
+                },
+                {
+                  "name": "Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "PartId",
+                  "value": "089c2e4a-46c7-4ad8-bc33-1fae5f093486"
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics"
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "general-audit-la"
+                },
+                {
+                  "name": "resourceTypeMode",
+                  "value": "workspace"
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid"
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "AAD Actions",
+                  "PartSubTitle": "Number of operations by type",
+                  "Query": "AuditLogs\n| summarize count() by OperationName\n| order by count_ ",
+                  "GridColumnsWidth": {
+                    "OperationName": "289px"
+                  }
+                }
+              },
+              "asset": {
+                "idInputName": "ComponentId",
+                "type": "ApplicationInsights"
+              }
+            }
+          },
+          "7": {
+            "position": {
+              "x": 0,
+              "y": 8,
+              "colSpan": 8,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "ComponentId",
+                  "value": {
+                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
+                    "ResourceGroup": "general-monitor-rg",
+                    "Name": "general-audit-la",
+                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                  }
+                },
+                {
+                  "name": "Query",
+                  "value": "SigninLogs | where AppDisplayName !=\"\" | where Location !=\"\" | extend Country = tostring(LocationDetails.countryOrRegion) |extend State = tostring(LocationDetails.state) |extend City = tostring(LocationDetails.city) | summarize LoginCount = count() by City, State, Country | sort by LoginCount desc\r\n"
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D"
+                },
+                {
+                  "name": "Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "PartId",
+                  "value": "1c570789-3132-4df4-8d15-44ff3b610c0b"
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics"
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "general-audit-la"
+                },
+                {
+                  "name": "resourceTypeMode",
+                  "value": "workspace"
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid"
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "User SignIns by City",
+                  "PartSubTitle": "Azure Active Directory"
+                }
+              },
+              "asset": {
+                "idInputName": "ComponentId",
+                "type": "ApplicationInsights"
+              }
+            }
+          },
+          "8": {
+            "position": {
+              "x": 8,
+              "y": 8,
+              "colSpan": 12,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "ComponentId",
+                  "value": {
+                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
+                    "ResourceGroup": "general-monitor-rg",
+                    "Name": "general-audit-la",
+                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                  }
+                },
+                {
+                  "name": "Query",
+                  "value": "SigninLogs\n| where AppDisplayName !=\"\"\n| where Location !=\"IL\"\n| where Location !=\"\"\n| extend Country = tostring(LocationDetails.countryOrRegion)\n| extend State = tostring(LocationDetails.state)\n| extend City = tostring(LocationDetails.city)\n| summarize LoginCount = count() by CreatedDateTime, AppDisplayName, UserDisplayName, UserPrincipalName, ClientAppUsed, IPAddress, City, State, Country\n| sort by LoginCount,AppDisplayName desc\n"
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D"
+                },
+                {
+                  "name": "Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "PartId",
+                  "value": "195798ee-16b1-4840-ad5a-e472c6382d6f"
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics"
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "general-audit-la"
+                },
+                {
+                  "name": "resourceTypeMode",
+                  "value": "workspace"
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid"
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "User SignIns outside IL",
+                  "PartSubTitle": "Azure Active Directory"
+                }
+              },
+              "asset": {
+                "idInputName": "ComponentId",
+                "type": "ApplicationInsights"
+              }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "model": {
+        "timeRange": {
+          "value": {
+            "relative": {
+              "duration": 24,
+              "timeUnit": 1
+            }
+          },
+          "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+        },
+        "filterLocale": {
+          "value": "en-us"
+        },
+        "filters": {
+          "value": {
+            "MsPortalFx_TimeRange": {
+              "model": {
+                "format": "utc",
+                "granularity": "auto",
+                "relative": "24h"
+              },
+              "displayCache": {
+                "name": "UTC Time",
+                "value": "Past 24 hours"
+              },
+              "filteredPartIds": [
+                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a710915f",
+                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a7109161",
+                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a7109163",
+                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a7109165",
+                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a7109167",
+                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a7109169",
+                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a710916b",
+                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a710916d"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "name": "Azure AD Users Activity Dashboard",
+  "type": "Microsoft.Portal/dashboards",
+  "location": "INSERT LOCATION",
+  "tags": {
+    "hidden-title": "Azure AD Users Activity Dashboard"
+  },
+  "apiVersion": "2015-08-01-preview"
+}
