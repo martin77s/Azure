@@ -205,11 +205,11 @@
                 },
                 {
                   "name": "Query",
-                  "value": "SigninLogs\n| extend OS= DeviceDetail.operatingSystem\n| extend Browser =extract(\"([a-zA-Z]+)\",1,tostring(DeviceDetail.browser))\n| where OS!=\"\"\n| where Browser !=\"\"\n| where AppDisplayName !=\"\"\n| summarize LoginCount=count() by tostring(Browser)\n| sort by LoginCount desc\n"
+                  "value": "AuditLogs\n"
                 },
                 {
                   "name": "TimeRange",
-                  "value": "P1D"
+                  "value": "P7D"
                 },
                 {
                   "name": "Version",
@@ -217,7 +217,7 @@
                 },
                 {
                   "name": "PartId",
-                  "value": "11fd5987-1512-4fad-a470-59433b58c6bf"
+                  "value": "30b2127b-4263-42b7-b12b-1c66217a0808"
                 },
                 {
                   "name": "PartTitle",
@@ -251,9 +251,9 @@
               "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
               "settings": {
                 "content": {
-                  "PartTitle": "User SignIns blocked by Conditional Access",
-                  "PartSubTitle": "Azure Active Directory",
-                  "Query": "SigninLogs | where ConditionalAccessStatus == 1 |summarize LoginCount = dcount(Id) by UserDisplayName, AppDisplayName | sort by LoginCount, UserDisplayName, AppDisplayName desc\n"
+                  "PartTitle": "Created users with no signin",
+                  "PartSubTitle": "Created (without deleted) users that have no sign in info for the duration",
+                  "Query": "AuditLogs | where TimeGenerated > ago(365d)\n| where OperationName == \"Add user\"\n| extend addID_ = tostring(TargetResources[0].id)\n| join kind=anti (AuditLogs\n    | where OperationName == \"Delete user\"\n    | extend deleteID_ = tostring(TargetResources[0].id)) on $left.addID_ == $right.deleteID_\n| extend upn_ = tostring(TargetResources[0].userPrincipalName)\n| join kind=leftouter (SigninLogs) on $left.upn_ == $right.UserPrincipalName\n| extend signed_ = isnotempty(UserPrincipalName)\n| project upn_, signed_"
                 }
               },
               "asset": {
@@ -484,7 +484,7 @@
                 "content": {
                   "PartTitle": "AAD Actions",
                   "PartSubTitle": "Number of operations by type",
-                  "Query": "AuditLogs\n| summarize count() by OperationName\n| order by count_ ",
+                  "Query": "AuditLogs\n| summarize Count = count() by OperationName\n| order by Count",
                   "GridColumnsWidth": {
                     "OperationName": "289px"
                   }
@@ -647,6 +647,83 @@
                 "type": "ApplicationInsights"
               }
             }
+          },
+          "9": {
+            "position": {
+              "x": 0,
+              "y": 12,
+              "colSpan": 5,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "ComponentId",
+                  "value": {
+                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
+                    "ResourceGroup": "general-monitor-rg",
+                    "Name": "general-audit-la",
+                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                  }
+                },
+                {
+                  "name": "Query",
+                  "value": "SigninLogs\n| extend OS= DeviceDetail.operatingSystem\n| extend Browser =extract(\"([a-zA-Z]+)\",1,tostring(DeviceDetail.browser))\n| where OS!=\"\"\n| where Browser !=\"\"\n| where AppDisplayName !=\"\"\n| summarize LoginCount=count() by tostring(Browser)\n| sort by LoginCount desc\n"
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D"
+                },
+                {
+                  "name": "Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "PartId",
+                  "value": "11fd5987-1512-4fad-a470-59433b58c6bf"
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics"
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "general-audit-la"
+                },
+                {
+                  "name": "resourceTypeMode",
+                  "value": "workspace"
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid"
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "User SignIns blocked by Conditional Access",
+                  "PartSubTitle": "Azure Active Directory",
+                  "Query": "SigninLogs | where ConditionalAccessStatus == 1 |summarize LoginCount = dcount(Id) by UserDisplayName, AppDisplayName | sort by LoginCount, UserDisplayName, AppDisplayName desc\n"
+                }
+              },
+              "asset": {
+                "idInputName": "ComponentId",
+                "type": "ApplicationInsights"
+              }
+            }
           }
         }
       }
@@ -671,21 +748,22 @@
               "model": {
                 "format": "utc",
                 "granularity": "auto",
-                "relative": "24h"
+                "relative": "30d"
               },
               "displayCache": {
                 "name": "UTC Time",
-                "value": "Past 24 hours"
+                "value": "Past 30 days"
               },
               "filteredPartIds": [
-                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a710915f",
-                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a7109161",
-                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a7109163",
-                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a7109165",
-                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a7109167",
-                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a7109169",
-                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a710916b",
-                "StartboardPart-AnalyticsPart-11e2b57a-cfb8-47ea-95cd-eb33a710916d"
+                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce059",
+                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce05b",
+                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce05d",
+                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce05f",
+                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce061",
+                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce063",
+                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce065",
+                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce067",
+                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce069"
               ]
             }
           }

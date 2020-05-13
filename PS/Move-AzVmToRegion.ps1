@@ -250,14 +250,15 @@ if ($PSCmdlet.ShouldProcess($VM.Name, "Move to $TargetLocation")) {
 	}
 	#endregion
 
-	#region VM config: Storage
+	#region VM config: Storage and License
 	Write-Verbose -Message ('{0:HH:mm:ss} - Creating the new basic VM config' -f (Get-Date))
 	$vmConfigParams = @{
 		VMName      = $VM.Name
 		VMSize      = $VM.HardwareProfile.VmSize
-		LicenseType = $VM.LicenseType
 		Tags        = $VM.Tags
-	}; $newVmConfig = New-AzVMConfig @vmConfigParams
+	}
+	if($VM.LicenseType) { $vmConfigParams.Add('LicenseType', $VM.LicenseType) }
+	$newVmConfig = New-AzVMConfig @vmConfigParams
 
 	Write-Verbose -Message ('{0:HH:mm:ss} - Updating the VM config with the storage details' -f (Get-Date))
 	$newVmConfig.FullyQualifiedDomainName = $VM.FullyQualifiedDomainName
