@@ -3,8 +3,8 @@
 
 <#
     Name        : Move-AzVmToRegion.ps1
-    Version     : 1.0.0.4
-    Last Update : 2019/09/20
+    Version     : 1.0.0.5
+    Last Update : 2020/05/13
     Keywords    : Azure, VM, Move
     Created by  : Martin Schvartzman, Microsoft
     Description : This script moves a virtual machine and all it's dependencies to a different region
