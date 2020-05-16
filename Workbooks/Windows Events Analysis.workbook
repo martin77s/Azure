@@ -1,0 +1,519 @@
+{
+    "version": "Notebook/1.0",
+    "items": [
+      {
+        "type": 1,
+        "content": {
+          "json": "# Windows Events Analysis\r\n\r\nUse the filters below to select the parameters that will be displayed on this workbook.\r\nThe **Computer** filter uses Regular Expression (RegEx) syntax.\r\n"
+        },
+        "name": "Title"
+      },
+      {
+        "type": 9,
+        "content": {
+          "version": "KqlParameterItem/1.0",
+          "query": "",
+          "crossComponentResources": [
+            "{WorkspaceParam}"
+          ],
+          "parameters": [
+            {
+              "id": "95e6236d-82f1-4a3a-9e82-add5a5036aa5",
+              "version": "KqlParameterItem/1.0",
+              "name": "SubscriptionParam",
+              "label": "Subscription",
+              "type": 6,
+              "isRequired": true,
+              "multiSelect": true,
+              "quote": "'",
+              "delimiter": ",",
+              "value": [
+                "value::all"
+              ],
+              "typeSettings": {
+                "additionalResourceOptions": [
+                  "value::all"
+                ],
+                "includeAll": true
+              }
+            },
+            {
+              "id": "53d41a48-22a3-4afd-b7d4-cf7d925ff914",
+              "version": "KqlParameterItem/1.0",
+              "name": "WorkspaceParam",
+              "label": "Workspace",
+              "type": 5,
+              "multiSelect": true,
+              "quote": "'",
+              "delimiter": ",",
+              "query": "where type =~ 'microsoft.operationalinsights/workspaces'\r\n| order by name asc\r\n| summarize Selected = makelist(id, 10), All = makelist(id, 1000)\r\n| mvexpand All limit 10000\r\n| project value = tostring(All), label = tostring(All), selected = iff(Selected contains All, true, false)",
+              "crossComponentResources": [
+                "{SubscriptionParam}"
+              ],
+              "value": [
+                "value::all"
+              ],
+              "typeSettings": {
+                "resourceTypeFilter": {
+                  "microsoft.operationalinsights/workspaces": true
+                },
+                "additionalResourceOptions": [
+                  "value::all"
+                ]
+              },
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            {
+              "id": "69f27b90-5766-438c-8602-d2dedc82f1c7",
+              "version": "KqlParameterItem/1.0",
+              "name": "TimeRangeParam",
+              "label": "Time Range",
+              "type": 4,
+              "value": {
+                "durationMs": 86400000
+              },
+              "typeSettings": {
+                "selectableValues": [
+                  {
+                    "durationMs": 900000
+                  },
+                  {
+                    "durationMs": 3600000
+                  },
+                  {
+                    "durationMs": 14400000
+                  },
+                  {
+                    "durationMs": 86400000
+                  },
+                  {
+                    "durationMs": 604800000
+                  },
+                  {
+                    "durationMs": 2592000000
+                  }
+                ],
+                "allowCustom": true
+              }
+            },
+            {
+              "id": "f4dba7bc-20d2-4fd7-922a-69c233dc85ef",
+              "version": "KqlParameterItem/1.0",
+              "name": "ComputerParam",
+              "label": "Computer",
+              "type": 1,
+              "value": ".*",
+              "timeContext": {
+                "durationMs": 0
+              },
+              "timeContextFromParameter": "TimeRangeParam"
+            }
+          ],
+          "style": "pills",
+          "queryType": 0,
+          "resourceType": "microsoft.operationalinsights/workspaces"
+        },
+        "name": "parameters - 1 - Copy"
+      },
+      {
+        "type": 9,
+        "content": {
+          "version": "KqlParameterItem/1.0",
+          "query": "",
+          "crossComponentResources": [
+            "{WorkspaceParam}"
+          ],
+          "parameters": [
+            {
+              "id": "c9344574-aeb7-4576-9dc0-dfa5446b59c9",
+              "version": "KqlParameterItem/1.0",
+              "name": "EventLevelParam",
+              "label": "Event Level",
+              "type": 2,
+              "multiSelect": true,
+              "quote": "'",
+              "delimiter": ",",
+              "query": "Event | distinct EventLevelName",
+              "crossComponentResources": [
+                "{WorkspaceParam}"
+              ],
+              "value": [
+                "value::all"
+              ],
+              "typeSettings": {
+                "additionalResourceOptions": [
+                  "value::all"
+                ]
+              },
+              "timeContext": {
+                "durationMs": 0
+              },
+              "timeContextFromParameter": "TimeRangeParam",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            {
+              "id": "fa90af7c-f726-48e4-bcbf-ef362b618061",
+              "version": "KqlParameterItem/1.0",
+              "name": "EventLogParam",
+              "label": "Event Log",
+              "type": 2,
+              "multiSelect": true,
+              "quote": "'",
+              "delimiter": ",",
+              "query": "Event | where EventLevelName in ({EventLevelParam}) | distinct EventLog",
+              "crossComponentResources": [
+                "{WorkspaceParam}"
+              ],
+              "typeSettings": {
+                "additionalResourceOptions": [
+                  "value::all"
+                ]
+              },
+              "timeContext": {
+                "durationMs": 0
+              },
+              "timeContextFromParameter": "TimeRangeParam",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "value": [
+                "value::all"
+              ]
+            },
+            {
+              "id": "17c05ceb-6533-437a-90a2-46847524509e",
+              "version": "KqlParameterItem/1.0",
+              "name": "SourceParam",
+              "label": "Source",
+              "type": 2,
+              "multiSelect": true,
+              "quote": "'",
+              "delimiter": ",",
+              "query": "Event \r\n| where EventLevelName in ({EventLevelParam}) and EventLog in ({EventLogParam})\r\n| distinct Source",
+              "crossComponentResources": [
+                "{WorkspaceParam}"
+              ],
+              "value": [
+                "value::all"
+              ],
+              "typeSettings": {
+                "additionalResourceOptions": [
+                  "value::all"
+                ]
+              },
+              "timeContext": {
+                "durationMs": 0
+              },
+              "timeContextFromParameter": "TimeRangeParam",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            {
+              "id": "16b6c9d3-4c43-488a-946a-632626859c63",
+              "version": "KqlParameterItem/1.0",
+              "name": "EventIDParam",
+              "label": "Event ID",
+              "type": 2,
+              "multiSelect": true,
+              "quote": "'",
+              "delimiter": ",",
+              "query": "Event \r\n| where EventLevelName in ({EventLevelParam}) and Source in ({SourceParam})\r\n| distinct EventID",
+              "crossComponentResources": [
+                "{WorkspaceParam}"
+              ],
+              "value": [
+                "value::all"
+              ],
+              "typeSettings": {
+                "additionalResourceOptions": [
+                  "value::all"
+                ]
+              },
+              "timeContext": {
+                "durationMs": 0
+              },
+              "timeContextFromParameter": "TimeRangeParam",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            }
+          ],
+          "style": "pills",
+          "queryType": 0,
+          "resourceType": "microsoft.operationalinsights/workspaces"
+        },
+        "name": "parameters - 1 - Copy - Copy"
+      },
+      {
+        "type": 1,
+        "content": {
+          "json": "### Event Count by Computer"
+        },
+        "name": "Event Count Title"
+      },
+      {
+        "type": 3,
+        "content": {
+          "version": "KqlItem/1.0",
+          "query": "Event \r\n| where Computer matches regex @\"(?i){ComputerParam}\" and EventLevelName in ({EventLevelParam}) and EventLog in ({EventLogParam}) and Source in ({SourceParam}) and EventID in ({EventIDParam})\r\n| project Computer, EventLevelName\r\n| evaluate pivot(EventLevelName)\r\n//| project Computer, Error, Warning, Information, Success, [\"Audit Success\"], [\"Audit Error\"]\r\n",
+          "size": 1,
+          "exportFieldName": "Computer",
+          "exportParameterName": "ComputerParam",
+          "title": "Click on Computer to filter results below",
+          "timeContext": {
+            "durationMs": 0
+          },
+          "timeContextFromParameter": "TimeRangeParam",
+          "queryType": 0,
+          "resourceType": "microsoft.operationalinsights/workspaces",
+          "crossComponentResources": [
+            "{WorkspaceParam}"
+          ],
+          "visualization": "table",
+          "gridSettings": {
+            "formatters": [
+              {
+                "columnMatch": "Computer",
+                "formatter": 0,
+                "formatOptions": {
+                  "showIcon": true
+                }
+              },
+              {
+                "columnMatch": "Error",
+                "formatter": 8,
+                "formatOptions": {
+                  "palette": "redBright",
+                  "showIcon": true
+                }
+              },
+              {
+                "columnMatch": "Warning",
+                "formatter": 8,
+                "formatOptions": {
+                  "palette": "yellow",
+                  "showIcon": true
+                }
+              },
+              {
+                "columnMatch": "Information",
+                "formatter": 8,
+                "formatOptions": {
+                  "palette": "blue",
+                  "showIcon": true
+                }
+              },
+              {
+                "columnMatch": "Success",
+                "formatter": 8,
+                "formatOptions": {
+                  "palette": "green",
+                  "showIcon": true
+                }
+              },
+              {
+                "columnMatch": "Audit Success",
+                "formatter": 8,
+                "formatOptions": {
+                  "palette": "green",
+                  "showIcon": true
+                }
+              },
+              {
+                "columnMatch": "Audit Error",
+                "formatter": 8,
+                "formatOptions": {
+                  "palette": "redBright",
+                  "showIcon": true
+                }
+              }
+            ],
+            "labelSettings": []
+          }
+        },
+        "name": "Event Count by Computer"
+      },
+      {
+        "type": 1,
+        "content": {
+          "json": "### Events through time"
+        },
+        "name": "Event Count Title - Copy"
+      },
+      {
+        "type": 3,
+        "content": {
+          "version": "KqlItem/1.0",
+          "query": "Event \r\n| where Computer matches regex @\"(?i){ComputerParam}\" and EventLevelName in ({EventLevelParam}) and EventLog in ({EventLogParam}) and Source in ({SourceParam}) and EventID in ({EventIDParam})\r\n| summarize Events = count() by EventLevelName, bin(TimeGenerated, 1h)",
+          "size": 1,
+          "title": "Select an interval by dragging with the mouse to filter results below",
+          "timeContext": {
+            "durationMs": 0
+          },
+          "timeContextFromParameter": "TimeRangeParam",
+          "timeBrushParameterName": "TimeRangeParam",
+          "queryType": 0,
+          "resourceType": "microsoft.operationalinsights/workspaces",
+          "crossComponentResources": [
+            "{WorkspaceParam}"
+          ],
+          "visualization": "linechart"
+        },
+        "name": "Event Timeline"
+      },
+      {
+        "type": 3,
+        "content": {
+          "version": "KqlItem/1.0",
+          "query": "Event\r\n| where Computer matches regex @\"(?i){ComputerParam}\" and EventLevelName in ({EventLevelParam}) and EventLog in ({EventLogParam}) and Source in ({SourceParam}) and EventID in ({EventIDParam})\r\n| summarize Events = count() by EventLog",
+          "size": 0,
+          "title": "Events by Log Name",
+          "timeContext": {
+            "durationMs": 0
+          },
+          "timeContextFromParameter": "TimeRangeParam",
+          "queryType": 0,
+          "resourceType": "microsoft.operationalinsights/workspaces",
+          "crossComponentResources": [
+            "{WorkspaceParam}"
+          ],
+          "visualization": "piechart"
+        },
+        "customWidth": "33",
+        "name": "Events by Log",
+        "styleSettings": {
+          "showBorder": true
+        }
+      },
+      {
+        "type": 3,
+        "content": {
+          "version": "KqlItem/1.0",
+          "query": "Event\r\n| where Computer matches regex @\"(?i){ComputerParam}\" and EventLevelName in ({EventLevelParam}) and EventLog in ({EventLogParam}) and Source in ({SourceParam}) and EventID in ({EventIDParam})\r\n| summarize Events = count() by Source",
+          "size": 0,
+          "title": "Events by Source",
+          "timeContext": {
+            "durationMs": 0
+          },
+          "timeContextFromParameter": "TimeRangeParam",
+          "queryType": 0,
+          "resourceType": "microsoft.operationalinsights/workspaces",
+          "crossComponentResources": [
+            "{WorkspaceParam}"
+          ],
+          "visualization": "piechart"
+        },
+        "customWidth": "34",
+        "name": "Events by Source",
+        "styleSettings": {
+          "showBorder": true
+        }
+      },
+      {
+        "type": 3,
+        "content": {
+          "version": "KqlItem/1.0",
+          "query": "Event\r\n| where Computer matches regex @\"(?i){ComputerParam}\" and EventLevelName in ({EventLevelParam}) and EventLog in ({EventLogParam}) and Source in ({SourceParam}) and EventID in ({EventIDParam})\r\n| summarize Events = count() by tostring(EventID)",
+          "size": 0,
+          "title": "Events by ID",
+          "timeContext": {
+            "durationMs": 0
+          },
+          "timeContextFromParameter": "TimeRangeParam",
+          "queryType": 0,
+          "resourceType": "microsoft.operationalinsights/workspaces",
+          "crossComponentResources": [
+            "{WorkspaceParam}"
+          ],
+          "visualization": "piechart"
+        },
+        "customWidth": "33",
+        "name": "Events by ID",
+        "styleSettings": {
+          "showBorder": true
+        }
+      },
+      {
+        "type": 3,
+        "content": {
+          "version": "KqlItem/1.0",
+          "query": "Event\r\n| where Computer matches regex @\"(?i){ComputerParam}\" and EventLevelName in ({EventLevelParam}) and EventLog in ({EventLogParam}) and Source in ({SourceParam}) and EventID in ({EventIDParam})\r\n| project TimeGenerated, Computer, EventLevelName, EventID, EventLog, Source, RenderedDescription \r\n| order by TimeGenerated desc",
+          "size": 3,
+          "showAnalytics": true,
+          "showExportToExcel": true,
+          "title": "Event List",
+          "timeContext": {
+            "durationMs": 0
+          },
+          "timeContextFromParameter": "TimeRangeParam",
+          "queryType": 0,
+          "resourceType": "microsoft.operationalinsights/workspaces",
+          "crossComponentResources": [
+            "{WorkspaceParam}"
+          ],
+          "visualization": "table",
+          "gridSettings": {
+            "formatters": [
+              {
+                "columnMatch": "TimeGenerated",
+                "formatter": 6,
+                "formatOptions": {
+                  "showIcon": true
+                },
+                "dateFormat": {
+                  "formatName": "fullDateTimePattern"
+                }
+              },
+              {
+                "columnMatch": "Computer",
+                "formatter": 0,
+                "formatOptions": {
+                  "showIcon": true
+                }
+              },
+              {
+                "columnMatch": "EventLevelName",
+                "formatter": 0,
+                "formatOptions": {
+                  "showIcon": true
+                }
+              },
+              {
+                "columnMatch": "EventID",
+                "formatter": 0,
+                "formatOptions": {
+                  "showIcon": true
+                }
+              },
+              {
+                "columnMatch": "EventLog",
+                "formatter": 0,
+                "formatOptions": {
+                  "showIcon": true
+                }
+              },
+              {
+                "columnMatch": "Source",
+                "formatter": 0,
+                "formatOptions": {
+                  "showIcon": true
+                }
+              },
+              {
+                "columnMatch": "RenderedDescription",
+                "formatter": 0,
+                "formatOptions": {
+                  "showIcon": true
+                }
+              }
+            ],
+            "rowLimit": 100,
+            "labelSettings": []
+          }
+        },
+        "name": "Event List"
+      }
+    ],
+    "styleSettings": {},
+    "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+  }
