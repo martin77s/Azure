@@ -159,3 +159,79 @@ Conditional resource deployment
         },
     ]
 ```
+
+- - -
+
+Extract the subscriptionId, ResourceGroup and ResourceName from a ResourceId
+```json
+parameters: {
+    "vnetResourceId": {
+        "type": "string"
+    }
+}
+variables: {
+    "vnetSubscriptionId": "[split(parameters('vnetResourceId'),'/')[2]]",
+    "vnetResourceGroupName": "[split(parameters('vnetResourceId'),'/')[4]]",
+    "vnetName": "[split(parameters('vnetResourceId'),'/')[8]]",
+}
+```
+
+- - -
+
+Copy loop example 1:
+```json
+{
+    "type": "Microsoft.Web/sites",
+    "apiVersion": "2019-08-01",
+    "copy": {
+        "name": "webAppsCopy",
+        "count": "[length(variables('webApps'))]"
+    },
+    "name": "[concat(parameters('environment'),variables('applicationPrefix'), '-', variables('webApps')[copyIndex('webAppsCopy')])]",
+    "location": "[parameters('location')]",
+    "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+    ],
+    "kind": "app",
+    "identity": {
+        "type": "SystemAssigned"
+    },
+    "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "clientAffinityEnabled": true,
+        "clientCertEnabled": false,
+        "hostNamesDisabled": false,
+        "httpsOnly": false
+    }
+}
+```
+- - -
+
+Copy loop example 2 (Handle the first item differently):
+```json
+{
+    "type": "Microsoft.Network/routeTables",
+    "apiVersion": "2018-11-01",
+    "name": "[variables('sqlManagedInstanceRouteTableName')]",
+    "location": "[parameters('location')]",
+    "properties": {
+        "copy": [
+            {
+                "name": "routes",
+                "count": "[length(parameters('sqlManagedInstanceManagementIPs'))]",
+                "input": {
+                    "name": "[if(equals(copyIndex('routes'),0),'subnet_to_vnetlocal',concat(replace(parameters('sqlManagedInstanceManagementIPs')[copyIndex('routes')],'/','-'),'-next-hop-internet-route'))]",
+                    "properties": {
+                        "addressPrefix": "[if(equals(copyIndex('routes'),0),parameters('sqlManagedInstanceSubnetAddressRange'),parameters('sqlManagedInstanceManagementIPs')[copyIndex('routes')])]",
+                        "nextHopType": "[if(equals(copyIndex('routes'),0),'VnetLocal','Internet')]"
+                    }
+                }
+            }
+        ]
+    }
+}
+```
+
+- - - 
+
