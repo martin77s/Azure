@@ -164,12 +164,12 @@ Conditional resource deployment
 
 Extract the subscriptionId, ResourceGroup and ResourceName from a ResourceId
 ```json
-parameters: {
+"parameters": {
     "vnetResourceId": {
         "type": "string"
     }
 }
-variables: {
+"variables": {
     "vnetSubscriptionId": "[split(parameters('vnetResourceId'),'/')[2]]",
     "vnetResourceGroupName": "[split(parameters('vnetResourceId'),'/')[4]]",
     "vnetName": "[split(parameters('vnetResourceId'),'/')[8]]",
@@ -235,3 +235,44 @@ Copy loop example 2 (Handle the first item differently):
 
 - - - 
 
+
+Calculate Static IP Address in a CopyLoop:
+```json
+"parameters": {
+    "addressPrefix": {
+        "type": "string",
+        "defaultValue": "192.168.10.0/24"
+    }
+}
+"variables": {
+    "addressPrefixSplit": "[split(parameters('addressPrefix'), '.')]",
+    "privateIPAddressOffset": 10
+}
+"resources": [
+    {
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2018-10-01",
+        "copy": {
+            "name": "nicLoop",
+            "count": "[parameters('vmCount')]"
+        },
+        "name": "[concat(variables('VmNamePrefix'), copyindex('nicLoop', 1), '-nic')]",
+        "location": "[parameters('location')]",
+        "properties": {
+            "ipConfigurations": [
+                {
+                    "name": "ipconfig1",
+                    "properties": {
+                        "subnet": {
+                            "id": "[variables('subnetId')]"
+                        },
+                        "privateIPAllocationMethod": "Static",
+                        "privateIPAddress": "[concat(variables('addressPrefixSplit')[0], '.', variables('addressPrefixSplit')[1], '.', variables('addressPrefixSplit')[2], '.', add(variables('privateIPAddressOffset'), copyIndex('nicLoop', 1)))]",
+                        "primary": true
+                    }
+                }
+            ]
+        }
+    }
+]
+```
