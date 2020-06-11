@@ -1,0 +1,28 @@
+{
+    "properties": {
+        "roleName": "Allow Vnet Peering to Hub Role",
+        "description": "Grant the Azure DevOps ServiceConnection permissions to create the peering on the Hub network",
+        "assignableScopes": [
+            "/subscriptions/<SubscriptionId>/resourceGroups/<ResourceGroup>"
+        ],
+        "permissions": [
+            {
+                "actions": [
+                    "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/read",
+                    "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/write",
+                    "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/delete",
+                    "Microsoft.Network/virtualNetworks/peer/action",
+                    "Microsoft.Resources/deployments/read",
+                    "Microsoft.Resources/deployments/write",
+                    "Microsoft.Resources/deployments/delete",
+                    "Microsoft.Resources/deployments/validate/action",
+                    "Microsoft.Resources/deployments/cancel/action",
+                    "Microsoft.Resources/deployments/operationstatuses/read"
+                ],
+                "notActions": [],
+                "dataActions": [],
+                "notDataActions": []
+            }
+        ]
+    }
+}
