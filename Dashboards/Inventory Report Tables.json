@@ -1,0 +1,171 @@
+{
+  "properties": {
+    "lenses": {
+      "0": {
+        "order": 0,
+        "parts": {
+          "0": {
+            "position": {
+              "x": 0,
+              "y": 1,
+              "colSpan": 17,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Virtual Machines",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources\n| where type == \"microsoft.compute/virtualmachines\"\n| extend vmSize = properties.hardwareProfile.vmSize\n| extend os = properties.storageProfile.imageReference.offer\n| extend sku = properties.storageProfile.imageReference.sku\n| extend licenseType = properties.licenseType\n| extend priority = properties.priority\n| mvexpand nic = properties.networkProfile.networkInterfaces\n| extend nicId = tostring(nic.id)\n| extend numDataDisks = array_length(properties.storageProfile.dataDisks)\n| project subscriptionId, resourceGroup, vmName = name, location, vmSize, os, sku, licenseType, nicId, priority, numDataDisks, properties\n| join kind=leftouter (\n\tResources\n\t| where type == \"microsoft.network/networkinterfaces\"\n\t| mvexpand ipconfig=properties.ipConfigurations\n\t| extend privateIp = ipconfig.properties.privateIPAddress\n    | project nicId = id, privateIp\n) on nicId\n| project-away nicId1\n| project subscriptionId, resourceGroup, vmName, location, vmSize, os, sku, licenseType, privateIp, priority, numDataDisks, properties",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "1": {
+            "position": {
+              "x": 0,
+              "y": 5,
+              "colSpan": 17,
+              "rowSpan": 6
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Advisor Digest - Cost",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "advisorresources\r\n| where properties.category == \"Cost\"\r\n| extend Category = properties.category\r\n| extend Impact = properties.impact\r\n| extend ResourceType = properties.impactedField\r\n| extend ResourceValue = properties.impactedValue\r\n| extend Problem = properties.shortDescription.problem\r\n| extend Solution = properties.shortDescription.solution\r\n| project id,Category,Impact,ResourceType,ResourceValue,Problem,Solution",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "2": {
+            "position": {
+              "x": 0,
+              "y": 11,
+              "colSpan": 17,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Orphan Disks",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "resources\n| where type == \"microsoft.compute/disks\"\n| where isempty(managedBy) and id notcontains \"-ASRReplica\"",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "model": {
+        "timeRange": {
+          "value": {
+            "relative": {
+              "duration": 24,
+              "timeUnit": 1
+            }
+          },
+          "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+        },
+        "filterLocale": {
+          "value": "en-us"
+        },
+        "filters": {
+          "value": {
+            "MsPortalFx_TimeRange": {
+              "model": {
+                "format": "utc",
+                "granularity": "auto",
+                "relative": "24h"
+              },
+              "displayCache": {
+                "name": "UTC Time",
+                "value": "Past 24 hours"
+              },
+              "filteredPartIds": []
+            }
+          }
+        }
+      }
+    }
+  },
+  "name": "Inventory Report Tables",
+  "type": "Microsoft.Portal/dashboards",
+  "location": "INSERT LOCATION",
+  "tags": {
+    "hidden-title": "Inventory Report Tables"
+  },
+  "apiVersion": "2015-08-01-preview"
+}
