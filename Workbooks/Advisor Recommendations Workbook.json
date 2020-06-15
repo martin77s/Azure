@@ -1,0 +1,123 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## AZURE ADVISOR RECOMMENDATIONS - This section gives you an overview of your Azure recommendations.\r\n\r\n---"
+      },
+      "name": "AZURE ADVISOR RECOMMENDATIONS",
+      "styleSettings": {
+        "progressStyle": "squares"
+      }
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "loadType": "always",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "### Advisor Recommendations by Category"
+            },
+            "name": "Advisor Recommendations by Category",
+            "styleSettings": {
+              "progressStyle": "squares"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "advisorresources \r\n| summarize Count=count() by Category=tostring(properties.category) \r\n| where Category!='' \r\n| extend Link = case(\r\n\tCategory == \"Cost\", \"https://portal.azure.com/#blade/Microsoft_Azure_Expert/AdvisorMenuBlade/Cost\",\r\n\tCategory == \"Security\", \"https://portal.azure.com/#blade/Microsoft_Azure_Expert/AdvisorMenuBlade/Security\",\r\n\tCategory == \"HighAvailability\", \"https://portal.azure.com/#blade/Microsoft_Azure_Expert/AdvisorMenuBlade/HighAvailability\",\r\n\tCategory == \"OperationalExcellence\", \"https://portal.azure.com/#blade/Microsoft_Azure_Expert/AdvisorMenuBlade/OperationalExcellence\",\r\n\tCategory == \"Performance\", \"https://portal.azure.com/#blade/Microsoft_Azure_Expert/AdvisorMenuBlade/Performance\",\r\n\t\"https://portal.azure.com/#blade/Microsoft_Azure_Expert/AdvisorMenuBlade\")\r\n| sort by Category asc\r\n| project Link, Category, Count",
+              "size": 0,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "value::all"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Link",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Link"
+                    }
+                  }
+                ]
+              }
+            },
+            "showPin": true,
+            "name": "Advisor Recommendations by Category",
+            "styleSettings": {
+              "progressStyle": "squares"
+            }
+          }
+        ]
+      },
+      "name": "Advisor Recommendations by Category",
+      "styleSettings": {
+        "progressStyle": "squares",
+        "showBorder": true
+      }
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "loadType": "always",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "### Advisor Recommendations Digest"
+            },
+            "name": "text - 0"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "advisorresources\r\n| where isnotnull(properties.impactedField)\r\n| extend Category = properties.category\r\n| extend Impact = properties.impact\r\n| extend ResourceType = properties.impactedField\r\n| extend ResourceName = properties.impactedValue\r\n| extend Problem = properties.shortDescription.problem\r\n| extend Solution = properties.shortDescription.solution\r\n| extend ImpactId = case(tostring(properties.impact) =~ \"High\", 1, tostring(properties.impact) =~ \"Medium\", 2, 3)\r\n| extend Link = strcat(\"https://portal.azure.com/#blade/Microsoft_Azure_Expert/RecommendationListBlade/recommendationTypeId/\", tostring(properties.recommendationTypeId))\r\n| order by ImpactId asc, tostring(properties.category) asc\r\n| project Link, Impact, Category, ResourceType, ResourceName, Problem, id",
+              "size": 0,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "value::all"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Link",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url",
+                      "linkLabel": "Link"
+                    }
+                  }
+                ]
+              }
+            },
+            "showPin": true,
+            "name": "query - 1",
+            "styleSettings": {
+              "progressStyle": "squares"
+            }
+          }
+        ]
+      },
+      "name": "Advisor Recommendations Digest",
+      "styleSettings": {
+        "progressStyle": "squares",
+        "showBorder": true
+      }
+    }
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

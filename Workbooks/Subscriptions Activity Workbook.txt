@@ -1,0 +1,299 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## Subscriptions Activity Workbook\n\n"
+      },
+      "name": "text - 2"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "loadType": "always",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "\r\n### Idle Subscriptions (Subscriptions without successful write activities in the last month)\r\n"
+            },
+            "name": "Idle Subscriptions"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AzureActivity | where TimeGenerated < ago(12m) | summarize by SubscriptionId\n| join kind=leftouter (\n    AzureActivity | where TimeGenerated < ago(1m)\n    | where OperationNameValue endswith \"write\" \n    | where ActivityStatus == \"Succeeded\" \n    | project SubscriptionId, CorrelationId\n) on SubscriptionId\n| where isempty(CorrelationId)\n| extend Subscription = SubscriptionId\n| extend SubscriptionUrl = strcat(\"https://portal.azure.com/#@contoso.onmicrosoft.com/resource/subscriptions/\", SubscriptionId, \"/overview\")\n| project SubscriptionUrl, Subscription\n",
+              "size": 1,
+              "queryType": 0,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "SubscriptionUrl",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "Subscription",
+                    "formatter": 15,
+                    "formatOptions": {
+                      "linkColumn": "SubscriptionUrl",
+                      "linkTarget": "Url"
+                    }
+                  }
+                ]
+              }
+            },
+            "showPin": true,
+            "name": "Idle Subscriptions",
+            "styleSettings": {
+              "progressStyle": "squares"
+            }
+          }
+        ]
+      },
+      "name": "Idle Subscriptions (Subscriptions without successful write activities in the last month)",
+      "styleSettings": {
+        "progressStyle": "squares",
+        "showBorder": true
+      }
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "loadType": "always",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "### Active Resource Groups (with new deployments)\r\n\r\n"
+            },
+            "name": "Active Resource Groups"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "cc21a863-cda5-49af-bb80-64c7ee018662",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "TimeRange",
+                  "label": "Time Range",
+                  "type": 4,
+                  "isRequired": true,
+                  "value": {
+                    "durationMs": 2592000000
+                  },
+                  "typeSettings": {
+                    "selectableValues": [
+                      {
+                        "durationMs": 86400000
+                      },
+                      {
+                        "durationMs": 604800000
+                      },
+                      {
+                        "durationMs": 2592000000
+                      },
+                      {
+                        "durationMs": 5184000000
+                      },
+                      {
+                        "durationMs": 7776000000
+                      }
+                    ],
+                    "allowCustom": true
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  }
+                }
+              ],
+              "style": "pills",
+              "queryType": 0
+            },
+            "name": "Parameters"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AzureActivity \n| where TimeGenerated {TimeRange:query}\n| where OperationNameValue == \"Microsoft.Resources/deployments/write\"\n| where ActivityStatus == \"Succeeded\"\n| extend SubscriptionUrl = strcat(\"https://portal.azure.com/#@contoso.onmicrosoft.com/resource/subscriptions/\", SubscriptionId, \"/overview\")\n| extend Subscription = SubscriptionId\n| summarize Count = count() by SubscriptionUrl, Subscription, ResourceGroup\n| order by SubscriptionUrl, Count\n",
+              "size": 1,
+              "timeContext": {
+                "durationMs": 604800000
+              },
+              "queryType": 0,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "SubscriptionUrl",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "Subscription",
+                    "formatter": 15,
+                    "formatOptions": {
+                      "linkColumn": "SubscriptionUrl",
+                      "linkTarget": "Url"
+                    }
+                  },
+                  {
+                    "columnMatch": "Count",
+                    "formatter": 3,
+                    "formatOptions": {
+                      "palette": "blue"
+                    }
+                  }
+                ],
+                "labelSettings": [
+                  {
+                    "columnId": "ResourceGroup"
+                  },
+                  {
+                    "columnId": "Count"
+                  }
+                ]
+              }
+            },
+            "showPin": true,
+            "name": "Active Resource Groups",
+            "styleSettings": {
+              "progressStyle": "squares"
+            }
+          }
+        ]
+      },
+      "name": "Active Resource Groups (with new deployments)",
+      "styleSettings": {
+        "progressStyle": "squares",
+        "showBorder": true
+      }
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "loadType": "always",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "### Subscriptions by total resource count\r\n"
+            },
+            "name": "Subscriptions by ResourceCount"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| summarize ResourcesCount=count() by subscriptionId\r\n| join (ResourceContainers | where type=='microsoft.resources/subscriptions' | project Subscription=name, subscriptionId) on subscriptionId\r\n| project-away subscriptionId1\r\n| extend Subscription = subscriptionId\r\n| extend SubscriptionUrl = strcat(\"https://portal.azure.com/#@contoso.onmicrosoft.com/resource/subscriptions/\", subscriptionId, \"/overview\")\r\n| project SubscriptionUrl, Subscription, ResourcesCount\r\n| order by ResourcesCount",
+              "size": 0,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "value::all"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "SubscriptionUrl",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "Subscription",
+                    "formatter": 15,
+                    "formatOptions": {
+                      "linkColumn": "SubscriptionUrl",
+                      "linkTarget": "Url"
+                    }
+                  },
+                  {
+                    "columnMatch": "ResourcesCount",
+                    "formatter": 3,
+                    "formatOptions": {
+                      "palette": "blue"
+                    }
+                  }
+                ]
+              }
+            },
+            "showPin": true,
+            "name": "Subscriptions by ResourceCount",
+            "styleSettings": {
+              "progressStyle": "squares"
+            }
+          }
+        ]
+      },
+      "name": "Subscriptions by total resource count",
+      "styleSettings": {
+        "progressStyle": "squares",
+        "showBorder": true
+      }
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "loadType": "always",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "### Empty Subscriptions (without any resources)\r\n"
+            },
+            "name": "Empty Subscriptions"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| summarize ResourcesCount=count() by subscriptionId\r\n| join (ResourceContainers | where type=='microsoft.resources/subscriptions' | project Subscription=name, subscriptionId) on subscriptionId\r\n| project-away subscriptionId1\r\n| where ResourcesCount == 0\r\n| extend Subscription = subscriptionId\r\n| extend SubscriptionUrl = strcat(\"https://portal.azure.com/#@contoso.onmicrosoft.com/resource/subscriptions/\", subscriptionId, \"/overview\")\r\n| project SubscriptionUrl, Subscription",
+              "size": 0,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "value::all"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "SubscriptionUrl",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "Subscription",
+                    "formatter": 15,
+                    "formatOptions": {
+                      "linkColumn": "SubscriptionUrl",
+                      "linkTarget": "Url"
+                    }
+                  }
+                ]
+              }
+            },
+            "showPin": true,
+            "name": "Empty Subscriptions",
+            "styleSettings": {
+              "progressStyle": "squares"
+            }
+          }
+        ]
+      },
+      "name": "Empty Subscriptions (without any resources)",
+      "styleSettings": {
+        "progressStyle": "squares",
+        "showBorder": true
+      }
+    }
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
