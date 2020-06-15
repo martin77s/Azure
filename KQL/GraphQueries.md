@@ -100,3 +100,36 @@ Resources
 | project-away nicId1
 | project subscriptionId, resourceGroup, vmName, location, vmSize, os, sku, licenseType, privateIp
 ```
+
+- - - 
+
+### Advisor Digest - Cost
+
+```
+advisorresources
+| where properties.category == "Cost"
+| extend Category = properties.category
+| extend Impact = properties.impact
+| extend ResourceType = properties.impactedField
+| extend ResourceValue = properties.impactedValue
+| extend Problem = properties.shortDescription.problem
+| extend Solution = properties.shortDescription.solution
+| project id,Category,Impact,ResourceType,ResourceValue,Problem,Solution
+```
+
+- - - 
+
+### Virtual Machine AutoShutdown Extension Status
+
+```
+resources
+| where type == "microsoft.compute/virtualmachines"
+| join kind=leftouter (resources | where type == "microsoft.devtestlab/schedules" 
+	| extend state = tostring(properties.provisioningState) 
+	| extend id = tostring(properties.targetResourceId) 
+	| project id, state) on id 
+| extend Status = case((state) =~ "", "Not Enabled", state)
+| summarize count() by Status
+| extend Count = count_
+| project Status, Count
+```
