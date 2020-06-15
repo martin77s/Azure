@@ -1,0 +1,212 @@
+{
+  "properties": {
+    "lenses": {
+      "0": {
+        "order": 0,
+        "parts": {
+          "0": {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "colSpan": 5,
+              "rowSpan": 5
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "ComponentId",
+                  "value": {
+                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
+                    "ResourceGroup": "general-monitor-rg",
+                    "Name": "general-audit-la",
+                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                  }
+                },
+                {
+                  "name": "Query",
+                  "value": "AzureActivity | where TimeGenerated < ago(12m) | summarize by SubscriptionId\r\n| join kind=leftouter (\r\n    AzureActivity | where TimeGenerated < ago(1m)\r\n    | where OperationNameValue endswith \"write\" \r\n    | where ActivityStatus == \"Succeeded\" \r\n    | project SubscriptionId, CorrelationId\r\n) on SubscriptionId\r\n| where isempty(CorrelationId)\r\n| project SubscriptionId\n"
+                },
+                {
+                  "name": "Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "PartId",
+                  "value": "14ea3c89-15f0-4fa5-a112-4cd30ac10d41"
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics"
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "general-audit-la"
+                },
+                {
+                  "name": "resourceTypeMode",
+                  "value": "workspace"
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid"
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "Idle Subscriptions",
+                  "PartSubTitle": "Subscriptions without successful write activities in the last month",
+                  "GridColumnsWidth": {
+                    "SubscriptionId": "337px"
+                  }
+                }
+              },
+              "asset": {
+                "idInputName": "ComponentId",
+                "type": "ApplicationInsights"
+              }
+            }
+          },
+          "1": {
+            "position": {
+              "x": 5,
+              "y": 0,
+              "colSpan": 8,
+              "rowSpan": 5
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "ComponentId",
+                  "value": {
+                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
+                    "ResourceGroup": "general-monitor-rg",
+                    "Name": "general-audit-la",
+                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                  }
+                },
+                {
+                  "name": "Query",
+                  "value": "AzureActivity \r\n| extend Name = strcat(\"/\", SubscriptionId, \"/\", ResourceGroup)\r\n| where OperationNameValue == \"Microsoft.Resources/deployments/write\"\r\n| where ActivityStatus == \"Succeeded\"\r\n| summarize Count = count() by SubscriptionId, ResourceGroup, Name\r\n| order by SubscriptionId, Count\n"
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D"
+                },
+                {
+                  "name": "Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "PartId",
+                  "value": "23108751-b480-4727-b0a2-b30733e36184"
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics"
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "general-audit-la"
+                },
+                {
+                  "name": "resourceTypeMode",
+                  "value": "workspace"
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid"
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "Active Resource Groups",
+                  "PartSubTitle": "Subscriptions with new deployments",
+                  "Query": "AzureActivity \n| where OperationNameValue == \"Microsoft.Resources/deployments/write\"\n| where ActivityStatus == \"Succeeded\"\n| summarize Count = count() by SubscriptionId, ResourceGroup\n| order by SubscriptionId, Count\n",
+                  "GridColumnsWidth": {
+                    "SubscriptionId": "294px"
+                  }
+                }
+              },
+              "asset": {
+                "idInputName": "ComponentId",
+                "type": "ApplicationInsights"
+              }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "model": {
+        "timeRange": {
+          "value": {
+            "relative": {
+              "duration": 24,
+              "timeUnit": 1
+            }
+          },
+          "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+        },
+        "filterLocale": {
+          "value": "en-us"
+        },
+        "filters": {
+          "value": {
+            "MsPortalFx_TimeRange": {
+              "model": {
+                "format": "utc",
+                "granularity": "auto",
+                "relative": "24h"
+              },
+              "displayCache": {
+                "name": "UTC Time",
+                "value": "Past 24 hours"
+              },
+              "filteredPartIds": [
+                "StartboardPart-AnalyticsPart-d5c8950f-b74e-4500-93c4-982645b37006",
+                "StartboardPart-AnalyticsPart-d5c8950f-b74e-4500-93c4-982645b37008"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "name": "Subscriptions Activity Dashboard",
+  "type": "Microsoft.Portal/dashboards",
+  "location": "INSERT LOCATION",
+  "tags": {
+    "hidden-title": "Subscriptions Activity Dashboard"
+  },
+  "apiVersion": "2015-08-01-preview"
+}
