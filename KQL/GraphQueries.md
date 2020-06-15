@@ -1,4 +1,4 @@
-# KQL Queries
+# Graph KQL Queries
 
 
 ## All Azure Resources
