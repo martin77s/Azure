@@ -124,7 +124,8 @@ advisorresources
 ```
 resources
 | where type == "microsoft.compute/virtualmachines"
-| join kind=leftouter (resources | where type == "microsoft.devtestlab/schedules" 
+| join kind=leftouter (resources 
+	| where type == "microsoft.devtestlab/schedules" 
 	| extend state = tostring(properties.provisioningState) 
 	| extend id = tostring(properties.targetResourceId) 
 	| project id, state) on id 
@@ -132,4 +133,21 @@ resources
 | summarize count() by Status
 | extend Count = count_
 | project Status, Count
+```
+
+- - - 
+
+### Virtual Machines without AutoShutdown
+
+```
+resources
+| where type == "microsoft.compute/virtualmachines"
+| join kind=leftouter (resources 
+	| where type == "microsoft.devtestlab/schedules" 
+	| extend state = tostring(properties.provisioningState) 
+	| extend id = tostring(properties.targetResourceId) 
+	| project id, state) on id 
+| where isempty(state) 
+| project-away id1, state 
+| project subscriptionId, resourceGroup, id
 ```
