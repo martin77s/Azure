@@ -1,0 +1,60 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+  branches:
+    include: 
+      - master
+  paths:
+    include:
+      - Templates
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- checkout: self
+  submodules: recursive
+  
+- task: PowerShell@2
+  displayName: 'Run a multi-line script'
+  inputs:
+    targetType: 'inline'
+    script: |
+      
+      $ExcludeTests = @(
+        'IDs-Should-Be-Derived-From-ResourceIDs',
+        'Template-Should-Not-Contain-Blanks',
+        'Outputs-Must-Not-Contain-Secrets'
+      )
+
+      Write-Verbose 'Importing ARM-TTK Module'
+      Import-Module $(Build.Repository.LocalPath)/Other/arm-ttk/arm-ttk/arm-ttk.psd1 -Verbose
+
+      Write-Verbose 'Calculating Tests to include' -Verbose
+      $IncludeTests = dir -Path $(Build.Repository.LocalPath)/Other/arm-ttk/unit-tests -Directory | 
+        Select-Object -ExpandProperty Name | Where-Object { -not ($ExcludeTests -contains $_) }
+
+      Write-Verbose 'Running Tests' -Verbose
+      $templates = dir $(Build.Repository.LocalPath)/Templates -Recurse -include *.deploy.json
+      $results = $templates | ForEach-Object {
+        Test-AzTemplate -TemplatePath $_.FullName -Test $IncludeTests
+      }
+
+      Write-Host "`n"
+      $TestFailures = $results | Where-Object { -not $_.Passed }
+      if($TestFailures) {
+          Write-Verbose "One or more templates did not pass the selected tests:" -Verbose
+          $TestFailures.file.name | select-object -unique
+          Write-Host "Results:"
+          Write-Output $TestFailures
+          exit 1
+      } else {
+          Write-Verbose ("All {0} tests passed (on {1} templates)" -f $results.Count, $templates.Count) -Verbose
+          exit 0
+      }
+
+    errorActionPreference: 'continue'
+    pwsh: true

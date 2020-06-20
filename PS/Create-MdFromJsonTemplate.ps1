@@ -1,7 +1,18 @@
+<#
+
+Script Name	: Create-MdFromJsonTemplate.ps1
+Description	: Creates readme markdown files from an ARM template
+Author		: Martin Schvartzman, Microsoft (maschvar@microsoft.com)
+Keywords	: Azure, ARM, DevOps
+Last Update	: 2020/06/17
+
+#>
+
+
 param (
     [CmdletBinding()]
-    
-    [Parameter(Mandatory=$true)] 
+
+    [Parameter(Mandatory=$true)]
     [ValidateScript({Test-Path -Path $_})] $Path,
     [Switch]$PassThru
 )
@@ -11,8 +22,12 @@ $json = ConvertFrom-Json -InputObject (Get-Content $Path -Raw) -ErrorAction Stop
 $OutputPath = Join-Path -Path (Split-Path -Path $Path -Parent) -ChildPath 'readme.md'
 $parameters = $resources = $outputs = $null
 
-$resourceType = ($json.resources.type -ne 'Microsoft.Resources/deployments')[0]
-$resourceTitle = '[{0}](https://docs.microsoft.com/en-us/azure/templates/{0})' -f $resourceType
+
+$resourceTitle = 'ARM Template: {0}' -f ($Path -replace '.*\\(.*)\.deploy\.json', '$1')
+if ($json.resources.type.Count -lt 2) {
+    $resourceType = ($json.resources.type -ne 'Microsoft.Resources/deployments')[0]
+    $resourceTitle = '[{0}](https://docs.microsoft.com/en-us/azure/templates/{0})' -f $resourceType
+}
 
 if($json.parameters) {
     $parameters = @'
