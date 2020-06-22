@@ -36,7 +36,7 @@
                 },
                 {
                   "name": "query",
-                  "value": "Resources\n| where type == \"microsoft.compute/virtualmachines\"\n| extend vmSize = properties.hardwareProfile.vmSize\n| extend os = properties.storageProfile.imageReference.offer\n| extend sku = properties.storageProfile.imageReference.sku\n| extend licenseType = properties.licenseType\n| extend priority = properties.priority\n| mvexpand nic = properties.networkProfile.networkInterfaces\n| extend nicId = tostring(nic.id)\n| extend numDataDisks = array_length(properties.storageProfile.dataDisks)\n| project subscriptionId, resourceGroup, vmName = name, location, vmSize, os, sku, licenseType, nicId, priority, numDataDisks, properties\n| join kind=leftouter (\n\tResources\n\t| where type == \"microsoft.network/networkinterfaces\"\n\t| mvexpand ipconfig=properties.ipConfigurations\n\t| extend privateIp = ipconfig.properties.privateIPAddress\n    | project nicId = id, privateIp\n) on nicId\n| project-away nicId1\n| project subscriptionId, resourceGroup, vmName, location, vmSize, os, sku, licenseType, privateIp, priority, numDataDisks, properties",
+                  "value": "Resources\n| where type == \"microsoft.compute/virtualmachines\"\n| extend vmSize = properties.hardwareProfile.vmSize\n| extend os = properties.storageProfile.imageReference.offer\n| extend sku = properties.storageProfile.imageReference.sku\n| extend licenseType = properties.licenseType\n| extend priority = properties.priority\n| extend numDataDisks = array_length(properties.storageProfile.dataDisks)\n| project subscriptionId, resourceGroup, vmName = name, location, vmSize, os, sku, licenseType, priority, numDataDisks, properties",
                   "isOptional": true
                 }
               ],
@@ -199,7 +199,7 @@
                 },
                 {
                   "name": "query",
-                  "value": "resources\n| where type == \"microsoft.compute/virtualmachines\"\n| join kind=leftouter (\nresources\n | where type == \"microsoft.devtestlab/schedules\"\n | extend state = tostring(properties.provisioningState)\n | extend id = tostring(properties.targetResourceId)\n | project id, state\n ) on id\n | where isempty(state)\n | project-away id1, state\n | project subscriptionId, resourceGroup, id",
+                  "value": "resources\n| where type == \"microsoft.compute/virtualmachines\"\n| join kind=leftouter (\nresources\n | where type == \"microsoft.devtestlab/schedules\"\n | extend state = tostring(properties.provisioningState)\n | extend id = tostring(properties.targetResourceId)\n | project id, state\n ) on id\n | where isempty(state)\n | project-away id1, state\n  | project subscriptionId, resourceGroup, id",
                   "isOptional": true
                 }
               ],
