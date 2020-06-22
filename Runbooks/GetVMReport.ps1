@@ -15,24 +15,26 @@ try {
         -ApplicationId $servicePrincipalConnection.ApplicationId `
         -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint | Out-Null
 
-    $subscriptions = @{ }
-    Get-AzSubscription | ForEach-Object { $subscriptions += @{ [string]($_.Id) = $_.Name} }
-
     $query = @'
-    Resources
-    | where type == "microsoft.compute/virtualmachines"
-    | extend vmSize = properties.hardwareProfile.vmSize
-    | extend os = properties.storageProfile.imageReference.offer
-    | extend sku = properties.storageProfile.imageReference.sku
-    | extend licenseType = properties.licenseType
-    | extend priority = properties.priority
-    | extend numDataDisks = array_length(properties.storageProfile.dataDisks)
-    | project subscriptionId, resourceGroup, vmName = name, location, vmSize, os, sku, licenseType, priority, numDataDisks, properties
+Resources
+| where type == "microsoft.compute/virtualmachines"
+| extend vmSize = properties.hardwareProfile.vmSize
+| extend os = properties.storageProfile.imageReference.offer
+| extend sku = properties.storageProfile.imageReference.sku
+| extend licenseType = properties.licenseType
+| extend priority = properties.priority
+| extend numDataDisks = array_length(properties.storageProfile.dataDisks)
+| join kind=leftouter (
+	resourcecontainers
+	| where type == "microsoft.resources/subscriptions"
+	| extend subscriptionName = tostring(name)
+	| project subscriptionName, subscriptionId
+) on subscriptionId
+| project-away subscriptionId1
+| project subscriptionName, subscriptionId, resourceGroup, vmName = name, location, vmSize, os, sku, licenseType, priority, numDataDisks, properties
 '@
 
-    $report = Search-AzGraph -Query $query | Select-Object @{N = 'SubscriptionName'; E = { $subscriptions[$_.subscriptionId] } },
-        subscriptionId, resourceGroup, vmName, location, vmSize, os, sku, licenseType, priority, numDataDisks
-
+    $report = Search-AzGraph -Query $query
     $report
 } catch {
     Write-Output ($_)
