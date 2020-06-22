@@ -36,7 +36,7 @@
                 },
                 {
                   "name": "query",
-                  "value": "Resources\n| where type == \"microsoft.compute/virtualmachines\"\n| extend vmSize = properties.hardwareProfile.vmSize\n| extend os = properties.storageProfile.imageReference.offer\n| extend sku = properties.storageProfile.imageReference.sku\n| extend licenseType = properties.licenseType\n| extend priority = properties.priority\n| extend numDataDisks = array_length(properties.storageProfile.dataDisks)\n| project subscriptionId, resourceGroup, vmName = name, location, vmSize, os, sku, licenseType, priority, numDataDisks, properties",
+                  "value": "Resources\n| where type == \"microsoft.compute/virtualmachines\"\n| extend vmSize = properties.hardwareProfile.vmSize\n| extend os = properties.storageProfile.imageReference.offer\n| extend sku = properties.storageProfile.imageReference.sku\n| extend licenseType = properties.licenseType\n| extend priority = properties.priority\n| extend numDataDisks = array_length(properties.storageProfile.dataDisks)\n| join kind=leftouter (\n\tresourcecontainers\n\t| where type == \"microsoft.resources/subscriptions\"\n\t| extend subscriptionName = tostring(name)\n\t| project subscriptionName, subscriptionId\n) on subscriptionId\n| project-away subscriptionId1\n| project subscriptionName, subscriptionId, resourceGroup, vmName = name, location, vmSize, os, sku, licenseType, priority, numDataDisks, properties",
                   "isOptional": true
                 }
               ],
