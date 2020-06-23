@@ -1,0 +1,1401 @@
+{
+  "properties": {
+    "lenses": {
+      "0": {
+        "order": 0,
+        "parts": {
+          "0": {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "colSpan": 18,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "settings": {
+                    "content": "<div style='line-height:50px;'>\n<span style='font-size:16px;font-weight:bold'>AZURE ADVISOR RECOMMENDATIONS - </span>\n<span>This section gives you an overview of your Azure recommendations.</span>\n</div>",
+                    "title": "",
+                    "subtitle": "",
+                    "markdownSource": 1
+                  }
+                }
+              }
+            }
+          },
+          "1": {
+            "position": {
+              "x": 0,
+              "y": 1,
+              "colSpan": 5,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Advisor Recommendations by Category",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "advisorresources | summarize Count=count() by Category=tostring(properties.category) | where Category!='' | sort by Category asc",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "2": {
+            "position": {
+              "x": 5,
+              "y": 1,
+              "colSpan": 13,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Advisor Recommendations Digest",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "advisorresources\n| where isnotnull(properties.impactedField)\n| extend Category = properties.category\n| extend Impact = properties.impact\n| extend ResourceType = properties.impactedField\n| extend ResourceName = properties.impactedValue\n| extend Problem = properties.shortDescription.problem\n| extend Solution = properties.shortDescription.solution\n| extend ImpactId = case(tostring(properties.impact) =~ \"High\", 1, tostring(properties.impact) =~ \"Medium\", 2, 3)\n| order by ImpactId asc, tostring(properties.category) asc\n| project Impact, Category, ResourceType, ResourceName, Problem, id",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "3": {
+            "position": {
+              "x": 0,
+              "y": 5,
+              "colSpan": 9,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Advisor Cost Recommendations",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "advisorresources | where type == 'microsoft.advisor/recommendations' | where properties.category == 'Cost' | summarize Resources = dcount(tostring(properties.resourceMetadata.resourceId)), Savings = sum(todouble(properties.extendedProperties.savingsAmount)) by Solution = tostring(properties.shortDescription.solution), Currency = tostring(properties.extendedProperties.savingsCurrency) | project Solution, Resources, Savings = bin(Savings, 0.01), Currency | order by Savings desc",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "value": "",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "4": {
+            "position": {
+              "x": 9,
+              "y": 5,
+              "colSpan": 9,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Advisor High Availability Recommendations",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "advisorresources | where type == 'microsoft.advisor/recommendations' | where properties.category == 'HighAvailability' | project Solution=tostring(properties.shortDescription.solution) | summarize Count=count() by Solution | sort by Count",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "5": {
+            "position": {
+              "x": 0,
+              "y": 9,
+              "colSpan": 9,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Advisor Operational Excellence Recommendations",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "advisorresources | where type == 'microsoft.advisor/recommendations' | where properties.category == 'OperationalExcellence' | project Solution=tostring(properties.shortDescription.solution) | summarize Count=count() by Solution | sort by Count",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "6": {
+            "position": {
+              "x": 9,
+              "y": 9,
+              "colSpan": 9,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Advisor Performance Recommendations",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "advisorresources | where type == 'microsoft.advisor/recommendations' | where properties.category == 'Performance' | project Solution=tostring(properties.shortDescription.solution) | summarize Count=count() by Solution | sort by Count",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "7": {
+            "position": {
+              "x": 0,
+              "y": 14,
+              "colSpan": 18,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "settings": {
+                    "content": "<div style='line-height:50px;'>\n<span style='font-size:16px;font-weight:bold'>AZURE SUBSCRIPTIONS INVENTORY - </span>\n<span>This section gives you an overview of all your Azure subscriptions.</span>\n</div>",
+                    "title": "",
+                    "subtitle": "",
+                    "markdownSource": 1
+                  }
+                }
+              }
+            }
+          },
+          "8": {
+            "position": {
+              "x": 0,
+              "y": 15,
+              "colSpan": 3,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Count of all Azure Subscriptions"
+                },
+                {
+                  "name": "query",
+                  "value": "resourcecontainers | where type =~ 'microsoft.resources/subscriptions' | summarize Subscriptions=count()"
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "9": {
+            "position": {
+              "x": 3,
+              "y": 15,
+              "colSpan": 15,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Azure Subscriptions by OfferId",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "resourcecontainers | where type =~ 'microsoft.resources/subscriptions' | extend quotaId = properties.subscriptionPolicies.quotaId | summarize Subscriptions=count() by tostring(quotaId)",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "value": 1,
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "value": "",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "10": {
+            "position": {
+              "x": 0,
+              "y": 18,
+              "colSpan": 12,
+              "rowSpan": 5
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Top ResourceCount by Subscription",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources | summarize ResourcesCount=count() by subscriptionId | join (ResourceContainers | where type=='microsoft.resources/subscriptions' | project Subscription=name, subscriptionId) on subscriptionId | project-away subscriptionId, subscriptionId1 | order by ResourcesCount desc",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "11": {
+            "position": {
+              "x": 0,
+              "y": 24,
+              "colSpan": 18,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "settings": {
+                    "content": "<div style='line-height:50px;'>\n<span style='font-size:16px;font-weight:bold'>AZURE RESOURCE INVENTORY - </span>\n<span>This section gives you an overview of all your Azure resources across all subscriptions that you can access.</span>\n</div>",
+                    "title": "",
+                    "subtitle": ""
+                  }
+                }
+              }
+            }
+          },
+          "12": {
+            "position": {
+              "x": 0,
+              "y": 25,
+              "colSpan": 3,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Count of all Azure resources"
+                },
+                {
+                  "name": "query",
+                  "value": "summarize Resources=count()"
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "13": {
+            "position": {
+              "x": 3,
+              "y": 25,
+              "colSpan": 15,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Top 10 resource counts by type"
+                },
+                {
+                  "name": "query",
+                  "value": "summarize ResourceCount=count() by type\r | order by ResourceCount\r | extend ['Resource count']=ResourceCount, ['Resource type']=type\r | project ['Resource type'], ['Resource count']\r | take 10"
+                },
+                {
+                  "name": "chartType",
+                  "value": 1
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "14": {
+            "position": {
+              "x": 0,
+              "y": 29,
+              "colSpan": 18,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "settings": {
+                    "content": "<div style='line-height:50px'>\r\n<span style='font-size:16px;font-weight:bold'>AZURE COMPUTE INVENTORY - </span>\r\n<span>This section gives you an overview of your Azure Compute usage.</span>\r\n</div>",
+                    "title": "",
+                    "subtitle": ""
+                  }
+                }
+              }
+            }
+          },
+          "15": {
+            "position": {
+              "x": 0,
+              "y": 30,
+              "colSpan": 4,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Virtual machines count (includes classic)"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.compute/virtualmachines\" or type==\"microsoft.classiccompute/virtualmachines\"\r | summarize VMCount=count()\r | extend ['Count (Virtual Machines)']=VMCount\r | project ['Count (Virtual Machines)']"
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "16": {
+            "position": {
+              "x": 4,
+              "y": 30,
+              "colSpan": 3,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "VMs by deployment type"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.compute/virtualmachines\" or type==\"microsoft.classiccompute/virtualmachines\"\r | summarize VMCount=count() by type\r | extend ['Count (Virtual Machines)']=VMCount\r | extend Type = iff(type == \"microsoft.compute/virtualmachines\", \"Resource Manager\", \"Classic\")\r | project Type,['Count (Virtual Machines)']"
+                },
+                {
+                  "name": "chartType",
+                  "value": 1
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "17": {
+            "position": {
+              "x": 7,
+              "y": 30,
+              "colSpan": 3,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "VMs by priority (spot)",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "resources\n| where type == \"microsoft.compute/virtualmachines\"\n| extend priority = iff(isnotempty(properties.priority), tostring(properties.priority), 'Not Spot')\n| summarize VMCount=count() by priority\n",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "value": 1,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "18": {
+            "position": {
+              "x": 10,
+              "y": 30,
+              "colSpan": 3,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "VMs by operating system"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.compute/virtualmachines\" or type == \"microsoft.classiccompute/virtualmachines\"\r | extend OSType = iff(type == \"microsoft.compute/virtualmachines\", tostring(properties.storageProfile.osDisk.osType),tostring(properties.storageProfile.operatingSystemDisk.operatingSystem)) \r | summarize VMCount=count() by OSType\r | order by VMCount desc\r |extend ['Count (Virtual Machines)']=VMCount\r | project OSType, ['Count (Virtual Machines)']"
+                },
+                {
+                  "name": "chartType",
+                  "value": 1
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "19": {
+            "position": {
+              "x": 13,
+              "y": 30,
+              "colSpan": 5,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "VMs by family"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.compute/virtualmachines\" or type == \"microsoft.classiccompute/virtualmachines\"\r | extend Size = iff(type == \"microsoft.compute/virtualmachines\", tostring(properties.hardwareProfile.vmSize),  tostring(properties.hardwareProfile.size))\r | extend Family = extract('([^_]+)_', 1, Size, typeof(string))\r | extend Family = iff(strlen(Family) == 0, Size, Family)\r | summarize VMCount=count() by Family\r | order by VMCount desc\r |extend ['Count (Virtual Machines)']=VMCount\r | project Family, ['Count (Virtual Machines)']"
+                },
+                {
+                  "name": "chartType",
+                  "value": 1
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "20": {
+            "position": {
+              "x": 0,
+              "y": 33,
+              "colSpan": 18,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "settings": {
+                    "content": "<div style='line-height:50px'>\n<span style='font-size:16px;font-weight:bold'>AZURE STORAGE INVENTORY - </span>\n<span>This section gives you an overview of your Azure Storage usage.</span>\n</div>",
+                    "title": "",
+                    "subtitle": ""
+                  }
+                }
+              }
+            }
+          },
+          "21": {
+            "position": {
+              "x": 0,
+              "y": 34,
+              "colSpan": 6,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Count of storage accounts by status"
+                },
+                {
+                  "name": "query",
+                  "value": " where type == \"microsoft.storage/storageaccounts\"\r\n | summarize StorageCount=count() by PrimaryStatus=tostring(properties.statusOfPrimary), SecondaryStatus=tostring(properties.statusOfSecondary)\r\n | extend SecondaryStatus= iff(strlen(SecondaryStatus) == 0, \"No secondary\", SecondaryStatus)\r\n | extend ['Count (Storage accounts)']=StorageCount\r\n | project-away StorageCount"
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "22": {
+            "position": {
+              "x": 6,
+              "y": 34,
+              "colSpan": 3,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Sum of all disk sizes (GB)"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.compute/disks\"\r | extend SizeGB = tolong(properties.diskSizeGB)\r | summarize ['Total Disk Size (GB)']=sum(SizeGB)"
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "23": {
+            "position": {
+              "x": 9,
+              "y": 34,
+              "colSpan": 5,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Disks (count) by disk state"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.compute/disks\"\r | summarize DiskCount=count() by State=tostring(properties.diskState)\r | order by DiskCount desc\r | extend [\"Count (Disks)\"]=DiskCount\r | project State, [\"Count (Disks)\"]"
+                },
+                {
+                  "name": "chartType",
+                  "value": 1
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "24": {
+            "position": {
+              "x": 14,
+              "y": 34,
+              "colSpan": 4,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Count of storage accounts by type"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.storage/storageaccounts\" or type==\"microsoft.classicstorage/storageaccounts\"\r | summarize StorageCount=count() by type\r | extend ['Count (Storage Accounts)']=StorageCount\r | extend Type = iff(type == \"microsoft.storage/storageaccounts\", \"Resource Manager\", \"Classic\")\r | project Type,['Count (Storage Accounts)']"
+                },
+                {
+                  "name": "chartType",
+                  "value": 1
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "25": {
+            "position": {
+              "x": 0,
+              "y": 37,
+              "colSpan": 18,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "settings": {
+                    "content": "<div style='line-height:50px'>\r\n<span style='font-size:16px;font-weight:bold'>AZURE NETWORKING INVENTORY - </span>\r\n<span>This section gives you an overview of your Azure networking usage.</span>\r\n</div>",
+                    "title": "",
+                    "subtitle": ""
+                  }
+                }
+              }
+            }
+          },
+          "26": {
+            "position": {
+              "x": 0,
+              "y": 38,
+              "colSpan": 4,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Count of virtual networks (includes classic)"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.network/virtualnetworks\"or type == \"microsoft.classicnetwork/virtualnetworks\"\r | summarize ['Virtual networks']=count()"
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "27": {
+            "position": {
+              "x": 4,
+              "y": 38,
+              "colSpan": 3,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Count of network interfaces"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.network/networkinterfaces\"\r | summarize ['Network interfaces']=count()"
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "28": {
+            "position": {
+              "x": 7,
+              "y": 38,
+              "colSpan": 3,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Total public IPs"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.network/publicipaddresses\"\r | summarize ['Number of public IP addresses']=count()"
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "29": {
+            "position": {
+              "x": 10,
+              "y": 38,
+              "colSpan": 8,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Virtual networks by type"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.network/virtualnetworks\" or type==\"microsoft.classicnetwork/virtualnetworks\"\r | summarize VNetCount=count() by type\r | extend ['Count (Virtual Networks)']=VNetCount\r | extend Type = iff(type == \"microsoft.network/virtualnetworks\", \"Resource Manager\", \"Classic\")\r | project Type,['Count (Virtual Networks)']"
+                },
+                {
+                  "name": "chartType",
+                  "value": 1
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "30": {
+            "position": {
+              "x": 0,
+              "y": 41,
+              "colSpan": 18,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "settings": {
+                    "content": "<div style='line-height:50px'>\r\n<span style='font-size:16px;font-weight:bold'>AZURE SQL DATABASES INVENTORY - </span>\r\n<span>This section gives you an overview of your Azure SQL database usage.</span>\r\n</div>",
+                    "title": "",
+                    "subtitle": ""
+                  }
+                }
+              }
+            }
+          },
+          "31": {
+            "position": {
+              "x": 0,
+              "y": 42,
+              "colSpan": 3,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Count of SQL databases"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.sql/servers/databases\"\r | summarize DBCount=count()"
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "32": {
+            "position": {
+              "x": 3,
+              "y": 42,
+              "colSpan": 6,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "SQL databases (count) by tier"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.sql/servers/databases\"\r | summarize DBCount=count() by Tier=tostring(properties.currentSku.tier)\r | order by DBCount desc\r |extend ['Count (SQL Databases)']=DBCount\r | project Tier, ['Count (SQL Databases)']"
+                },
+                {
+                  "name": "chartType",
+                  "value": 1
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "33": {
+            "position": {
+              "x": 9,
+              "y": 42,
+              "colSpan": 9,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "SQL databases (count) by max size (GB)"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.sql/servers/databases\"\r | extend GB = todouble(properties.maxSizeBytes) / (1024 * 1024 * 1024)\r | summarize DBCount=count() by GB\r | order by GB desc\r |extend ['Count (SQL Databases)']=DBCount\r | project GB=strcat(tostring(GB), \" GB\"), ['Count (SQL Databases)']"
+                },
+                {
+                  "name": "chartType",
+                  "value": 1
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "34": {
+            "position": {
+              "x": 0,
+              "y": 45,
+              "colSpan": 18,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "settings": {
+                    "content": "<div style='line-height:50px'>\r\n<span style='font-size:16px;font-weight:bold'>APP SERVICE INVENTORY - </span>\r\n<span>This section gives you an overview of your Azure App Service usage.</span>\r\n</div>",
+                    "title": "",
+                    "subtitle": ""
+                  }
+                }
+              }
+            }
+          },
+          "35": {
+            "position": {
+              "x": 0,
+              "y": 46,
+              "colSpan": 3,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Count of AppService apps"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.web/sites\"\r | summarize SiteCount=count() \r |extend ['Count (AppService Apps)']=SiteCount\r | project ['Count (AppService Apps)']"
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "36": {
+            "position": {
+              "x": 3,
+              "y": 46,
+              "colSpan": 3,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Count of AppService plans"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.web/serverfarms\"\r | summarize serverFarmCount=count() \r |extend ['Count (AppService plans)']=serverFarmCount\r | project ['Count (AppService plans)']"
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "37": {
+            "position": {
+              "x": 6,
+              "y": 46,
+              "colSpan": 4,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "AppService Apps by status"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.web/sites\"\r | summarize SiteCount=count() by Status=tostring(properties.state) \r | order by SiteCount desc\r |extend ['Count (AppService Apps)']=SiteCount\r | project Status, ['Count (AppService Apps)']"
+                },
+                {
+                  "name": "chartType",
+                  "value": 1
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          },
+          "38": {
+            "position": {
+              "x": 10,
+              "y": 46,
+              "colSpan": 8,
+              "rowSpan": 3
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "AppService apps by kind"
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.web/sites\"\r | summarize SiteCount=count() by kind \r | order by SiteCount desc\r |extend ['Count (AppService Apps)']=SiteCount\r | project Kind=kind, ['Count (AppService Apps)']"
+                },
+                {
+                  "name": "chartType",
+                  "value": 1
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryChartTile",
+              "settings": {}
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "model": {
+        "timeRange": {
+          "value": {
+            "relative": {
+              "duration": 24,
+              "timeUnit": 1
+            }
+          },
+          "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+        }
+      }
+    }
+  },
+  "name": "Azure Inventory Dashboard v5",
+  "type": "Microsoft.Portal/dashboards",
+  "location": "INSERT LOCATION",
+  "tags": {
+    "hidden-title": "Azure Inventory Dashboard v5"
+  },
+  "apiVersion": "2015-08-01-preview"
+}
