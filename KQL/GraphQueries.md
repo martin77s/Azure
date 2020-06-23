@@ -87,6 +87,29 @@ Resources
 | extend os = properties.storageProfile.imageReference.offer
 | extend sku = properties.storageProfile.imageReference.sku
 | extend licenseType = properties.licenseType
+| extend priority = properties.priority
+| extend numDataDisks = array_length(properties.storageProfile.dataDisks)
+| join kind=leftouter (
+	resourcecontainers
+	| where type == "microsoft.resources/subscriptions"
+	| extend subscriptionName = tostring(name)
+	| project subscriptionName, subscriptionId
+) on subscriptionId
+| project-away subscriptionId1
+| project subscriptionName, subscriptionId, resourceGroup, vmName = name, location, vmSize, os, sku, licenseType, priority, numDataDisks, properties
+```
+
+- - - 
+
+### VMs and private IPs Report
+
+```
+Resources
+| where type == "microsoft.compute/virtualmachines"
+| extend vmSize = properties.hardwareProfile.vmSize
+| extend os = properties.storageProfile.imageReference.offer
+| extend sku = properties.storageProfile.imageReference.sku
+| extend licenseType = properties.licenseType
 | mvexpand nic = properties.networkProfile.networkInterfaces
 | extend nicId = tostring(nic.id)
 | project subscriptionId, resourceGroup, vmName = name, location, vmSize, os, sku, licenseType, nicId

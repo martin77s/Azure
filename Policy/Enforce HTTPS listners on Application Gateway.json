@@ -1,0 +1,34 @@
+{
+    "properties": {
+        "displayName": "Enforce HTTPS listners on Application Gateway",
+        "description": "This policy enforces HTTPS Listeners and HttpSettings on Application Gateways",
+        "parameters": {}
+        },
+        "policyRule": {
+            "if": {
+                "allOf": [
+                    {
+                        "field": "type",
+                        "equals": "Microsoft.Network/applicationGateways"
+                    },
+                    {
+                        "not": {
+                            "field": "Microsoft.Network/applicationGateways/backendHttpSettingsCollection[*].protocol ",
+                            "equals": "HTTPS"
+                        }
+                    },
+                    {
+                        "not": {
+                            "field": "Microsoft.Network/applicationGateways/httpListeners[*].protocol",
+                            "equals": "HTTPS"
+                        }
+                    },					
+					
+                ]
+            },
+            "then": {
+                "effect": "Deny"
+            }
+        }
+    }
+}
