@@ -1,0 +1,77 @@
+{
+    "properties": {
+        "displayName": "Require Governance Tags for Resource Groups",
+        "mode": "All",
+        "metadata": {
+            "category": "Tags"
+        },
+        "parameters": {
+            "tagName": {
+                "type": "String",
+                "metadata": {
+                    "displayName": "Tag Name",
+                    "description": "Name of the tag, such as 'Environment', 'Owner' or 'CostCenter'"
+                }
+            }
+        },
+        "policyRule": {
+            "if": {
+                "allOf": [
+                    {
+                        "field": "type",
+                        "equals": "Microsoft.Resources/subscriptions/resourceGroups"
+                    },
+                    {
+                        "field": "[concat('tags[', parameters('tagName'), ']')]",
+                        "exists": "false"
+                    },
+                    {
+                        "not": {
+                            "field": "name",
+                            "like": "AzureBackupRG_*"
+                        }
+                    },
+                    {
+                        "not": {
+                            "field": "name",
+                            "like": "cloud-shell-storage-*"
+                        }
+                    },
+                    {
+                        "not": {
+                            "field": "name",
+                            "like": "Default-ActivityLogAlerts*"
+                        }
+                    },
+                    {
+                        "not": {
+                            "field": "name",
+                            "like": "DefaultResourceGroup-*"
+                        }
+                    },
+                    {
+                        "not": {
+                            "field": "name",
+                            "like": "MC_*"
+                        }
+                    },
+                    {
+                        "not": {
+                            "field": "name",
+                            "like": "NetworkWatcherRG"
+                        }
+                    },
+                    {
+                        "not": {
+                            "field": "name",
+                            "like": "VstsRG-*"
+                        }
+                    }
+                ]
+            },
+            "then": {
+                "effect": "deny"
+            }
+        }
+    }
+}

@@ -5,8 +5,6 @@
 Type | Name |
 | --- | --- |
 | BuiltIn | Allowed locations |
-| BuiltIn | Add or replace a tag on resource groups |
-| BuiltIn | Inherit a tag from the resource group if missing |
 | BuiltIn | Activity log should be retained for at least one year |
 | BuiltIn | Audit diagnostic setting |
 | BuiltIn | Audit VMs that do not use managed disks |
@@ -19,6 +17,8 @@ Type | Name |
 | BuiltIn | Audit virtual machines without disaster recovery configured |
 | BuiltIn | Automation account variables should be encrypted |
 | BuiltIn | Manage certificates that are within a specified number of days of expiration |
+| BuiltIn | Inherit a tag from the resource group if missing |
+| Custom | Require Governance Tags for Resource Groups |
 | Custom | Audit unattached managed disks |
 | Custom | Audit hybrid use benefit |
 | Custom | Audits resource locks on KeyVaults |
