@@ -40,6 +40,12 @@
                     {
                         "not": {
                             "field": "name",
+                            "like": "databricks-rg-*"
+                        }
+                    },
+                    {
+                        "not": {
+                            "field": "name",
                             "like": "Default-ActivityLogAlerts*"
                         }
                     },
