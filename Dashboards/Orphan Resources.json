@@ -1,0 +1,605 @@
+{
+  "properties": {
+    "lenses": {
+      "0": {
+        "order": 0,
+        "parts": {
+          "0": {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "colSpan": 16,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "settings": {
+                    "content": "<div style='line-height:50px;'>\n<span style='font-size:16px;font-weight:bold'>Orphan Azure Resources - </span>\n<span>This section gives you an overview of your orphan Azure resources</span>\n</div>",
+                    "title": "",
+                    "subtitle": "",
+                    "markdownSource": 1
+                  }
+                }
+              }
+            }
+          },
+          "1": {
+            "position": {
+              "x": 0,
+              "y": 1,
+              "colSpan": 3,
+              "rowSpan": 2
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Orphan Disks (Total)",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "resources\r\n| where type == \"microsoft.compute/disks\"\r\n| where isempty(managedBy) and id notcontains \"-ASRReplica\"\r\n| project [\"Disk Name\"]=name, resourceGroup, location, subscriptionId, sku, tags\r\n| summarize [\"Total Orphan Disks\"]=count()",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "value": "4ebafb9c-c1a1-4280-aa76-4636ef1446dc",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "2": {
+            "position": {
+              "x": 3,
+              "y": 1,
+              "colSpan": 13,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Orphan Disks",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "resources\n| where type == \"microsoft.compute/disks\"\n| where isempty(managedBy) and id notcontains \"-ASRReplica\"\n| project subscriptionId, resourceGroup, id, [\"Sku\"]=sku.name, location, tags",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "3": {
+            "position": {
+              "x": 0,
+              "y": 3,
+              "colSpan": 3,
+              "rowSpan": 2
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Total Orphan Disk Size (GB)",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "resources\r\n| where type == \"microsoft.compute/disks\"\r\n| where isempty(managedBy) and id notcontains \"-ASRReplica\"\r\n| extend SizeGB = tolong(properties.diskSizeGB)\r\n| summarize ['Total Disk Size (GB)']=sum(SizeGB)",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "value": "6d1d3902-df3c-4ed0-8e54-c97a9414e716",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "4": {
+            "position": {
+              "x": 0,
+              "y": 5,
+              "colSpan": 3,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Orphan Network Interface (Total)",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "resources\r\n| where type == \"microsoft.network/networkinterfaces\"\r\n| where isempty(managedBy)\r\n| summarize [\"Total Orphan Network Interfaces\"]=count()",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "value": "d722dc9b-a0f2-432a-9cf9-b7d18f8e3890",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "5": {
+            "position": {
+              "x": 3,
+              "y": 5,
+              "colSpan": 13,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Orphan Network Interfaces",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "resources\r\n| where type == \"microsoft.network/networkinterfaces\"\r\n| where isempty(managedBy)\r\n| project subscriptionId, resourceGroup, id, location, tags",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "6": {
+            "position": {
+              "x": 0,
+              "y": 9,
+              "colSpan": 3,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Orphan Public IPs (Total)",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.network/publicipaddresses\"\r\n| where properties.ipConfiguration == \"\"\r\n| project [\"PublicIP Name\"]=name, resourceGroup, location, subscriptionId, sku, tags\r\n| summarize [\"Total Orphan Public IPs\"]=count()",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "value": "dda57d0d-7bb1-4f1b-82ab-990bf834e2d1",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "7": {
+            "position": {
+              "x": 3,
+              "y": 9,
+              "colSpan": 13,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Orphan Public IPs",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "where type == \"microsoft.network/publicipaddresses\"\r\n| where properties.ipConfiguration == \"\"\r\n| project subscriptionId, resourceGroup, id, [\"Sku\"]=sku.name, location, tags",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "8": {
+            "position": {
+              "x": 0,
+              "y": 13,
+              "colSpan": 3,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Orphan Resource Groups (Total)",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "ResourceContainers\r\n | where type == \"microsoft.resources/subscriptions/resourcegroups\"\r\n | extend rgAndSub = strcat(resourceGroup, \"--\", subscriptionId)\r\n | join kind=leftouter (\r\n     Resources\r\n     | extend rgAndSub = strcat(resourceGroup, \"--\", subscriptionId)\r\n     | summarize count() by rgAndSub\r\n ) on rgAndSub\r\n | where isnull(count_)\r\n | project-away rgAndSub1, count_\r\n | summarize [\"Total Orphan Resource Groups\"]=count()",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "value": "e0ee967d-86e1-4327-9832-03897d54b491",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "9": {
+            "position": {
+              "x": 3,
+              "y": 13,
+              "colSpan": 13,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Orphan Resource Groups",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "ResourceContainers\r\n | where type == \"microsoft.resources/subscriptions/resourcegroups\"\r\n | extend rgAndSub = strcat(resourceGroup, \"--\", subscriptionId)\r\n | join kind=leftouter (\r\n     Resources\r\n     | extend rgAndSub = strcat(resourceGroup, \"--\", subscriptionId)\r\n     | summarize count() by rgAndSub\r\n ) on rgAndSub\r\n | where isnull(count_)\r\n | project-away rgAndSub1, count_\r\n | project subscriptionId, id,  location, tags",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "10": {
+            "position": {
+              "x": 0,
+              "y": 17,
+              "colSpan": 3,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Orphan NSGs (Total)",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources\r\n| where type == \"microsoft.network/networksecuritygroups\" and isnull(properties.networkInterfaces) and isnull(properties.subnets)\r\n| project [\"NSG Name\"]=name, resourceGroup, location, subscriptionId, tags\r\n| summarize [\"Total Orphan NSGs\"]=count()",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "value": "f5b4b257-f244-4f89-820b-2bfc269b92bd",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "11": {
+            "position": {
+              "x": 3,
+              "y": 17,
+              "colSpan": 13,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Orphan NSGs",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources\r\n| where type == \"microsoft.network/networksecuritygroups\" and isnull(properties.networkInterfaces) and isnull(properties.subnets)\r\n| project subscriptionId, resourceGroup, id, location, tags",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "12": {
+            "position": {
+              "x": 0,
+              "y": 21,
+              "colSpan": 3,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Orphan Availability Sets (Total)",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "where type =~ 'Microsoft.Compute/availabilitySets'\r\n| where properties.virtualMachines == \"[]\"\r\n| project [\"Availabity Set Name\"]=name, resourceGroup, location, subscriptionId, tags\r\n| summarize [\"Total Orphan Availability Sets\"]=count()",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "13": {
+            "position": {
+              "x": 3,
+              "y": 21,
+              "colSpan": 13,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "partTitle",
+                  "value": "Orphan Availabity Sets",
+                  "isOptional": true
+                },
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "where type =~ 'Microsoft.Compute/availabilitySets'\r\n| where properties.virtualMachines == \"[]\"\r\n| project subscriptionId, resourceGroup, id, location, tags",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "model": {
+        "timeRange": {
+          "value": {
+            "relative": {
+              "duration": 24,
+              "timeUnit": 1
+            }
+          },
+          "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+        },
+        "filterLocale": {
+          "value": "en-us"
+        },
+        "filters": {
+          "value": {
+            "MsPortalFx_TimeRange": {
+              "model": {
+                "format": "utc",
+                "granularity": "auto",
+                "relative": "24h"
+              },
+              "displayCache": {
+                "name": "UTC Time",
+                "value": "Past 24 hours"
+              },
+              "filteredPartIds": []
+            }
+          }
+        }
+      }
+    }
+  },
+  "name": "Orphan Resources",
+  "type": "Microsoft.Portal/dashboards",
+  "location": "INSERT LOCATION",
+  "tags": {
+    "hidden-title": "Orphan Resources"
+  },
+  "apiVersion": "2015-08-01-preview"
+}
