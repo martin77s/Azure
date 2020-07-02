@@ -1,0 +1,516 @@
+{
+   "$schema":"http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+   "contentVersion":"1.0.0.0",
+    "parameters": {
+        "namePrefix": {
+            "type": "string",
+            "defaultValue": "FDT",
+            "minLength": 1,
+            "maxLength": 10,
+            "metadata": {
+                "description": "This prefix will be applied the VM(s) and other objects (e.g. Network Security Group) that are created"
+            }
+        },
+        "virtualMachineSize": {
+            "type": "string",
+            "defaultValue": "Standard_DS4_v2",
+            "allowedValues": [
+                "Standard_D3_v2",
+                "Standard_D4_v2",
+                "Standard_D5_v2",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2"
+            ],
+            "metadata": {
+                "description": "For speeds up to 1 Gbps per-server to Storage, or 2.5 Gbps per-server to VM disk, the recommended size is D4_v2/DS4_v2. For higher speeds, choose D5_v2/DS5_v2. Use DS-series if saving to VM disk, since they support premium disks."
+            }
+        },
+        "operatingSystem": {
+            "type": "string",
+            "allowedValues": [
+                "Windows Server 2016",
+                "CentOS 7.2",
+                "CentOS 7.4",
+                "Debian 9",
+                "OpenSUSE Leap 42.3",
+                "Ubuntu 16.04-LTS",
+                "Ubuntu 17.10"
+            ],
+            "metadata": {
+                "description": "VM Operating system. Only includes OS's that Fast Data Transfer, AND this template, have been tested on. See Fast Data Transfer documentation if you want to install (manually) to other Linux distros or versions."
+            }
+        },
+        "fdtNodeCount": {
+            "type": "int",
+            "defaultValue": 2,
+            "maxValue": 10,
+            "metadata": {
+                "description": "This template creates as many Fast Data Transfer nodes as specified here. As a rule of thumb, use one server for every 2.5 Gbps of desired throughput.  But if saving to a clustered file system, you can use one server for every 3.5 Gbps."
+            }
+        },
+        "adminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "VM admin username.  Same name is use for all VMs if Node Count is greater than 1"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "minLength": 10,
+            "metadata": {
+                "description": "VM admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols. Same password is used for all VMs if Node Count is greater than 1."
+            }
+        },
+        "fdtAuthenticationKey": {
+            "type": "securestring",
+            "minLength": 16,
+            "metadata": {
+                "description": "Authentication key that must be provided by Fast Data Transfer clients, to authenticate themselves to the server(s).  Include letter(s), digit(s) and symbol(s).  Same key is used for all VMs if Node Count is greater than 1."
+            }
+        },
+        "installationType": {
+            "type": "string",
+            "defaultValue": "PublicIP",
+            "allowedValues": [
+                "PublicIP",
+                "ExpressRoute"
+            ],
+            "metadata": {
+                "description": "Choose PublicIP to install Fast Data Transfer servers with public IP Addresses. Choose ExpressRoute to install Fast Data Transfer servers that will serve an ExpressRoute connection.  For PublicIP, a Network Security Group and VNET will automatically be created.  For ExpressRoute, you must nominate a existing VNET and Subnet, and no NSG will be automatically created."
+            }
+        },
+        "existingVnetName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Name of the existing VNET into which the VMs will be placed.  Is required when using ExpressRoute installation type, and ignored when using PublicIP."
+            }
+        },
+        "existingVnetResourceGroup": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Resource Group of the existing VNET. Should only be populated when using ExpressRoute installation type. May differ from the Resource Group to which this template is being deployed."
+            }
+        },
+        "existingSubnetName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Name of existing subnet within the VNET. VMs will be attached to this subnet. Is required when using ExpressRoute installation type, and ignored when using PublicIP."
+            }
+        },
+        "resourceFileUri": {
+            "type": "string",
+            "defaultValue": "auto",
+            "metadata": {
+                "description": "Root URL from which deployment resources can be download.  Leave at 'auto' to base it off the URL of this template. Specify an actual URL only when testing this template in the form of a local file. Include trailing /"
+            }
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]",
+
+        "commentOnAuthKeyValidation": "Auth key is validated by the following convoluted series of variable assignments, which, if key is not complex enough, will produce an error message when the template runs. Coupled with the min length requirement for the parameter, this seems to be the best we can do, in terms of 'validation' of complexity requirements.",
+        "commentOnAuthKeyValidation2": "The key part is where we index into a dummy object , using a property name that is either valid (just an underscore) or invalid. If invalid, that manufactures a failure which serves as the 'validation' error",
+        "commentOnAuthKeyValidation3": "The resulting failure message reads as follows: The template variable 'authenticationKey' is not valid: The language expression property 'at_least_one_digit_one_letter_and_one_symbol' doesn't exist, available properties are 'you_need_to_re_run_the_template_with_a_more_complex_authentication_key, _'..",
+        "maxDigitIndex": "[max(indexOf(parameters('fdtAuthenticationKey'),'0'),indexOf(parameters('fdtAuthenticationKey'),'1'),indexOf(parameters('fdtAuthenticationKey'),'2'),indexOf(parameters('fdtAuthenticationKey'),'3'),indexOf(parameters('fdtAuthenticationKey'),'4'),indexOf(parameters('fdtAuthenticationKey'),'5'),indexOf(parameters('fdtAuthenticationKey'),'6'),indexOf(parameters('fdtAuthenticationKey'),'7'),indexOf(parameters('fdtAuthenticationKey'),'8'),indexOf(parameters('fdtAuthenticationKey'),'9'))]",
+        "maxSymbolIndex": "[max(indexOf(parameters('fdtAuthenticationKey'),')'),indexOf(parameters('fdtAuthenticationKey'),'!'),indexOf(parameters('fdtAuthenticationKey'),'@'),indexOf(parameters('fdtAuthenticationKey'),'#'),indexOf(parameters('fdtAuthenticationKey'),'$'),indexOf(parameters('fdtAuthenticationKey'),'%'),indexOf(parameters('fdtAuthenticationKey'),'^'),indexOf(parameters('fdtAuthenticationKey'),'&'),indexOf(parameters('fdtAuthenticationKey'),'*'),indexOf(parameters('fdtAuthenticationKey'),'('),indexOf(parameters('fdtAuthenticationKey'),'+'),indexOf(parameters('fdtAuthenticationKey'),'='),indexOf(parameters('fdtAuthenticationKey'),'-'),indexOf(parameters('fdtAuthenticationKey'),'/'),indexOf(parameters('fdtAuthenticationKey'),'\\'))]",
+        "complexityOk": "[and(greater(variables('maxDigitIndex'),-1),greater(variables('maxSymbolIndex'),-1))]",
+        "conditionallyInvalidPropertyName": "[if(variables('complexityOk'), '_', 'at_least_one_digit_one_letter_and_one_symbol')]",
+        "dummyObj": "[json('{\"you_need_to_re_run_the_template_with_a_more_complex_authentication_key\": \"\", \"_\":\"\"}')]",
+        "authenticationKey": "[variables('dummyObj')[variables('conditionallyInvalidPropertyName')]]",
+
+        "hasExplicitResourceUri": "[if(equals('auto',parameters('resourceFileUri')), bool('false'), bool('true'))]",
+
+        "commentOnTemplateLinkPropertyName": "deployment().properties.templateLink doesn't always exist, but when it doesn't exist we get a parse error even when we take the OTHER branch of the following IF statement.  So we index by string instead, and provide a harmless alternative in the case where the desired property does not exist. We use 'template.contentVersion', which always exists, as the harmless alternative.",
+        "templateLinkPropertyName": "[if(variables('hasExplicitResourceUri'),'template', 'templateLink')]",
+        "templateLinkUriName": "[if(variables('hasExplicitResourceUri'),'contentVersion', 'uri')]",
+        "templateUriIfKnown": "[deployment().properties[variables('templateLinkPropertyName')][variables('templateLinkUriName')]]",
+
+        "rootUri": "[if(variables('hasExplicitResourceUri'), parameters('resourceFileUri'), variables('templateUriIfKnown'))]",
+
+        "commentOnMaxNodeIndex": "This is here for the same reason as templateLinkPropertyName above - i.e. the IF statement always evaluates both branches.  We use this variable in the output to ensure that both branches are valid - even the branch that we don't want.",
+        "maxNodeIndex": "[sub(parameters('fdtNodeCount'),1)]",
+
+        "publicIpMode": "[if(equals('PublicIP',parameters('installationType')),bool('true'),bool('false'))]",
+
+        "osVersionDictionary": {
+            "CentOS 7.2": {
+                "osType": "Linux",
+                "imagePublisher": "OpenLogic",
+                "imageOffer": "CentOS",
+                "imageSku": "7.2",
+                "dependenciesArchiveFilename": "netcoredeps-centos-7-2.tar.gz"
+            },
+            "CentOS 7.4": {
+                "osType": "Linux",
+                "imagePublisher": "OpenLogic",
+                "imageOffer": "CentOS",
+                "imageSku": "7.4",
+                "dependenciesArchiveFilename": "netcoredeps-centos-7-4.tar.gz"
+            },
+            "Debian 9": {
+                "osType": "Linux",
+                "imagePublisher": "credativ",
+                "imageOffer": "Debian",
+                "imageSku": "9",
+                "dependenciesArchiveFilename": "netcoredeps-debian-9.tar.gz"
+            },
+            "OpenSUSE Leap 42.3": {
+                "osType": "Linux",
+                "imagePublisher": "SUSE",
+                "imageOffer": "openSUSE-Leap",
+                "imageSku": "42.3",
+                "dependenciesArchiveFilename": "netcoredeps-opensuse-42-3.tar.gz"
+            },
+            "Ubuntu 14.04-LTS": {
+                "osType": "Linux",
+                "imagePublisher": "Canonical",
+                "imageOffer": "UbuntuServer",
+                "imageSku": "14.04-LTS",
+                "dependenciesArchiveFilename": "netcoredeps-ubuntu-14-04.tar.gz"
+            },
+            "Ubuntu 16.04-LTS": {
+                "osType": "Linux",
+                "imagePublisher": "Canonical",
+                "imageOffer": "UbuntuServer",
+                "imageSku": "16.04-LTS",
+                "dependenciesArchiveFilename": "netcoredeps-ubuntu-16-04.tar.gz"
+            },
+            "Ubuntu 17.10": {
+                "osType": "Linux",
+                "imagePublisher": "Canonical",
+                "imageOffer": "UbuntuServer",
+                "imageSku": "17.10",
+                "dependenciesArchiveFilename": "netcoredeps-ubuntu-17-10.tar.gz"
+            },
+            "Windows Server 2012 R2": {
+                "comment": "NOT CURRENTLY SUPPORTED because it does not come with PowerShell 5 , which is required by our install script",
+                "osType": "Windows",
+                "imagePublisher": "MicrosoftWindowsServer",
+                "imageOffer": "WindowsServer",
+                "imageSku": "2012-R2-Datacenter",
+                "dependenciesArchiveFilename": "netcoredeps-emptyForWindows.zip"
+            },
+            "Windows Server 2016": {
+                "osType": "Windows",
+                "imagePublisher": "MicrosoftWindowsServer",
+                "imageOffer": "WindowsServer",
+                "imageSku": "2016-Datacenter",
+                "dependenciesArchiveFilename": "netcoredeps-emptyForWindows.zip"
+            }
+        },
+        "osVersion": "[variables('osVersionDictionary')[parameters('operatingSystem')]]",
+
+        "osPropertiesDictionary": {
+            "Linux": {
+                "extensionPublisher": "Microsoft.Azure.Extensions",
+                "extensionType": "CustomScript",
+                "extensionVersion": "2.0",
+                "applicationArchiveFilename": "FDT-Linux-Server.tar.gz",
+                "customScriptFilename": "FDT-setup-linux-server.sh",
+                "customScriptCommandPrefix": "bash ",
+                "remoteAccessPort": "22",
+                "resultPropertyName": "statuses"
+            },
+            "Windows": {
+                "extensionPublisher": "Microsoft.Compute",
+                "extensionType": "CustomScriptExtension",
+                "extensionVersion": "1.7",
+                "applicationArchiveFilename": "FDT-Windows-Server.zip",
+                "customScriptFilename": "FDT-setup-windows-server.ps1",
+                "customScriptCommandPrefix": "powershell.exe -ExecutionPolicy Unrestricted -File .\\",
+                "remoteAccessPort": "3389",
+                "resultPropertyName": "substatuses"
+            }
+        },
+        "osProps": "[variables('osPropertiesDictionary')[variables('osVersion').osType]]",
+
+        "standardStorageVmTypes": [
+            "Standard_D3_v2",
+            "Standard_D4_v2",
+            "Standard_D5_v2"
+        ],
+        "storageAccountType": "[if(contains(variables('standardStorageVmTypes'),parameters('virtualMachineSize')),'Standard_LRS','Premium_LRS')]",
+
+        "newNsgName": "[concat(parameters('namePrefix'),'-nsg')]",
+        "newNetworkSettings": {
+            "vnetName": "[concat(parameters('namePrefix'), '-vnet')]",
+            "vnetAddressPrefix": "10.0.0.0/24",
+            "subnet": {
+                "name": "default",
+                "subnetAddressPrefix": "10.0.0.0/26"
+            }
+        },
+        "newSubnetId": "[resourceId(                                        'Microsoft.Network/virtualNetworks/subnets', variables('newNetworkSettings').vnetName, variables('newNetworkSettings').subnet.name)]",
+        "existingSubnetId": "[resourceId(parameters('existingVnetResourceGroup'),'Microsoft.Network/virtualNetworks/subnets', parameters('existingVnetName'),           parameters('existingSubnetName'))]",
+
+        "encodedAuthKey": "[base64(parameters('fdtAuthenticationKey'))]",
+        "commentOnEncodedAuthKey": "Escaping characters is problematical. To be sure of coping with all situations, we base 64 encode it, so that we can pass it without having to deal with special characters and spaces",
+
+        "applicationArchiveUri": "[uri(variables('rootUri'), variables('osProps').applicationArchiveFilename)]",
+        "customScriptFileUri": "[uri(variables('rootUri'), variables('osProps').customScriptFilename)]",
+        "dependenciesArchiveUri": "[uri('https://fdtreleases.blob.core.windows.net/linux-dependencies/',variables('osVersion').dependenciesArchiveFilename)]",
+        "customScriptCommand": "[concat(variables('osProps').customScriptCommandPrefix, variables('osProps').customScriptFilename, ' -archiveName ', variables('osProps').applicationArchiveFilename,' -authKeyBase64 ', variables('encodedAuthKey'), ' -returnPublicIp ', variables('publicIpMode'), ' -depsArchiveUsedOnlyOnLinux ', variables('osVersion').dependenciesArchiveFilename)]"
+    },
+   "resources":[
+      {
+         "name":"[variables('newNsgName')]",
+         "type":"Microsoft.Network/networkSecurityGroups",
+         "condition": "[variables('publicIpMode')]",
+         "comments":"One NSG is created for the whole set of VMs. It is created with the standard Fast Data Transfer port opened.",
+         "apiVersion":"2016-09-01",
+         "location":"[variables('location')]",
+         "properties":{
+            "securityRules":[
+               {
+                  "name":"default-allow-remote-access",
+                  "properties": {
+                    "priority": 1000,
+                    "sourceAddressPrefix": "*",
+                    "protocol": "TCP",
+                    "destinationPortRange": "[variables('osProps').remoteAccessPort]",
+                    "access": "Allow",
+                    "direction": "Inbound",
+                    "sourcePortRange": "*",
+                    "destinationAddressPrefix": "*"
+                }
+               },
+               {
+                  "name":"allow-fast-data-transfer",
+                  "properties":{
+                     "priority":1100,
+                     "sourceAddressPrefix":"*",
+                     "protocol":"TCP",
+                     "destinationPortRange":"10256",
+                     "access":"Allow",
+                     "direction":"Inbound",
+                     "sourcePortRange":"*",
+                     "destinationAddressPrefix":"*"
+                  }
+               }
+            ]
+         }
+      },
+      {
+         "name":"[variables('newNetworkSettings').vnetName]",
+         "type":"Microsoft.Network/virtualNetworks",
+         "condition": "[variables('publicIpMode')]",
+         "comments":"One VNET is created for the whole set of VMs.",
+         "apiVersion":"2016-12-01",
+         "location":"[variables('location')]",
+         "properties":{
+            "addressSpace":{
+               "addressPrefixes":[
+                  "[variables('newNetworkSettings').vnetAddressPrefix]"
+               ]
+            },
+            "subnets":[
+               {
+                  "name":"[variables('newNetworkSettings').subnet.name]",
+                  "properties":{
+                     "addressPrefix":"[variables('newNetworkSettings').subnet.subnetAddressPrefix]"
+                  }
+               }
+            ]
+         }
+      },
+      {
+         "name":"[concat(parameters('namePrefix'), '-', copyIndex(), '-pip')]",
+         "type":"Microsoft.Network/publicIpAddresses",
+         "condition": "[variables('publicIpMode')]",
+         "comments":"Create one public IP address per VM. **NOTE** allocation method must be static, because the IP addresses of dynamic public IPs are not available at the time the template output section runs.",
+         "apiVersion":"2016-09-01",
+         "location":"[variables('location')]",
+         "copy":{
+            "name":"pipCopy",
+            "count":"[parameters('fdtNodeCount')]"
+         },
+         "properties":{
+            "publicIpAllocationMethod":"Static"
+         }
+      },
+      {
+         "name":"[concat(parameters('namePrefix'), '-', copyIndex(), if(variables('publicIpMode'), '-nic', '-skippedNic'))]",
+         "type":"Microsoft.Network/networkInterfaces",
+         "condition": "[variables('publicIpMode')]",
+         "comments":"NIC for PublicIP install type. Create one per VM",
+         "apiVersion":"2016-09-01",
+         "location":"[variables('location')]",
+         "copy":{
+            "name":"nicCopy",
+            "count":"[parameters('fdtNodeCount')]"
+         },
+         "dependsOn":[
+            "[concat('Microsoft.Network/networkSecurityGroups/', variables('newNsgName'))]",
+            "[concat('Microsoft.Network/virtualNetworks/', variables('newNetworkSettings').vnetName)]",
+            "[concat('Microsoft.Network/publicIpAddresses/', parameters('namePrefix'),'-', copyIndex(), '-pip')]"
+         ],
+         "properties":{
+            "ipConfigurations":[
+               {
+                  "name":"ipconfig1",
+                  "properties":{
+                     "subnet":{
+                        "id":"[variables('newSubnetId')]"
+                     },
+                     "privateIPAllocationMethod":"Dynamic",
+                     "publicIpAddress":{
+                        "id":"[resourceId('Microsoft.Network/publicIpAddresses', concat(parameters('namePrefix'),'-', copyIndex(), '-pip'))]"
+                     }
+                  }
+               }
+            ],
+            "networkSecurityGroup":{
+               "id":"[resourceId('Microsoft.Network/networkSecurityGroups', variables('newNsgName'))]"
+            }
+         }
+      },
+      {
+        "name": "[concat(parameters('namePrefix'), '-', copyIndex(), if(variables('publicIpMode'), '-skippedNic', '-nic'))]",
+        "type": "Microsoft.Network/networkInterfaces",
+         "condition": "[not(variables('publicIpMode'))]",
+        "comments":"NIC for ExpressRoute install type. Create one per VM",
+        "apiVersion": "2016-09-01",
+        "location": "[variables('location')]",
+        "copy" : {
+            "name": "nicCopy",
+            "count": "[parameters('fdtNodeCount')]"
+        },
+        "properties": {
+            "ipConfigurations": [
+                {
+                    "name": "ipconfig1",
+                    "properties": {
+                        "subnet": {
+                            "id": "[variables('existingSubnetId')]"
+                        },
+                        "privateIPAllocationMethod": "Dynamic"
+                    }
+                }
+            ]
+        }
+      },
+      {
+         "name":"[concat(parameters('namePrefix'),'-', copyIndex(), '-vm')]",
+         "type":"Microsoft.Compute/virtualMachines",
+         "comments":"Create VM(s)",
+         "apiVersion":"2016-04-30-preview",
+         "location":"[variables('location')]",
+         "copy":{
+            "name":"vmCopy",
+            "count":"[parameters('fdtNodeCount')]"
+         },
+         "dependsOn":[
+            "[concat('Microsoft.Network/networkInterfaces/', parameters('namePrefix'),'-', copyIndex(), '-nic')]"
+         ],
+         "properties":{
+            "osProfile":{
+               "computerName":"[concat(parameters('namePrefix'),'-', copyIndex(), '-vm')]",
+               "adminUsername":"[parameters('adminUsername')]",
+               "adminPassword":"[parameters('adminPassword')]"
+            },
+            "hardwareProfile":{
+               "vmSize":"[parameters('virtualMachineSize')]"
+            },
+            "storageProfile":{
+                "imageReference": {
+                    "publisher": "[variables('osVersion').imagePublisher]",
+                    "offer": "[variables('osVersion').imageOffer]",
+                    "sku": "[variables('osVersion').imageSku]",
+                    "version": "latest"
+                },
+               "osDisk":{
+                  "createOption":"FromImage",
+                  "managedDisk":{
+                     "storageAccountType":"[variables('storageAccountType')]"
+                  }
+               },
+               "dataDisks":[
+               ]
+            },
+            "networkProfile":{
+               "networkInterfaces":[
+                  {
+                     "id":"[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('namePrefix'),'-', copyIndex(), '-nic'))]"
+                  }
+               ]
+            }
+         }
+      },
+      {
+         "type":"Microsoft.Compute/virtualMachines/extensions",
+         "name":"[concat(parameters('namePrefix'),'-', copyIndex(), '-vm/installation-script')]",
+         "comments":"Run script on VM to set up Fast Data Transfer",
+         "apiVersion":"2016-04-30-preview",
+         "location":"[variables('location')]",
+         "copy":{
+            "name":"extnCopy",
+            "count":"[parameters('fdtNodeCount')]"
+         },
+         "dependsOn":[
+            "[concat('Microsoft.Compute/virtualMachines/', parameters('namePrefix'),'-', copyIndex(), '-vm')]"
+         ],
+        "properties": {
+            "publisher": "[variables('osProps').extensionPublisher]",
+            "type": "[variables('osProps').extensionType]",
+            "typeHandlerVersion": "[variables('osProps').extensionVersion]",
+            "autoUpgradeMinorVersion": "true",
+            "settings": {
+                "fileUris": [
+                    "[variables('customScriptFileUri')]",
+                    "[variables('applicationArchiveUri')]",
+                    "[variables('dependenciesArchiveUri')]"
+                ]
+            },
+            "protectedSettings": {
+                "commandToExecute": "[variables('customScriptCommand')]"
+            }
+        }
+      }
+   ],
+   "outputs":{
+      "connectionString0":{
+         "type":"string",
+         "value": "[if(less(0, parameters('fdtNodeCount')),split(reference(concat('Microsoft.Compute/virtualMachines/', parameters('namePrefix'),'-', min(0, variables('maxNodeIndex')), '-vm/extensions/installation-script')).instanceView[variables('osProps').resultPropertyName][0].message,'|')[1], '')]"
+        },
+      "connectionString1":{
+         "type":"string",
+         "value": "[if(less(1, parameters('fdtNodeCount')),split(reference(concat('Microsoft.Compute/virtualMachines/', parameters('namePrefix'),'-', min(1, variables('maxNodeIndex')), '-vm/extensions/installation-script')).instanceView[variables('osProps').resultPropertyName][0].message,'|')[1], '')]"
+        },
+      "connectionString2":{
+         "type":"string",
+         "value": "[if(less(2, parameters('fdtNodeCount')),split(reference(concat('Microsoft.Compute/virtualMachines/', parameters('namePrefix'),'-', min(2, variables('maxNodeIndex')), '-vm/extensions/installation-script')).instanceView[variables('osProps').resultPropertyName][0].message,'|')[1], '')]"
+        },
+      "connectionString3":{
+         "type":"string",
+         "value": "[if(less(3, parameters('fdtNodeCount')),split(reference(concat('Microsoft.Compute/virtualMachines/', parameters('namePrefix'),'-', min(3, variables('maxNodeIndex')), '-vm/extensions/installation-script')).instanceView[variables('osProps').resultPropertyName][0].message,'|')[1], '')]"
+        },
+      "connectionString4":{
+         "type":"string",
+         "value": "[if(less(4, parameters('fdtNodeCount')),split(reference(concat('Microsoft.Compute/virtualMachines/', parameters('namePrefix'),'-', min(4, variables('maxNodeIndex')), '-vm/extensions/installation-script')).instanceView[variables('osProps').resultPropertyName][0].message,'|')[1], '')]"
+        },
+      "connectionString5":{
+         "type":"string",
+         "value": "[if(less(5, parameters('fdtNodeCount')),split(reference(concat('Microsoft.Compute/virtualMachines/', parameters('namePrefix'),'-', min(5, variables('maxNodeIndex')), '-vm/extensions/installation-script')).instanceView[variables('osProps').resultPropertyName][0].message,'|')[1], '')]"
+        },
+      "connectionString6":{
+         "type":"string",
+         "value": "[if(less(6, parameters('fdtNodeCount')),split(reference(concat('Microsoft.Compute/virtualMachines/', parameters('namePrefix'),'-', min(6, variables('maxNodeIndex')), '-vm/extensions/installation-script')).instanceView[variables('osProps').resultPropertyName][0].message,'|')[1], '')]"
+        },
+      "connectionString7":{
+         "type":"string",
+         "value": "[if(less(7, parameters('fdtNodeCount')),split(reference(concat('Microsoft.Compute/virtualMachines/', parameters('namePrefix'),'-', min(7, variables('maxNodeIndex')), '-vm/extensions/installation-script')).instanceView[variables('osProps').resultPropertyName][0].message,'|')[1], '')]"
+        },
+      "connectionString8":{
+         "type":"string",
+         "value": "[if(less(8, parameters('fdtNodeCount')),split(reference(concat('Microsoft.Compute/virtualMachines/', parameters('namePrefix'),'-', min(8, variables('maxNodeIndex')), '-vm/extensions/installation-script')).instanceView[variables('osProps').resultPropertyName][0].message,'|')[1], '')]"
+        },
+      "connectionString9":{
+         "type":"string",
+         "value": "[if(less(9, parameters('fdtNodeCount')),split(reference(concat('Microsoft.Compute/virtualMachines/', parameters('namePrefix'),'-', min(9, variables('maxNodeIndex')), '-vm/extensions/installation-script')).instanceView[variables('osProps').resultPropertyName][0].message,'|')[1], '')]"
+        }
+   }
+}
