@@ -58,7 +58,10 @@
               "showDefault": false
             },
             "queryType": 1,
-            "resourceType": "microsoft.resourcegraph/resources"
+            "resourceType": "microsoft.resourcegraph/resources",
+            "value": [
+              "value::all"
+            ]
           },
           {
             "id": "c4b69c01-2263-4ada-8d9c-43433b739ff3",
@@ -197,6 +200,12 @@
             "namespace": "microsoft.compute/virtualmachines",
             "metric": "microsoft.compute/virtualmachines--Percentage CPU",
             "aggregation": 4
+          },
+          {
+            "namespace": "microsoft.compute/virtualmachines",
+            "metric": "microsoft.compute/virtualmachines--Percentage CPU",
+            "aggregation": 3,
+            "columnName": "MaxCPU"
           }
         ],
         "gridSettings": {
@@ -219,6 +228,10 @@
               "formatOptions": {
                 "linkTarget": "Resource"
               }
+            },
+            {
+              "columnMatch": "MaxCPU Timeline",
+              "formatter": 5
             }
           ],
           "rowLimit": 10000,
@@ -267,7 +280,6 @@
             "formatOptions": {
               "linkTarget": "WorkbookTemplate",
               "linkIsContextBlade": true,
-              "showIcon": true,
               "workbookContext": {
                 "componentIdSource": "column",
                 "componentId": "Name",
@@ -289,12 +301,18 @@
               }
             }
           },
+          "bottomContent": {
+            "columnMatch": "MaxCPU",
+            "formatter": 1,
+            "tooltipFormat": {
+              "tooltip": "Max CPU was {0}%"
+            }
+          },
           "hivesContent": {
             "columnMatch": "Subscription",
             "formatter": 15,
             "formatOptions": {
-              "linkTarget": null,
-              "showIcon": true
+              "linkTarget": null
             }
           },
           "nodeIdField": "Name",
