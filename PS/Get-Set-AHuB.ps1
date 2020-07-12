@@ -7,7 +7,7 @@ function Get-AzVmNotAHuB {
 
 
 # Set all Windows Servers to use AHUB:
-function Get-AzVmNotAHuB {
+function Set-AzVmAHuB {
     param($ResourceGroupName = '*')
     Get-AzVM -ResourceGroupName $ResourceGroupName -ErrorAction SilentlyContinue |
     Where-Object { $_.StorageProfile.OsDisk.OsType -eq 'Windows' -and @('Windows_Server', 'Windows_Client') -notcontains $_.LicenseType } |

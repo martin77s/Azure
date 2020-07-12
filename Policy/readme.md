@@ -12,7 +12,6 @@ Type | Name |
 | BuiltIn | Network interfaces should not have public IPs |
 | BuiltIn | Deploy Diagnostic Settings for Network Security Groups |
 | BuiltIn | RDP access from the Internet should be blocked |
-| BuiltIn | Audit unrestricted network access to storage accounts |
 | BuiltIn | Azure Backup should be enabled for Virtual Machines |
 | BuiltIn | Audit virtual machines without disaster recovery configured |
 | BuiltIn | Automation account variables should be encrypted |
