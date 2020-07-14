@@ -174,3 +174,94 @@ resources
 | project-away id1, state 
 | project subscriptionId, resourceGroup, id
 ```
+
+- - - 
+
+### Storage Accounts without HttpsTrafficOnly, FileEncryption or BlobEncryption
+
+```
+resources
+| where type == "microsoft.storage/storageaccounts" 
+| where aliases["Microsoft.Storage/storageAccounts/supportsHttpsTrafficOnly"] == "false" 
+	or aliases["Microsoft.Storage/storageAccounts/enableFileEncryption"] == "false"
+	or aliases["Microsoft.Storage/storageAccounts/enableBlobEncryption"] == "false"
+| project id, subscriptionId, resourceGroup, name, kind
+```
+
+- - - 
+
+### Virtual Networks and their Address Prefixes
+
+```
+Resources 
+| where type == 'microsoft.network/virtualnetworks' 
+| project Name = name, Id = id, Prefixes = properties.addressSpace.addressPrefixes, subscriptionId 
+| join kind = inner (
+	ResourceContainers 
+	| where type=='microsoft.resources/subscriptions' 
+	| project Subscription=name, subscriptionId
+) on subscriptionId 
+| project Subscription, Name, Prefixes 
+| order by Subscription asc
+```
+
+- - - 
+
+### Subnets and their Address Prefixes
+
+```
+Resources 
+| where type == 'microsoft.network/virtualnetworks' 
+| mvexpand subnets = properties.subnets
+| project id, resourceGroup, vnetName=name, subnetName = subnets.name, addressPrefix = tostring(subnets.properties.addressPrefix)
+| sort by addressPrefix asc
+```
+
+- - - 
+
+### Virtual Network Peerings
+
+```
+Resources
+| where type =~ 'Microsoft.Network/virtualNetworks'
+| extend peering=properties.virtualNetworkPeerings
+| where array_length(peering) > 0
+| mvexpand peering
+| extend AllowVirtualNetworkAccess = peering.properties.allowVirtualNetworkAccess
+| extend AllowForwardedTraffic = peering.properties.allowForwardedTraffic
+| extend AllowGatewayTransit = peering.properties.allowGatewayTransit
+| extend UseRemoteGateways = peering.properties.useRemoteGateways
+| extend PeeringState = peering.properties.peeringState
+| extend RemoteVirtualNetworkId = peering.properties.remoteVirtualNetwork.id
+| project id, subscriptionId, resourceGroup, name, AllowVirtualNetworkAccess, AllowForwardedTraffic, AllowGatewayTransit, UseRemoteGateways, RemoteVirtualNetworkId
+```
+
+- - - 
+
+### Virtual Machines with Public IPs
+
+```
+Resources
+| where type =~ 'microsoft.compute/virtualmachines'
+| extend nics=array_length(properties.networkProfile.networkInterfaces)
+| mv-expand nic=properties.networkProfile.networkInterfaces
+| where nics == 1 or nic.properties.primary =~ 'true' or isempty(nic)
+| project vmId = id, vmName = name, vmSize=tostring(properties.hardwareProfile.vmSize), nicId = tostring(nic.id)
+| join kind=leftouter (
+	Resources
+	| where type =~ 'microsoft.network/networkinterfaces'
+	| extend ipConfigsCount=array_length(properties.ipConfigurations)
+	| mv-expand ipconfig=properties.ipConfigurations
+	| where ipConfigsCount == 1 or ipconfig.properties.primary =~ 'true'
+	| project nicId = id, publicIpId = tostring(ipconfig.properties.publicIPAddress.id)
+) on nicId
+| project-away nicId1
+| summarize by vmId, vmName, vmSize, nicId, publicIpId
+| join kind=leftouter (
+	Resources
+	| where type =~ 'microsoft.network/publicipaddresses'
+	| project publicIpId = id, publicIpAddress = properties.ipAddress
+) on publicIpId
+| project-away publicIpId1
+| where isnotempty(publicIpId)
+```

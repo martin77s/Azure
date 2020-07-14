@@ -1,0 +1,436 @@
+{
+  "properties": {
+    "lenses": {
+      "0": {
+        "order": 0,
+        "parts": {
+          "0": {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "colSpan": 3,
+              "rowSpan": 2
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Total Virtual Networks",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources \n| where type == 'microsoft.network/virtualnetworks' \n| summarize ['Virtual Networks'] = count()",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "1": {
+            "position": {
+              "x": 3,
+              "y": 0,
+              "colSpan": 3,
+              "rowSpan": 2
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Total Subnets",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources \n| where type == 'microsoft.network/virtualnetworks' \n| mvexpand subnets = properties.subnets\n| summarize Subnets = count()",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "2": {
+            "position": {
+              "x": 6,
+              "y": 0,
+              "colSpan": 3,
+              "rowSpan": 2
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Total Public IPs",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources \n| where type == 'microsoft.network/publicipaddresses'\n| summarize ['Public IPs'] = count()",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "3": {
+            "position": {
+              "x": 9,
+              "y": 0,
+              "colSpan": 3,
+              "rowSpan": 2
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Total Network Security Groups",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "resources\r\n| where type == \"microsoft.network/networksecuritygroups\"\r\n| summarize ['Network Security Groups']=count()",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "4": {
+            "position": {
+              "x": 12,
+              "y": 0,
+              "colSpan": 3,
+              "rowSpan": 2
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Total User Defined Routes",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "resources \r\n| where type == 'microsoft.network/routetables'\r\n| summarize ['User Defined Routes']=count()",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQuerySingleValueTile",
+              "settings": {}
+            }
+          },
+          "5": {
+            "position": {
+              "x": 0,
+              "y": 2,
+              "colSpan": 15,
+              "rowSpan": 5
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Virtual Networks",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources \n| where type == 'microsoft.network/virtualnetworks' \n| project Name = name, id, Prefixes = properties.addressSpace.addressPrefixes, subscriptionId, resourceGroup\n| join kind = inner (\n\tResourceContainers \n\t| where type=='microsoft.resources/subscriptions' \n\t| project Subscription=name, subscriptionId\n) on subscriptionId \n| order by Subscription asc\n| project subscriptionId, resourceGroup, id, Name, AddressPrefix=Prefixes ",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "6": {
+            "position": {
+              "x": 0,
+              "y": 7,
+              "colSpan": 15,
+              "rowSpan": 5
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Subnets",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources \n| where type == 'microsoft.network/virtualnetworks' \n| mvexpand subnets = properties.subnets\n| project subscriptionId, resourceGroup, id, ['Subnet name'] = subnets.name, AddressPrefix = tostring(subnets.properties.addressPrefix)\n| sort by AddressPrefix asc",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "7": {
+            "position": {
+              "x": 0,
+              "y": 12,
+              "colSpan": 15,
+              "rowSpan": 5
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Vnet Peerings",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources\n| where type =~ 'Microsoft.Network/virtualNetworks'\n| extend peering=properties.virtualNetworkPeerings\n| where array_length(peering) > 0\n| mvexpand peering\n| extend AllowVirtualNetworkAccess = peering.properties.allowVirtualNetworkAccess\n| extend AllowForwardedTraffic = peering.properties.allowForwardedTraffic\n| extend AllowGatewayTransit = peering.properties.allowGatewayTransit\n| extend UseRemoteGateways = peering.properties.useRemoteGateways\n| extend PeeringState = peering.properties.peeringState\n| extend RemoteVirtualNetworkId = peering.properties.remoteVirtualNetwork.id\n| project subscriptionId, resourceGroup, id, AllowVirtualNetworkAccess, AllowForwardedTraffic, AllowGatewayTransit, UseRemoteGateways, RemoteVirtualNetworkId",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "8": {
+            "position": {
+              "x": 0,
+              "y": 17,
+              "colSpan": 15,
+              "rowSpan": 5
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Public IP Addresses",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources\n| where type =~ 'microsoft.network/publicipaddresses'\n| extend AttachedTo = split(properties.ipConfiguration.id, '/')[8]\n| project subscriptionId, resourceGroup, id, ['IP Address']=properties.ipAddress, SKU=sku.name, ['Allocation Method']=properties.publicIPAllocationMethod, ['Attached To']=AttachedTo",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          },
+          "9": {
+            "position": {
+              "x": 0,
+              "y": 22,
+              "colSpan": 15,
+              "rowSpan": 5
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Virtual Machines with Public IP Addresses",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "Resources\n| where type =~ 'microsoft.compute/virtualmachines'\n| extend nics=array_length(properties.networkProfile.networkInterfaces)\n| mv-expand nic=properties.networkProfile.networkInterfaces\n| where nics == 1 or nic.properties.primary =~ 'true' or isempty(nic)\n| project vmId = id, vmName = name, vmSize=tostring(properties.hardwareProfile.vmSize), nicId = tostring(nic.id), subscriptionId, resourceGroup\n| join kind=leftouter (\n\tResources\n\t| where type =~ 'microsoft.network/networkinterfaces'\n\t| extend ipConfigsCount=array_length(properties.ipConfigurations)\n\t| mv-expand ipconfig=properties.ipConfigurations\n\t| where ipConfigsCount == 1 or ipconfig.properties.primary =~ 'true'\n\t| project nicId = id, publicIpId = tostring(ipconfig.properties.publicIPAddress.id)\n) on nicId\n| project-away nicId1\n| summarize by subscriptionId, resourceGroup, publicIpId, vmId, vmName, nicId\n| join kind=leftouter (\n\tResources\n\t| where type =~ 'microsoft.network/publicipaddresses'\n\t| project publicIpId = id, publicIpAddress = properties.ipAddress\n) on publicIpId\n| project-away publicIpId1\n| where isnotempty(publicIpId)\n| project subscriptionId, resourceGroup, id=publicIpId, ['IP Address']=publicIpAddress, ['VM Name']=vmName, vmId, nicId",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "model": {
+        "timeRange": {
+          "value": {
+            "relative": {
+              "duration": 24,
+              "timeUnit": 1
+            }
+          },
+          "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+        }
+      }
+    }
+  },
+  "name": "Azure Networking Dashboard",
+  "type": "Microsoft.Portal/dashboards",
+  "location": "INSERT LOCATION",
+  "tags": {
+    "hidden-title": "Azure Networking Dashboard"
+  },
+  "apiVersion": "2015-08-01-preview"
+}
