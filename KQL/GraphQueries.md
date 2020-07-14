@@ -195,14 +195,14 @@ resources
 ```
 Resources 
 | where type == 'microsoft.network/virtualnetworks' 
-| project Name = name, Id = id, Prefixes = properties.addressSpace.addressPrefixes, subscriptionId 
+| project Name = name, id, Prefixes = properties.addressSpace.addressPrefixes, subscriptionId, resourceGroup
 | join kind = inner (
 	ResourceContainers 
 	| where type=='microsoft.resources/subscriptions' 
 	| project Subscription=name, subscriptionId
 ) on subscriptionId 
-| project Subscription, Name, Prefixes 
 | order by Subscription asc
+| project subscriptionId, resourceGroup, id, Name, AddressPrefix=Prefixes 
 ```
 
 - - - 
@@ -213,8 +213,8 @@ Resources
 Resources 
 | where type == 'microsoft.network/virtualnetworks' 
 | mvexpand subnets = properties.subnets
-| project id, resourceGroup, vnetName=name, subnetName = subnets.name, addressPrefix = tostring(subnets.properties.addressPrefix)
-| sort by addressPrefix asc
+| project subscriptionId, resourceGroup, id, ['Subnet name'] = subnets.name, AddressPrefix = tostring(subnets.properties.addressPrefix)
+| sort by AddressPrefix asc
 ```
 
 - - - 
@@ -233,7 +233,18 @@ Resources
 | extend UseRemoteGateways = peering.properties.useRemoteGateways
 | extend PeeringState = peering.properties.peeringState
 | extend RemoteVirtualNetworkId = peering.properties.remoteVirtualNetwork.id
-| project id, subscriptionId, resourceGroup, name, AllowVirtualNetworkAccess, AllowForwardedTraffic, AllowGatewayTransit, UseRemoteGateways, RemoteVirtualNetworkId
+| project subscriptionId, resourceGroup, id, AllowVirtualNetworkAccess, AllowForwardedTraffic, AllowGatewayTransit, UseRemoteGateways, RemoteVirtualNetworkId
+```
+
+- - - 
+
+### Public IPs Addresses
+
+```
+Resources
+| where type =~ 'microsoft.network/publicipaddresses'
+| extend AttachedTo = split(properties.ipConfiguration.id, '/')[8]
+| project subscriptionId, resourceGroup, id, ['IP Address']=properties.ipAddress, SKU=sku.name, ['Allocation Method']=properties.publicIPAllocationMethod, ['Attached To']=AttachedTo
 ```
 
 - - - 
@@ -246,7 +257,7 @@ Resources
 | extend nics=array_length(properties.networkProfile.networkInterfaces)
 | mv-expand nic=properties.networkProfile.networkInterfaces
 | where nics == 1 or nic.properties.primary =~ 'true' or isempty(nic)
-| project vmId = id, vmName = name, vmSize=tostring(properties.hardwareProfile.vmSize), nicId = tostring(nic.id)
+| project vmId = id, vmName = name, vmSize=tostring(properties.hardwareProfile.vmSize), nicId = tostring(nic.id), subscriptionId, resourceGroup
 | join kind=leftouter (
 	Resources
 	| where type =~ 'microsoft.network/networkinterfaces'
@@ -256,7 +267,7 @@ Resources
 	| project nicId = id, publicIpId = tostring(ipconfig.properties.publicIPAddress.id)
 ) on nicId
 | project-away nicId1
-| summarize by vmId, vmName, vmSize, nicId, publicIpId
+| summarize by subscriptionId, resourceGroup, publicIpId, vmId, vmName, nicId
 | join kind=leftouter (
 	Resources
 	| where type =~ 'microsoft.network/publicipaddresses'
@@ -264,4 +275,5 @@ Resources
 ) on publicIpId
 | project-away publicIpId1
 | where isnotempty(publicIpId)
+| project subscriptionId, resourceGroup, id=publicIpId, ['IP Address']=publicIpAddress, ['VM Name']=vmName, vmId, nicId
 ```
