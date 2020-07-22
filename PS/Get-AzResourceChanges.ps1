@@ -1,18 +1,28 @@
-﻿[CmdletBinding(DefaultParameterSetName='byResourceId')]
+﻿<#
+
+Script Name	: Get-AzResourceChanges.ps1
+Description	: Get the specified resource's changes for the last timespan specified
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/22
+Keywords	: Azure, Resource, Graph, ResourceChanges
+
+#>
+
+[CmdletBinding(DefaultParameterSetName = 'byResourceId')]
 
 PARAM(
 
-    [Parameter(Mandatory=$true, ParameterSetName='byResourceId')] [string] $ResourceID,
+    [Parameter(Mandatory = $true, ParameterSetName = 'byResourceId')] [string] $ResourceID,
 
-    [Parameter(Mandatory=$true, ParameterSetName='byResourceName')] [string]$ResourceGroupName,
-    [Parameter(Mandatory=$true, ParameterSetName='byResourceName')] [string]$ResourceName,
-    [Parameter(Mandatory=$true, ParameterSetName='byResourceName')] [string]$ResourceType,
+    [Parameter(Mandatory = $true, ParameterSetName = 'byResourceName')] [string]$ResourceGroupName,
+    [Parameter(Mandatory = $true, ParameterSetName = 'byResourceName')] [string]$ResourceName,
+    [Parameter(Mandatory = $true, ParameterSetName = 'byResourceName')] [string]$ResourceType,
 
     [timespan]$TimeSpan = 36000000000
 )
 
 try {
-    if($PSCmdlet.ParameterSetName -eq 'byResourceName') {
+    if ($PSCmdlet.ParameterSetName -eq 'byResourceName') {
         $rid = (Get-AzResource -ResourceGroupName $ResourceGroupName -Name $ResourceName -ResourceType $ResourceType).ResourceId
     } else {
         $rid = (Get-AzResource -ResourceId $ResourceID).ResourceId
@@ -28,7 +38,7 @@ $cachedTokens = ($context.TokenCache).ReadItems() |
 $accessToken = $cachedTokens[0].AccessToken
 
 $endTime = (Get-Date (Get-Date).ToUniversalTime() -Format 'yyyy-MM-ddTHH:mm:ss.fffZ')
-$startTime = (Get-Date (Get-Date).AddMilliseconds(-1*$TimeSpan.TotalMilliseconds).ToUniversalTime() -Format 'yyyy-MM-ddTHH:mm:ss.fffZ')
+$startTime = (Get-Date (Get-Date).AddMilliseconds(-1 * $TimeSpan.TotalMilliseconds).ToUniversalTime() -Format 'yyyy-MM-ddTHH:mm:ss.fffZ')
 
 $body = @{
     resourceId = $rid
@@ -62,7 +72,7 @@ foreach ($changeId in $changes.changes.changeId ) {
     $response.beforeSnapshot.content | ConvertTo-Json -Depth 100 | Out-File before.json
     $response.afterSnapshot.content | ConvertTo-Json -Depth 100 | Out-File after.json
     $diff = Compare-Object -ReferenceObject (Get-Content before.json) -DifferenceObject (Get-Content after.json)
-    if($diff) {
+    if ($diff) {
         [PSCustomObject]@{
             AfterSnapshotTimestamp  = $response.afterSnapshot.timestamp
             BeforeSnapshotTimestamp = $response.beforeSnapshot.timestamp
