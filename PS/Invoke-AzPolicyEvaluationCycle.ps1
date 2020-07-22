@@ -32,7 +32,7 @@ function _getAuthHeader {
 
 function _invokeAPI {
     param($Uri, $AuthHeader)
-    $result = Invoke-RestMethod -Uri $Uri -Method POST -Headers $AuthHeader
+    Invoke-RestMethod -Uri $Uri -Method POST -Headers $AuthHeader | Out-Null
 }
 
 
