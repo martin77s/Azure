@@ -1,3 +1,14 @@
+<#
+
+Script Name	: IdentifyOrphanSubscriptions.ps1
+Description	: List subscriptions that reside directly under the tenant root management group
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, Tags, Governance
+
+#>
+
+
 PARAM(
     [string] $ConnectionName = 'AzureRunAsConnection',
     [string] $SendToEmailAddress = $null

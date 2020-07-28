@@ -1,3 +1,13 @@
+<#
+
+Script Name	: ReportShutdownVMs.ps1
+Description	: Report and optionally deallocate OS-Shutdown VMs
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, Compute, VM
+
+#>
+
 PARAM(
     [string] $ConnectionName = 'AzureRunAsConnection',
     [string] $SubscriptionNamePattern = '.*',

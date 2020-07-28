@@ -1,4 +1,14 @@
-﻿PARAM(
+﻿<#
+
+Script Name	: IdentifyOrphanDisks.ps1
+Description	: List disks (managed and VHDs) that are not attached to any VM
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, Compute, VMs, Storace, VHD, Disk
+
+#>
+
+PARAM(
     [string] $SubscriptionNamePattern = 'maschvar.*',
     [string] $ConnectionName = 'AzureRunAsConnection',
     [string] $SendToEmailAddress = $null,

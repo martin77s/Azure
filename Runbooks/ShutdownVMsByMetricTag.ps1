@@ -1,3 +1,13 @@
+<#
+
+Script Name	: ShutdownVMsByMetricTag.ps1
+Description	: Deallocate VMs by their CPU metrics and their tagged threshold
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, Compute, VMs
+
+#>
+
 PARAM (
     [string] $ConnectionName = 'AzureRunAsConnection',
     [string] $MetricTagName = 'ShutdownByMetric',

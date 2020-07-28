@@ -1,5 +1,15 @@
+<#
+
+Script Name	: InheritTagsFromResourceGroup.ps1
+Description	: Set the resource group tags and values on the child resources (specific resource group)
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, Tags, Governance
+
+#>
+
 PARAM(
-    $resourceGroupName = 'rg-test-vms'
+    $resourceGroupName = 'rg-test'
 )
 
 Write-Output ('{0:yyyy-MM-dd HH:mm:ss.f} - Starting' -f (Get-Date))
@@ -23,7 +33,7 @@ try {
     Add-AzAccount -ServicePrincipal -Tenant $spConnection.TenantId `
         -ApplicationId $spConnection.ApplicationId `
         -CertificateThumbprint $spConnection.CertificateThumbprint | Out-Null
-    
+
 
     # Get the resource group, and it's tags
     $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
@@ -44,13 +54,13 @@ try {
         } else {
             $tagsToSet = $resourceGroupTags.Clone()
             foreach ($tag in $resourcetags.GetEnumerator()) {
-                if ($tagsToSet.Keys -inotcontains $tag.Key) {                        
+                if ($tagsToSet.Keys -inotcontains $tag.Key) {
                     $tagsToSet.Add($tag.Key, $tag.Value)
-                }    
+                }
 
             }
             $tagsSet = Set-AzResource -ResourceId $resourceid -Tag $tagsToSet -Force
-        }   
+        }
     }
 } catch {
     Write-Output ($_)

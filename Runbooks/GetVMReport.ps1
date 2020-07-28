@@ -1,3 +1,13 @@
+<#
+
+Script Name	: GetVMReport.ps1
+Description	: List all Virtual Machines and some of their details
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, Compute, VMs
+
+#>
+
 PARAM(
     [string] $ConnectionName = 'AzureRunAsConnection'
 )

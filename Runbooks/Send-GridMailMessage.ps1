@@ -1,3 +1,13 @@
+<#
+
+Script Name	: Send-GridMailMessage.ps1
+Description	: Send an email using the SendGrid API
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, SendGrid, Email
+
+#>
+
 Param(
     [Parameter(Mandatory = $True)]
     [String] $destEmailAddress,

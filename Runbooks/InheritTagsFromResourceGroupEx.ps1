@@ -1,5 +1,15 @@
+<#
+
+Script Name	: InheritTagsFromResourceGroupEx.ps1
+Description	: Set the resource group tags and values on the child resources (on all subscriptions by filter)
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, Tags, Governance
+
+#>
+
 PARAM(
-    [string] $SubscriptionNamePattern = 'maschvar.*',
+    [string] $SubscriptionNamePattern = '.*',
     [string] $ConnectionName = 'AzureRunAsConnection',
     [string[]] $ExcludeResourceTypes = @(
         'microsoft.visualstudio/*', 'Microsoft.DevOps/*', 'microsoft.insights/*', 'Microsoft.Classic*'

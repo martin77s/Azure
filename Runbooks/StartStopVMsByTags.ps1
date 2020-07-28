@@ -1,4 +1,14 @@
-﻿Workflow StartStopVMsByTags {
+﻿<#
+
+Script Name	: StartStopVMsByTags.ps1
+Description	: Start or Deallocate VMs by their tag values
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, Compute, VMs
+
+#>
+
+Workflow StartStopVMsByTags {
 
     param (
         [string]$ConnectionName = 'AzureRunAsConnection'

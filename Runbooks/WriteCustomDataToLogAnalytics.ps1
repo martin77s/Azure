@@ -1,3 +1,13 @@
+<#
+
+Script Name	: WriteCustomDataToLogAnalytics.ps1
+Description	: Write custom data to a log analytics workspace table
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, LogAnalytics
+
+#>
+
 PARAM(
     $WorkspaceId = '',
     $SharedKey = '',

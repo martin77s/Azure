@@ -1,3 +1,13 @@
+<#
+
+Script Name	: MonitorCertificates.ps1
+Description	: Test websites' SSL certificates and log the data in a LogAnalytics workspace
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, PKI, Certificates, SSL
+
+#>
+
 Write-Output ('{0:yyyy-MM-dd HH:mm:ss.f} - Starting' -f (Get-Date))
 
 $workspaceId = Get-AutomationVariable -Name 'MonitorWorkspaceId'

@@ -1,3 +1,13 @@
+<#
+
+Script Name	: BaseTemplate.ps1
+Description	:
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 0000/00/00
+Keywords	: Azure, Automation, Runbook
+
+#>
+
 PARAM(
     [string] $ConnectionName = 'AzureRunAsConnection'
 )
@@ -8,9 +18,9 @@ Write-Output ('{0:yyyy-MM-dd HH:mm:ss.f} - Starting' -f (Get-Date))
 try {
 
 	Disable-AzContextAutosave –Scope Process
-	
+
     $servicePrincipalConnection = Get-AutomationConnection -Name $connectionName
-		
+
     $connection = Connect-AzureAD -TenantId $servicePrincipalConnection.TenantId `
         -ApplicationId $servicePrincipalConnection.ApplicationId `
         -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint

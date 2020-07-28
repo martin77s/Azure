@@ -1,3 +1,13 @@
+<#
+
+Script Name	: IdentifyOrphanResourceGroupsSHB.ps1
+Description	: List resource groups that do not have a matching owner (by tag) on Azure AD
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, Tags, Governance
+
+#>
+
 PARAM(
     [string] $SubscriptionNamePattern = 'maschvar.*',
     [string] $ConnectionName = 'AzureRunAsConnection',

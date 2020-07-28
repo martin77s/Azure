@@ -1,3 +1,13 @@
+<#
+
+Script Name	: IdentifyPublicContainers.ps1
+Description	: List all storage account containers with public anonymous access
+Author		: Martin Schvartzman, Microsoft
+Last Update	: 2020/07/28
+Keywords	: Azure, Automation, Runbook, Storage, Containers
+
+#>
+
 PARAM(
     [string] $ConnectionName = 'AzureRunAsConnection',
     [string] $SubscriptionNamePattern = '.*'
