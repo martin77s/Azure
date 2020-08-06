@@ -3,7 +3,7 @@
 Script Name	: Set-AzStorageAccountRequireSecureTransfer.ps1
 Description	: Set the 'supportsHttpsTrafficOnly' to true on the storage account(s)
 Author		: Martin Schvartzman, Microsoft
-Last Update	: 2020/08/02
+Last Update	: 2020/08/06
 Keywords	: Azure, StorageAccount, SecureTransfer
 
 #>
@@ -31,6 +31,8 @@ if (-not [string]::IsNullOrEmpty($ExcludeStorageAccountNamePattern)) {
 } else {
     $resources = $results
 }
+
+Set-AzContext -SubscriptionId $SubscriptionId -TenantId ((Get-AzContext).Tenant.Id)
 
 foreach ($res in $resources) {
     $storage = Get-AzStorageAccount -ResourceGroupName $res.resourceGroup -Name $res.name
