@@ -32,11 +32,14 @@ if (-not [string]::IsNullOrEmpty($ExcludeStorageAccountNamePattern)) {
     $resources = $results
 }
 
-Set-AzContext -SubscriptionId $SubscriptionId -TenantId ((Get-AzContext).Tenant.Id)
 
-foreach ($res in $resources) {
-    $storage = Get-AzStorageAccount -ResourceGroupName $res.resourceGroup -Name $res.name
-    if ($storage) {
-        Set-AzStorageAccount -ResourceGroupName $storage.ResourceGroupName -AccountName $storage.StorageAccountName -EnableHttpsTrafficOnly $true
-    }
+if($resources) {
+	Set-AzContext -SubscriptionId $SubscriptionId -TenantId ((Get-AzContext).Tenant.Id)
+
+	foreach ($res in $resources) {
+		$storage = Get-AzStorageAccount -ResourceGroupName $res.resourceGroup -Name $res.name
+		if ($storage) {
+			Set-AzStorageAccount -ResourceGroupName $storage.ResourceGroupName -AccountName $storage.StorageAccountName -EnableHttpsTrafficOnly $true
+		}
+	}
 }
