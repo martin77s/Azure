@@ -46,10 +46,9 @@ try {
         $null = Set-AzContext -SubscriptionObject $_ -Force
 
         # Iterate all resource groups
-
         Get-AzResourceGroup | ForEach-Object {
 
-            # List all resources within the resource group
+            # Iterate all resources within the resource group
             Write-Output ("Checking resource group {0}" -f $_.ResourceGroupName)
             $allResources = Get-AzResource -ResourceGroupName $_.ResourceGroupName
             $resourceGroupTags = $_.Tags
@@ -57,7 +56,8 @@ try {
                 Write-Output ("`tNo tags found")
             } else {
                 Write-Output ("`tResource group tags: {0}" -f (Get-TagsPairs -hashtable $resourceGroupTags))
-                # Iterate the resources and apply the missing tags
+
+                # Iterate the resources to apply the missing tags
                 foreach ($resource in $allResources) {
 
                     # Exclude specific resources by type
@@ -65,14 +65,28 @@ try {
                         Write-Output ("`tSkipping resource {0}/{1} ({2})" -f $_.ResourceGroupName, $resource.Name, $resource.ResourceType)
                     } else {
                         try {
+
+                            # Get the resource Id and current tags
                             Write-Output ("`t`tVerifying tags for {0}/{1} ({2})" -f $_.ResourceGroupName, $resource.Name, $resource.ResourceType)
                             $resourceid = $resource.resourceId
                             $resourcetags = $resource.Tags
                             $tagsSet = $null
 
-                            if ((-not $resourcetags) -or $resourcetags.Count -eq 0) {
-                                $tagsSet = (Set-AzResource -ResourceId $resourceid -Tag $resourceGroupTags -Force).Tags
+                            # Build the parameters hashtable
+                            $params = @{
+                                ResourceId  = $resourceid
+                                Force       = $true
+                                ErrorAction = 'Stop'
+                            }
 
+                            # Workaround for media services API version issue
+                            if ($resource.ResourceType -eq 'microsoft.media/mediaservices') {
+                                $params.Add('ApiVersion', '2018-07-01')
+                            }
+
+                            if ((-not $resourcetags) -or $resourcetags.Count -eq 0) {
+                                # Add the all the tags from parent resource group
+                                $tagsSet = (Set-AzResource @params -Tag $resourceGroupTags).Tags
                             } else {
                                 if ($resourceGroupTags) {
                                     $tagsToSet = $resourceGroupTags.Clone()
@@ -82,7 +96,8 @@ try {
                                         }
                                     }
                                     if (-not (Compare-TagCollection -Reference $tagsToSet -Difference $resourcetags)) {
-                                        $tagsSet = (Set-AzResource -ResourceId $resourceid -Tag $tagsToSet -Force).Tags
+                                        # Add the required tags (inherit missing tags)
+                                        $tagsSet = (Set-AzResource @params -Tag $tagsToSet).Tags
                                     }
                                 }
                             }
@@ -90,7 +105,7 @@ try {
                                 Write-Output ("`t`t`tTags updated for {0}/{1} ({2})" -f $_.ResourceGroupName, $resource.Name, $resource.ResourceType)
                             }
                         } catch {
-                            if ($resource.Name -match "/") {
+                            if ($resource.Name -match '/') {
                                 Write-Output ("`t`tTags could not be set on the child resource {0}/{1} ({2})" -f $_.ResourceGroupName, $resource.Name, $resource.ResourceType)
                             } else {
                                 Write-Output ("`t`tError setting tags on {0}/{1} ({2}): {3}" -f $_.ResourceGroupName, $resource.Name, $resource.ResourceType, $_.Exception.Message)
