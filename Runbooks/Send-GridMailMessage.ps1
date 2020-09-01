@@ -3,7 +3,7 @@
 Script Name	: Send-GridMailMessage.ps1
 Description	: Send an email using the SendGrid API
 Author		: Martin Schvartzman, Microsoft
-Last Update	: 2020/07/28
+Last Update	: 2020/08/25
 Keywords	: Azure, Automation, Runbook, SendGrid, Email
 
 #>
@@ -37,6 +37,7 @@ try {
     $headers.Add("Authorization", "Bearer " + $SendGridAPIKey)
     $headers.Add("Content-Type", "application/json")
 
+    # Add CSS if body is html content
     if ($bodyAsHtml) {
         $contentType = 'text/html'
         $content = @'
@@ -50,24 +51,28 @@ try {
         $contentType = "text/plain"
     }
 
+    # Split and add the multiple email addresses
+    $sendTo = foreach ($email in ($destEmailAddress -split ',|;')) {
+        @{'email' = $email.Trim() }
+    }
+
+    # Build the request json body
     $body = @{
-        personalizations = @(
-            @{
-                to = @(
-                    @{
-                        email = $destEmailAddress
-                    }
-                )
-            }
-        )
-        from             = @{
-            email = $fromEmailAddress
-        }
         subject          = $subject
         content          = @(
             @{
                 type  = $contentType
                 value = $content
+            }
+        )
+        from             = @{
+            email = $fromEmailAddress
+        }
+        personalizations = @(
+            @{
+                to = @(
+                    $sendTo
+                )
             }
         )
     }
