@@ -45,10 +45,10 @@
                 {
                   "name": "ComponentId",
                   "value": {
-                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
-                    "ResourceGroup": "general-monitor-rg",
-                    "Name": "general-audit-la",
-                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                    "SubscriptionId": "96123092-dc01-4cc8-a8b2-4a0b20a300d7",
+                    "ResourceGroup": "general-rg",
+                    "Name": "lavialmog-la",
+                    "ResourceId": "/subscriptions/96123092-dc01-4cc8-a8b2-4a0b20a300d7/resourcegroups/general-rg/providers/microsoft.operationalinsights/workspaces/lavialmog-la"
                   }
                 },
                 {
@@ -73,7 +73,7 @@
                 },
                 {
                   "name": "PartSubTitle",
-                  "value": "general-audit-la"
+                  "value": "lavialmog-la"
                 },
                 {
                   "name": "resourceTypeMode",
@@ -121,10 +121,10 @@
                 {
                   "name": "ComponentId",
                   "value": {
-                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
-                    "ResourceGroup": "general-monitor-rg",
-                    "Name": "general-audit-la",
-                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                    "SubscriptionId": "96123092-dc01-4cc8-a8b2-4a0b20a300d7",
+                    "ResourceGroup": "general-rg",
+                    "Name": "lavialmog-la",
+                    "ResourceId": "/subscriptions/96123092-dc01-4cc8-a8b2-4a0b20a300d7/resourcegroups/general-rg/providers/microsoft.operationalinsights/workspaces/lavialmog-la"
                   }
                 },
                 {
@@ -149,7 +149,7 @@
                 },
                 {
                   "name": "PartSubTitle",
-                  "value": "general-audit-la"
+                  "value": "lavialmog-la"
                 },
                 {
                   "name": "resourceTypeMode",
@@ -197,10 +197,10 @@
                 {
                   "name": "ComponentId",
                   "value": {
-                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
-                    "ResourceGroup": "general-monitor-rg",
-                    "Name": "general-audit-la",
-                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                    "SubscriptionId": "96123092-dc01-4cc8-a8b2-4a0b20a300d7",
+                    "ResourceGroup": "general-rg",
+                    "Name": "lavialmog-la",
+                    "ResourceId": "/subscriptions/96123092-dc01-4cc8-a8b2-4a0b20a300d7/resourcegroups/general-rg/providers/microsoft.operationalinsights/workspaces/lavialmog-la"
                   }
                 },
                 {
@@ -225,7 +225,7 @@
                 },
                 {
                   "name": "PartSubTitle",
-                  "value": "general-audit-la"
+                  "value": "lavialmog-la"
                 },
                 {
                   "name": "resourceTypeMode",
@@ -253,7 +253,10 @@
                 "content": {
                   "PartTitle": "Created users with no signin",
                   "PartSubTitle": "Created (without deleted) users that have no sign in info for the duration",
-                  "Query": "AuditLogs | where TimeGenerated > ago(365d)\n| where OperationName == \"Add user\"\n| extend addID_ = tostring(TargetResources[0].id)\n| join kind=anti (AuditLogs\n    | where OperationName == \"Delete user\"\n    | extend deleteID_ = tostring(TargetResources[0].id)) on $left.addID_ == $right.deleteID_\n| extend upn_ = tostring(TargetResources[0].userPrincipalName)\n| join kind=leftouter (SigninLogs) on $left.upn_ == $right.UserPrincipalName\n| extend signed_ = isnotempty(UserPrincipalName)\n| project upn_, signed_"
+                  "Query": "AuditLogs | where TimeGenerated > ago(365d)\n| where OperationName == \"Add user\"\n| extend addID_ = tostring(TargetResources[0].id)\n| join kind=anti (AuditLogs\n    | where OperationName == \"Delete user\"\n    | extend deleteID_ = tostring(TargetResources[0].id)) on $left.addID_ == $right.deleteID_\n| extend upn_ = tostring(TargetResources[0].userPrincipalName)\n| join kind=leftouter (SigninLogs) on $left.upn_ == $right.UserPrincipalName\n| extend signed_ = isnotempty(UserPrincipalName)\n| project upn_, signed_",
+                  "GridColumnsWidth": {
+                    "upn_": "239px"
+                  }
                 }
               },
               "asset": {
@@ -274,10 +277,10 @@
                 {
                   "name": "ComponentId",
                   "value": {
-                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
-                    "ResourceGroup": "general-monitor-rg",
-                    "Name": "general-audit-la",
-                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                    "SubscriptionId": "96123092-dc01-4cc8-a8b2-4a0b20a300d7",
+                    "ResourceGroup": "general-rg",
+                    "Name": "lavialmog-la",
+                    "ResourceId": "/subscriptions/96123092-dc01-4cc8-a8b2-4a0b20a300d7/resourcegroups/general-rg/providers/microsoft.operationalinsights/workspaces/lavialmog-la"
                   }
                 },
                 {
@@ -302,7 +305,7 @@
                 },
                 {
                   "name": "PartSubTitle",
-                  "value": "general-audit-la"
+                  "value": "lavialmog-la"
                 },
                 {
                   "name": "resourceTypeMode",
@@ -351,10 +354,10 @@
                 {
                   "name": "ComponentId",
                   "value": {
-                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
-                    "ResourceGroup": "general-monitor-rg",
-                    "Name": "general-audit-la",
-                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                    "SubscriptionId": "96123092-dc01-4cc8-a8b2-4a0b20a300d7",
+                    "ResourceGroup": "general-rg",
+                    "Name": "lavialmog-la",
+                    "ResourceId": "/subscriptions/96123092-dc01-4cc8-a8b2-4a0b20a300d7/resourcegroups/general-rg/providers/microsoft.operationalinsights/workspaces/lavialmog-la"
                   }
                 },
                 {
@@ -379,7 +382,7 @@
                 },
                 {
                   "name": "PartSubTitle",
-                  "value": "general-audit-la"
+                  "value": "lavialmog-la"
                 },
                 {
                   "name": "resourceTypeMode",
@@ -428,10 +431,10 @@
                 {
                   "name": "ComponentId",
                   "value": {
-                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
-                    "ResourceGroup": "general-monitor-rg",
-                    "Name": "general-audit-la",
-                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                    "SubscriptionId": "96123092-dc01-4cc8-a8b2-4a0b20a300d7",
+                    "ResourceGroup": "general-rg",
+                    "Name": "lavialmog-la",
+                    "ResourceId": "/subscriptions/96123092-dc01-4cc8-a8b2-4a0b20a300d7/resourcegroups/general-rg/providers/microsoft.operationalinsights/workspaces/lavialmog-la"
                   }
                 },
                 {
@@ -456,7 +459,7 @@
                 },
                 {
                   "name": "PartSubTitle",
-                  "value": "general-audit-la"
+                  "value": "lavialmog-la"
                 },
                 {
                   "name": "resourceTypeMode",
@@ -508,10 +511,10 @@
                 {
                   "name": "ComponentId",
                   "value": {
-                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
-                    "ResourceGroup": "general-monitor-rg",
-                    "Name": "general-audit-la",
-                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                    "SubscriptionId": "96123092-dc01-4cc8-a8b2-4a0b20a300d7",
+                    "ResourceGroup": "general-rg",
+                    "Name": "lavialmog-la",
+                    "ResourceId": "/subscriptions/96123092-dc01-4cc8-a8b2-4a0b20a300d7/resourcegroups/general-rg/providers/microsoft.operationalinsights/workspaces/lavialmog-la"
                   }
                 },
                 {
@@ -536,7 +539,7 @@
                 },
                 {
                   "name": "PartSubTitle",
-                  "value": "general-audit-la"
+                  "value": "lavialmog-la"
                 },
                 {
                   "name": "resourceTypeMode",
@@ -584,10 +587,10 @@
                 {
                   "name": "ComponentId",
                   "value": {
-                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
-                    "ResourceGroup": "general-monitor-rg",
-                    "Name": "general-audit-la",
-                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                    "SubscriptionId": "96123092-dc01-4cc8-a8b2-4a0b20a300d7",
+                    "ResourceGroup": "general-rg",
+                    "Name": "lavialmog-la",
+                    "ResourceId": "/subscriptions/96123092-dc01-4cc8-a8b2-4a0b20a300d7/resourcegroups/general-rg/providers/microsoft.operationalinsights/workspaces/lavialmog-la"
                   }
                 },
                 {
@@ -612,7 +615,7 @@
                 },
                 {
                   "name": "PartSubTitle",
-                  "value": "general-audit-la"
+                  "value": "lavialmog-la"
                 },
                 {
                   "name": "resourceTypeMode",
@@ -652,7 +655,7 @@
             "position": {
               "x": 0,
               "y": 12,
-              "colSpan": 5,
+              "colSpan": 20,
               "rowSpan": 4
             },
             "metadata": {
@@ -660,10 +663,10 @@
                 {
                   "name": "ComponentId",
                   "value": {
-                    "SubscriptionId": "63bd5dca-a147-481f-8aeb-cdf2060b74c8",
-                    "ResourceGroup": "general-monitor-rg",
-                    "Name": "general-audit-la",
-                    "ResourceId": "/subscriptions/63bd5dca-a147-481f-8aeb-cdf2060b74c8/resourcegroups/general-monitor-rg/providers/microsoft.operationalinsights/workspaces/general-audit-la"
+                    "SubscriptionId": "96123092-dc01-4cc8-a8b2-4a0b20a300d7",
+                    "ResourceGroup": "general-rg",
+                    "Name": "lavialmog-la",
+                    "ResourceId": "/subscriptions/96123092-dc01-4cc8-a8b2-4a0b20a300d7/resourcegroups/general-rg/providers/microsoft.operationalinsights/workspaces/lavialmog-la"
                   }
                 },
                 {
@@ -688,7 +691,7 @@
                 },
                 {
                   "name": "PartSubTitle",
-                  "value": "general-audit-la"
+                  "value": "lavialmog-la"
                 },
                 {
                   "name": "resourceTypeMode",
@@ -716,7 +719,11 @@
                 "content": {
                   "PartTitle": "User SignIns blocked by Conditional Access",
                   "PartSubTitle": "Azure Active Directory",
-                  "Query": "SigninLogs | where ConditionalAccessStatus == 1 |summarize LoginCount = dcount(Id) by UserDisplayName, AppDisplayName | sort by LoginCount, UserDisplayName, AppDisplayName desc\n"
+                  "Query": "SigninLogs | where ConditionalAccessStatus == \"failure\" \n| extend AuthMethod = MfaDetail.authMethod\n| extend AdditionalDetails = Status.additionalDetails\n| extend ErrorCode = Status.errorCode\n| extend Location = strcat(LocationDetails.countryOrRegion, ', ', LocationDetails.state, ', ', LocationDetails.city)\n| summarize Count = dcount(Id) by UserDisplayName, AppDisplayName, \ntostring(AuthMethod), tostring(AdditionalDetails), tostring(ErrorCode), tostring(Location) \n| sort by Count, UserDisplayName, AppDisplayName desc\n| project Count, UserDisplayName, AppDisplayName, ErrorCode, AuthMethod, AdditionalDetails, Location\n",
+                  "GridColumnsWidth": {
+                    "AdditionalDetails": "265px",
+                    "Location": "272px"
+                  }
                 }
               },
               "asset": {
@@ -755,15 +762,15 @@
                 "value": "Past 30 days"
               },
               "filteredPartIds": [
-                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce059",
-                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce05b",
-                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce05d",
-                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce05f",
-                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce061",
-                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce063",
-                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce065",
-                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce067",
-                "StartboardPart-AnalyticsPart-5cd1ddc7-c049-4534-9576-d21a8f9ce069"
+                "StartboardPart-AnalyticsPart-432dbda6-8760-4403-aada-e0f418ee820f",
+                "StartboardPart-AnalyticsPart-432dbda6-8760-4403-aada-e0f418ee8211",
+                "StartboardPart-AnalyticsPart-432dbda6-8760-4403-aada-e0f418ee8213",
+                "StartboardPart-AnalyticsPart-432dbda6-8760-4403-aada-e0f418ee8215",
+                "StartboardPart-AnalyticsPart-432dbda6-8760-4403-aada-e0f418ee8217",
+                "StartboardPart-AnalyticsPart-432dbda6-8760-4403-aada-e0f418ee8219",
+                "StartboardPart-AnalyticsPart-432dbda6-8760-4403-aada-e0f418ee821b",
+                "StartboardPart-AnalyticsPart-432dbda6-8760-4403-aada-e0f418ee821d",
+                "StartboardPart-AnalyticsPart-432dbda6-8760-4403-aada-e0f418ee821f"
               ]
             }
           }
