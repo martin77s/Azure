@@ -88,15 +88,20 @@ Resources
 | extend sku = properties.storageProfile.imageReference.sku
 | extend licenseType = properties.licenseType
 | extend priority = properties.priority
-| extend numDataDisks = array_length(properties.storageProfile.dataDisks)
+| mvexpand nic = properties.networkProfile.networkInterfaces
+| extend nicId = tostring(nic.id)
+| extend numOfDataDisks = array_length(properties.storageProfile.dataDisks)
+| extend powerState = replace('PowerState/', '', tostring(properties.extended.instanceView.powerState.code))
+| project subscriptionId, resourceGroup, id = name, location, powerState, vmSize, os, sku, licenseType, nicId, priority, numOfDataDisks
 | join kind=leftouter (
-	resourcecontainers
-	| where type == "microsoft.resources/subscriptions"
-	| extend subscriptionName = tostring(name)
-	| project subscriptionName, subscriptionId
-) on subscriptionId
-| project-away subscriptionId1
-| project subscriptionName, subscriptionId, resourceGroup, vmName = name, location, vmSize, os, sku, licenseType, priority, numDataDisks, properties
+	Resources
+	| where type == "microsoft.network/networkinterfaces"
+	| mvexpand ipconfig=properties.ipConfigurations
+	| extend privateIp = ipconfig.properties.privateIPAddress
+    | project nicId = id, privateIp
+) on nicId
+| project-away nicId1
+| project subscriptionId, resourceGroup, id, location, powerState, vmSize, os, sku, licenseType, privateIp, priority, numOfDataDisks
 ```
 
 - - - 
@@ -232,8 +237,8 @@ Resources
 | extend AllowGatewayTransit = peering.properties.allowGatewayTransit
 | extend UseRemoteGateways = peering.properties.useRemoteGateways
 | extend PeeringState = peering.properties.peeringState
-| extend RemoteVirtualNetworkId = peering.properties.remoteVirtualNetwork.id
-| project subscriptionId, resourceGroup, id, AllowVirtualNetworkAccess, AllowForwardedTraffic, AllowGatewayTransit, UseRemoteGateways, RemoteVirtualNetworkId
+| extend RemoteVirtualNetwork = split(peering.properties.remoteVirtualNetwork.id, '/')[8]
+| project subscriptionId, resourceGroup, id, RemoteVirtualNetwork, AllowVirtualNetworkAccess, AllowForwardedTraffic, AllowGatewayTransit, UseRemoteGateways
 ```
 
 - - - 
@@ -241,10 +246,14 @@ Resources
 ### Public IPs Addresses
 
 ```
-Resources
-| where type =~ 'microsoft.network/publicipaddresses'
-| extend AttachedTo = split(properties.ipConfiguration.id, '/')[8]
-| project subscriptionId, resourceGroup, id, ['IP Address']=properties.ipAddress, SKU=sku.name, ['Allocation Method']=properties.publicIPAllocationMethod, ['Attached To']=AttachedTo
+resources
+| where type =~ 'microsoft.network/publicipaddresses' or type =~ "microsoft.classicnetwork/reservedips"
+| extend DeploymentType = iif(type == "microsoft.classicnetwork/reservedips", "Classic", "ARM")
+| extend AttachedTo = iff(type == "microsoft.classicnetwork/reservedips", 
+	split(properties.attachedTo.id, '/')[8], 
+	split(properties.ipConfiguration.id, '/')[8]
+)
+| project subscriptionId, resourceGroup, id, DeploymentType, ['IP Address']=properties.ipAddress, SKU=sku.name, ['Allocation Method']=properties.publicIPAllocationMethod, AttachedTo
 ```
 
 - - - 
@@ -276,4 +285,80 @@ Resources
 | project-away publicIpId1
 | where isnotempty(publicIpId)
 | project subscriptionId, resourceGroup, id=publicIpId, ['IP Address']=publicIpAddress, ['VM Name']=vmName, vmId, nicId
+```
+
+- - - 
+
+### Orphan Disks
+
+```
+resources
+| where type == "microsoft.compute/disks"
+| where isempty(managedBy) and id notcontains "-ASRReplica"
+| project subscriptionId, resourceGroup, id, ["Sku"]=sku.name, location, tags
+```
+
+- - - 
+
+### Orphan Network Interfaces
+
+```
+resources
+| where type == "microsoft.network/networkinterfaces"
+| where isempty(managedBy)
+| project subscriptionId, resourceGroup, id, location, tags
+```
+
+- - - 
+
+### Orphan Public IPs
+
+```
+resources
+| where type =~ 'microsoft.network/publicipaddresses' or type =~ "microsoft.classicnetwork/reservedips"
+| extend DeploymentType = iif(type == "microsoft.classicnetwork/reservedips", "Classic", "ARM")
+| extend AttachedTo = iff(type == "microsoft.classicnetwork/reservedips", 
+	split(properties.attachedTo.id, '/')[8], 
+	split(properties.ipConfiguration.id, '/')[8]
+)
+| where isempty(AttachedTo)
+| project subscriptionId, resourceGroup, id, DeploymentType, ['IP Address']=properties.ipAddress, location
+```
+
+- - - 
+
+### Orphan Resource Groups
+
+```
+ResourceContainers
+ | where type == "microsoft.resources/subscriptions/resourcegroups"
+ | extend rgAndSub = strcat(resourceGroup, "--", subscriptionId)
+ | join kind=leftouter (
+     Resources
+     | extend rgAndSub = strcat(resourceGroup, "--", subscriptionId)
+     | summarize count() by rgAndSub
+ ) on rgAndSub
+ | where isnull(count_)
+ | project-away rgAndSub1, count_
+ | project subscriptionId, id,  location, tags
+```
+
+- - - 
+
+### Orphan NSGs
+
+```
+Resources
+| where type == "microsoft.network/networksecuritygroups" and isnull(properties.networkInterfaces) and isnull(properties.subnets)
+| project subscriptionId, resourceGroup, id, location, tags
+```
+
+- - - 
+
+### Orphan Availabity Sets
+
+```
+where type =~ 'Microsoft.Compute/availabilitySets'
+| where properties.virtualMachines == "[]"
+| project subscriptionId, resourceGroup, id, location, tags
 ```
