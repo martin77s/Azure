@@ -164,6 +164,11 @@
                   "isOptional": true
                 },
                 {
+                  "name": "query",
+                  "value": "resources\r\n| where type == \"microsoft.network/networkinterfaces\"\r\n| where isempty(managedBy)\r\n| summarize [\"Total Orphan Network Interfaces\"]=count()",
+                  "isOptional": true
+                },
+                {
                   "name": "chartType",
                   "isOptional": true
                 },
@@ -172,16 +177,12 @@
                   "isOptional": true
                 },
                 {
-                  "name": "formatResults",
-                  "isOptional": true
-                },
-                {
-                  "name": "query",
-                  "value": "resources| where type == \"microsoft.network/networkinterfaces\"| where isempty(properties.virtualMachine)| summarize [\"Total Orphan Network Interfaces\"]=count()",
-                  "isOptional": true
-                },
-                {
                   "name": "queryId",
+                  "value": "d722dc9b-a0f2-432a-9cf9-b7d18f8e3890",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
                   "isOptional": true
                 }
               ],
@@ -222,7 +223,7 @@
                 },
                 {
                   "name": "query",
-                  "value": "resources| where type == \"microsoft.network/networkinterfaces\"| where isempty(properties.virtualMachine)| project [\"Nic Name\"]=name, resourceGroup, location, subscriptionId, tags",
+                  "value": "resources\r\n| where type == \"microsoft.network/networkinterfaces\"\r\n| where isempty(managedBy)\r\n| project subscriptionId, resourceGroup, id, location, tags",
                   "isOptional": true
                 }
               ],
@@ -304,7 +305,7 @@
                 },
                 {
                   "name": "query",
-                  "value": "where type == \"microsoft.network/publicipaddresses\"\r\n| where properties.ipConfiguration == \"\"\r\n| project subscriptionId, resourceGroup, id, [\"Sku\"]=sku.name, location, tags",
+                  "value": "resources\r\n| where type =~ 'microsoft.network/publicipaddresses' or type =~ \"microsoft.classicnetwork/reservedips\"\r\n| extend DeploymentType = iif(type == \"microsoft.classicnetwork/reservedips\", \"Classic\", \"ARM\")\r\n| extend AttachedTo = iff(type == \"microsoft.classicnetwork/reservedips\", \r\n\tsplit(properties.attachedTo.id, '/')[8], \r\n\tsplit(properties.ipConfiguration.id, '/')[8]\r\n)\r\n| where isempty(AttachedTo)\r\n| project subscriptionId, resourceGroup, id, DeploymentType, location, tags\r\n",
                   "isOptional": true
                 }
               ],
@@ -594,11 +595,11 @@
       }
     }
   },
-  "name": "Orphan Resources Dashboard",
+  "name": "Orphan Resources",
   "type": "Microsoft.Portal/dashboards",
   "location": "INSERT LOCATION",
   "tags": {
-    "hidden-title": "Orphan Resources Dashboard"
+    "hidden-title": "Orphan Resources"
   },
   "apiVersion": "2015-08-01-preview"
 }

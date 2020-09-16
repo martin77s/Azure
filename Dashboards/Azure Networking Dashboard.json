@@ -360,7 +360,7 @@
                 },
                 {
                   "name": "query",
-                  "value": "Resources\n| where type =~ 'microsoft.network/publicipaddresses'\n| extend AttachedTo = split(properties.ipConfiguration.id, '/')[8]\n| project subscriptionId, resourceGroup, id, ['IP Address']=properties.ipAddress, SKU=sku.name, ['Allocation Method']=properties.publicIPAllocationMethod, ['Attached To']=AttachedTo",
+                  "value": "resources\n| where type =~ 'microsoft.network/publicipaddresses' or type =~ \"microsoft.classicnetwork/reservedips\"\n| extend DeploymentType = iif(type == \"microsoft.classicnetwork/reservedips\", \"Classic\", \"ARM\")\n| extend AttachedTo = iff(type == \"microsoft.classicnetwork/reservedips\", \n\tsplit(properties.attachedTo.id, '/')[8], \n\tsplit(properties.ipConfiguration.id, '/')[8]\n)\n| project subscriptionId, resourceGroup, id, DeploymentType, ['IP Address']=properties.ipAddress, SKU=sku.name, ['Allocation Method']=properties.publicIPAllocationMethod, AttachedTo, properties\n",
                   "isOptional": true
                 }
               ],
