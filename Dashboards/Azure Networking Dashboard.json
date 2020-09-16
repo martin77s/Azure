@@ -116,7 +116,7 @@
                 },
                 {
                   "name": "query",
-                  "value": "Resources \n| where type == 'microsoft.network/publicipaddresses'\n| summarize ['Public IPs'] = count()",
+                  "value": "Resources \n| where type =~ 'microsoft.network/publicipaddresses' or type =~ \"microsoft.classicnetwork/reservedips\"\n| summarize ['Public IPs'] = count()",
                   "isOptional": true
                 }
               ],
@@ -319,7 +319,7 @@
                 },
                 {
                   "name": "query",
-                  "value": "Resources\n| where type =~ 'Microsoft.Network/virtualNetworks'\n| extend peering=properties.virtualNetworkPeerings\n| where array_length(peering) > 0\n| mvexpand peering\n| extend AllowVirtualNetworkAccess = peering.properties.allowVirtualNetworkAccess\n| extend AllowForwardedTraffic = peering.properties.allowForwardedTraffic\n| extend AllowGatewayTransit = peering.properties.allowGatewayTransit\n| extend UseRemoteGateways = peering.properties.useRemoteGateways\n| extend PeeringState = peering.properties.peeringState\n| extend RemoteVirtualNetworkId = peering.properties.remoteVirtualNetwork.id\n| project subscriptionId, resourceGroup, id, AllowVirtualNetworkAccess, AllowForwardedTraffic, AllowGatewayTransit, UseRemoteGateways, RemoteVirtualNetworkId",
+                  "value": "Resources\n| where type =~ 'Microsoft.Network/virtualNetworks'\n| extend peering=properties.virtualNetworkPeerings\n| where array_length(peering) > 0\n| mvexpand peering\n| extend AllowVirtualNetworkAccess = peering.properties.allowVirtualNetworkAccess\n| extend AllowForwardedTraffic = peering.properties.allowForwardedTraffic\n| extend AllowGatewayTransit = peering.properties.allowGatewayTransit\n| extend UseRemoteGateways = peering.properties.useRemoteGateways\n| extend PeeringState = peering.properties.peeringState\n| extend RemoteVirtualNetwork = split(peering.properties.remoteVirtualNetwork.id, '/')[8]\n| project subscriptionId, resourceGroup, id, RemoteVirtualNetwork, AllowVirtualNetworkAccess, AllowForwardedTraffic, AllowGatewayTransit, UseRemoteGateways",
                   "isOptional": true
                 }
               ],
@@ -360,7 +360,7 @@
                 },
                 {
                   "name": "query",
-                  "value": "resources\n| where type =~ 'microsoft.network/publicipaddresses' or type =~ \"microsoft.classicnetwork/reservedips\"\n| extend DeploymentType = iif(type == \"microsoft.classicnetwork/reservedips\", \"Classic\", \"ARM\")\n| extend AttachedTo = iff(type == \"microsoft.classicnetwork/reservedips\", \n\tsplit(properties.attachedTo.id, '/')[8], \n\tsplit(properties.ipConfiguration.id, '/')[8]\n)\n| project subscriptionId, resourceGroup, id, DeploymentType, ['IP Address']=properties.ipAddress, SKU=sku.name, ['Allocation Method']=properties.publicIPAllocationMethod, AttachedTo, properties\n",
+                  "value": "resources\n| where type =~ 'microsoft.network/publicipaddresses' or type =~ \"microsoft.classicnetwork/reservedips\"\n| extend DeploymentType = iif(type == \"microsoft.classicnetwork/reservedips\", \"Classic\", \"ARM\")\n| extend AttachedTo = iff(type == \"microsoft.classicnetwork/reservedips\", \n\tsplit(properties.attachedTo.id, '/')[8], \n\tsplit(properties.ipConfiguration.id, '/')[8]\n)\n| project subscriptionId, resourceGroup, id, DeploymentType, ['IP Address']=properties.ipAddress, SKU=sku.name, ['Allocation Method']=properties.publicIPAllocationMethod, AttachedTo",
                   "isOptional": true
                 }
               ],
@@ -401,7 +401,7 @@
                 },
                 {
                   "name": "query",
-                  "value": "Resources\n| where type =~ 'microsoft.compute/virtualmachines'\n| extend nics=array_length(properties.networkProfile.networkInterfaces)\n| mv-expand nic=properties.networkProfile.networkInterfaces\n| where nics == 1 or nic.properties.primary =~ 'true' or isempty(nic)\n| project vmId = id, vmName = name, vmSize=tostring(properties.hardwareProfile.vmSize), nicId = tostring(nic.id), subscriptionId, resourceGroup\n| join kind=leftouter (\n\tResources\n\t| where type =~ 'microsoft.network/networkinterfaces'\n\t| extend ipConfigsCount=array_length(properties.ipConfigurations)\n\t| mv-expand ipconfig=properties.ipConfigurations\n\t| where ipConfigsCount == 1 or ipconfig.properties.primary =~ 'true'\n\t| project nicId = id, publicIpId = tostring(ipconfig.properties.publicIPAddress.id)\n) on nicId\n| project-away nicId1\n| summarize by subscriptionId, resourceGroup, publicIpId, vmId, vmName, nicId\n| join kind=leftouter (\n\tResources\n\t| where type =~ 'microsoft.network/publicipaddresses'\n\t| project publicIpId = id, publicIpAddress = properties.ipAddress\n) on publicIpId\n| project-away publicIpId1\n| where isnotempty(publicIpId)\n| project subscriptionId, resourceGroup, id=publicIpId, ['IP Address']=publicIpAddress, ['VM Name']=vmName, vmId, nicId",
+                  "value": "Resources\n| where type =~ 'microsoft.compute/virtualmachines'\n| extend nics=array_length(properties.networkProfile.networkInterfaces)\n| mv-expand nic=properties.networkProfile.networkInterfaces\n| where nics == 1 or nic.properties.primary =~ 'true' or isempty(nic)\n| project vmId = id, vmName = name, vmSize=tostring(properties.hardwareProfile.vmSize), nicId = tostring(nic.id), subscriptionId, resourceGroup\n| join kind=leftouter (\n\tResources\n\t| where type =~ 'microsoft.network/networkinterfaces'\n\t| extend ipConfigsCount=array_length(properties.ipConfigurations)\n\t| mv-expand ipconfig=properties.ipConfigurations\n\t| where ipConfigsCount == 1 or ipconfig.properties.primary =~ 'true'\n\t| project nicId = id, publicIpId = tostring(ipconfig.properties.publicIPAddress.id)\n) on nicId\n| project-away nicId1\n| summarize by subscriptionId, resourceGroup, publicIpId, vmId, vmName, nicId\n| join kind=leftouter (\n\tResources\n\t| where type =~ 'microsoft.network/publicipaddresses'\n\t| project publicIpId = id, publicIpAddress = properties.ipAddress\n) on publicIpId\n| project-away publicIpId1\n| where isnotempty(publicIpId)\n| project subscriptionId, resourceGroup, id=publicIpId, ['IP Address']=publicIpAddress, ['VM Name']=vmName, ['VM Id']=vmId, ['NIC Id']=nicId",
                   "isOptional": true
                 }
               ],
