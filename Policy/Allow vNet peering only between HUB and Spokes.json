@@ -14,12 +14,6 @@
                 "field": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/remoteVirtualNetwork.id",
                 "like": "[concat('*',parameters('allowedVnet'))]"
               }
-            },
-            {
-              "not": {
-                "field": "fullName",
-                "like": "[concat(parameters('allowedVnet'),'*')]"
-              }
             }
           ]
         },
@@ -33,12 +27,6 @@
               "not": {
                 "field": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings[*].remoteVirtualNetwork.id",
                 "like": "[concat('*',parameters('allowedVnet'))]"
-              }
-            },
-            {
-              "not": {
-                "field": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings[*].remoteVirtualNetwork.id",
-                "exists": false
               }
             }
           ]

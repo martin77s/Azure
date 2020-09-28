@@ -19,11 +19,12 @@ Type | Name |
 | BuiltIn | Inherit a tag from the resource group if missing |
 | Custom | Require Governance Tags for Resource Groups |
 | Custom | Audit unattached managed disks |
-| Custom | Audit hybrid use benefit |
+| Custom | Audit/Enforce/Deploy Hybrid use Benefit |
 | Custom | Audits resource locks on KeyVaults |
 | Custom | Audits resource locks on VNETs |
 | Custom | Audit NSG allowing RDP and SSH from any source |
 | Custom | Deny NSGs with allow any-any-any rule |
+| Custom | Storage Accounts should not allow public blobs |
 | Custom | Allow vNet peering only between HUB and Spokes |
 | Custom | Append the CreationTimeStamp tag at resource creation |
 | Custom | Set Subscription DiagnosticSettings LogAnalytics |
