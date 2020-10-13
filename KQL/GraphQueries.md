@@ -370,23 +370,20 @@ where type =~ 'Microsoft.Compute/availabilitySets'
 
 ```code
 resources 
-	| where type =~ 'microsoft.network/loadbalancers' or type =~ 'microsoft.network/applicationgateways' or type =~ 'microsoft.network/azurefirewalls'
-	| mvexpand ipconfig = iif(type == 'microsoft.network/azurefirewalls', properties.ipConfigurations, properties.frontendIPConfigurations)
-	| extend privateIp = tostring(ipconfig.properties.privateIPAddress)
-| union (
-	Resources
+| where type =~ 'microsoft.network/loadbalancers' or type =~ 'microsoft.network/applicationgateways' or type =~ 'microsoft.network/azurefirewalls'
+| mvexpand ipconfig = iif(type == 'microsoft.network/azurefirewalls', properties.ipConfigurations, properties.frontendIPConfigurations)
+| extend privateIp = tostring(ipconfig.properties.privateIPAddress)
+| union ( resources
 	| where type =~ 'microsoft.compute/virtualmachines'
-	| mv-expand nic=properties.networkProfile.networkInterfaces
-	| project id, type, vmName = name, nicId = tostring(nic.id), subscriptionId, resourceGroup
+	| mv-expand nic = properties.networkProfile.networkInterfaces
+	| project id, type, nicId = tostring(nic.id), subscriptionId, resourceGroup
 	| join kind=leftouter (
-		Resources
+		resources
 		| where type =~ 'microsoft.network/networkinterfaces'
-		| extend ipConfigsCount=array_length(properties.ipConfigurations)
-		| mv-expand ipconfig=properties.ipConfigurations
-		| where ipConfigsCount == 1 or ipconfig.properties.primary =~ 'true'
+		| mv-expand ipconfig = properties.ipConfigurations
 		| extend nicId = id, privateIp = tostring(ipconfig.properties.privateIPAddress)
 	) on nicId
-)
+) 
 | where isnotempty(privateIp)
 | project subscriptionId, resourceGroup, id, type, privateIp
 ```
