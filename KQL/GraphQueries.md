@@ -376,6 +376,6 @@ resources
 	properties.frontendIPConfigurations
 )
 | where isnotempty(ipconfig.properties.privateIPAddress)
-| project id, type, privateIp = ipconfig.properties.privateIPAddress
+| project subscriptionId, resourceGroup, id, type, privateIp = ipconfig.properties.privateIPAddress
 ```
 
