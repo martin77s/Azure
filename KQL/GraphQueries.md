@@ -370,8 +370,8 @@ where type =~ 'Microsoft.Compute/availabilitySets'
 
 ```code
 resources 
-	| where type =~ 'microsoft.network/loadbalancers' or type =~ 'microsoft.network/applicationgateways'
-	| mvexpand ipconfig = properties.frontendIPConfigurations
+	| where type =~ 'microsoft.network/loadbalancers' or type =~ 'microsoft.network/applicationgateways' or type =~ 'microsoft.network/azurefirewalls'
+	| mvexpand ipconfig = iif(type == 'microsoft.network/azurefirewalls', properties.ipConfigurations, properties.frontendIPConfigurations)
 	| extend privateIp = tostring(ipconfig.properties.privateIPAddress)
 | union (
 	Resources
