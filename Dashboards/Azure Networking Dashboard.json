@@ -408,6 +408,47 @@
               "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
               "settings": {}
             }
+          },
+          "10": {
+            "position": {
+              "x": 0,
+              "y": 27,
+              "colSpan": 15,
+              "rowSpan": 5
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "chartType",
+                  "isOptional": true
+                },
+                {
+                  "name": "isShared",
+                  "isOptional": true
+                },
+                {
+                  "name": "queryId",
+                  "isOptional": true
+                },
+                {
+                  "name": "partTitle",
+                  "value": "Private IP Addresses",
+                  "isOptional": true
+                },
+                {
+                  "name": "query",
+                  "value": "resources \n| where type =~ 'microsoft.network/loadbalancers' or type =~ 'microsoft.network/applicationgateways' or type =~ 'microsoft.network/azurefirewalls'\n| mvexpand ipconfig = iif(type =~ 'microsoft.network/azurefirewalls', properties.ipConfigurations, properties.frontendIPConfigurations)\n| extend privateIp = tostring(ipconfig.properties.privateIPAddress)\n| union ( resources\n\t| where type =~ 'microsoft.compute/virtualmachines'\n\t| mv-expand nic=properties.networkProfile.networkInterfaces\n\t| project id, type, nicId = tostring(nic.id), subscriptionId, resourceGroup\n\t| join kind=leftouter (\n\t\tresources\n\t\t| where type =~ 'microsoft.network/networkinterfaces'\n\t\t| mv-expand ipconfig=properties.ipConfigurations\n\t\t| extend nicId = id, privateIp = tostring(ipconfig.properties.privateIPAddress)\n\t) on nicId\n) \n| where isnotempty(privateIp)\n| project subscriptionId, resourceGroup, id, type, privateIp",
+                  "isOptional": true
+                },
+                {
+                  "name": "formatResults",
+                  "value": true,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+              "settings": {}
+            }
           }
         }
       }
