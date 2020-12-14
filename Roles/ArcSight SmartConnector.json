@@ -71,8 +71,6 @@
                     "microsoft.web/sites/slots/config/delete",
                     "Microsoft.Web/sites/slots/config/Write",
                     "Microsoft.Web/sites/slots/config/Read",
-                    "microsoft.web/sites/functions/properties/read",
-                    "microsoft.web/sites/functions/properties/write",
                     "microsoft.web/sites/extensions/write",
                     "microsoft.web/sites/extensions/read",
                     "microsoft.web/sites/extensions/delete",
