@@ -276,3 +276,28 @@ Calculate Static IP Address in a CopyLoop:
     }
 ]
 ```
+
+- - -
+
+Custom function
+```json
+"functions": [
+    {
+        "namespace": "myNameSpace",
+        "members": {
+            "joinArray": {
+                "parameters": [
+                    {
+                        "name": "items",
+                        "type": "array"
+                    }
+                ],
+                "output": {
+                    "type": "string",
+                    "value": "[replace(replace(replace(string(parameters('items')), '[\"', ''), '\"]', ''), '\",\"', '')]"
+                }
+            }
+        }
+    }
+]
+```
