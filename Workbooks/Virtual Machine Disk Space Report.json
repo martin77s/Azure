@@ -2,6 +2,13 @@
   "version": "Notebook/1.0",
   "items": [
     {
+      "type": 1,
+      "content": {
+        "json": "# Disk Space Workbook"
+      },
+      "name": "text - 2"
+    },
+    {
       "type": 9,
       "content": {
         "version": "KqlParameterItem/1.0",
@@ -19,7 +26,7 @@
             "quote": "'",
             "delimiter": ",",
             "value": [
-              "/subscriptions/e4272367-5645-4c4e-9c67-3b74b59a6982"
+              "value::all"
             ],
             "typeSettings": {
               "additionalResourceOptions": [
@@ -30,7 +37,8 @@
             "timeContext": {
               "durationMs": 0
             },
-            "timeContextFromParameter": "TimeRange"
+            "timeContextFromParameter": "TimeRange",
+            "resourceType": "microsoft.insights/components"
           },
           {
             "id": "7850afb1-cc41-4904-9587-34606b4f6c42",
@@ -41,7 +49,7 @@
             "crossComponentResources": [
               "{Subscription}"
             ],
-            "value": "/subscriptions/e4272367-5645-4c4e-9c67-3b74b59a6982/resourceGroups/contosoazurehq/providers/Microsoft.OperationalInsights/workspaces/contosoretail-IT",
+            "value": "/subscriptions/5733bcb3-7fde-4caf-8629-41dc15e3b352/resourceGroups/CH-OpsRG-Pri/providers/Microsoft.OperationalInsights/workspaces/CH-LA",
             "typeSettings": {
               "additionalResourceOptions": []
             },
@@ -108,14 +116,16 @@
                   "durationMs": 7776000000
                 }
               ]
-            }
+            },
+            "resourceType": "microsoft.insights/components"
           },
           {
             "id": "75c01e76-1d21-487d-90be-feff824eff77",
             "version": "KqlParameterItem/1.0",
             "name": "Threshold",
             "type": 1,
-            "value": "50"
+            "value": "50",
+            "resourceType": "microsoft.insights/components"
           }
         ],
         "style": "pills",
@@ -169,19 +179,18 @@
                     "text": "{0}{1}"
                   },
                   {
+                    "operator": "==",
+                    "thresholdValue": "Unhealthy",
+                    "representation": "critical",
+                    "text": "{0}{1}"
+                  },
+                  {
                     "operator": "Default",
                     "thresholdValue": null,
                     "representation": "4",
                     "text": "{0}{1}"
                   }
                 ]
-              }
-            },
-            {
-              "columnMatch": "TimeGenerated",
-              "formatter": 0,
-              "formatOptions": {
-                "showIcon": true
               }
             },
             {
@@ -208,13 +217,6 @@
                 "palette": "blue",
                 "showIcon": true
               }
-            },
-            {
-              "columnMatch": "$gen_group",
-              "formatter": 0,
-              "formatOptions": {
-                "showIcon": true
-              }
             }
           ],
           "hierarchySettings": {
@@ -225,33 +227,25 @@
             "expandTopLevel": true,
             "finalBy": "InstanceName"
           },
+          "sortBy": [
+            {
+              "itemKey": "$gen_group",
+              "sortOrder": 1
+            }
+          ],
           "labelSettings": [
-            {
-              "columnId": "Computer",
-              "label": "Computer"
-            },
-            {
-              "columnId": "InstanceName",
-              "label": "InstanceName"
-            },
-            {
-              "columnId": "Status",
-              "label": "Status"
-            },
-            {
-              "columnId": "TimeGenerated",
-              "label": "TimeGenerated"
-            },
             {
               "columnId": "CounterValue",
               "label": "% Free Space"
-            },
-            {
-              "columnId": "Trend",
-              "label": "Trend"
             }
           ]
-        }
+        },
+        "sortBy": [
+          {
+            "itemKey": "$gen_group",
+            "sortOrder": 1
+          }
+        ]
       },
       "name": "query - 0"
     }
