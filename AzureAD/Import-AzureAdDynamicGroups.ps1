@@ -95,8 +95,12 @@ function Invoke-AadApi {
 
     # Build the request headers:
     $headers = @{
-        "Authorization" = "Bearer $($authToken)"
-        "Content-Type"  = "application/json; charset=utf-8"
+        'Authorization'         = "Bearer $($authToken)"
+        'Content-Type'          = 'application/json'
+        'Accept'                = '*/*'
+        'Accept-Language'       = 'en'
+        'Accept-Encoding'       = 'gzip, deflate, br'
+        'x-ms-effective-locale' = 'en.en-us'
     }
 
     # Build the params and call the API:
@@ -107,7 +111,7 @@ function Invoke-AadApi {
         Body            = if ($method -eq 'Get') { $null } else { $payload }
         ErrorAction     = 'Stop'
         UseBasicParsing = $true
-    }; $response = Invoke-RestMethod @params
+    }; $response = Invoke-RestMethod @params -UserAgent 'User-Agent: Mozilla/5.0'
     if ($?) {
         $response | ConvertTo-Json -Depth 100
     }
@@ -144,6 +148,7 @@ Import-Csv -Path $DataFilePath -Encoding $DataFileEncoding | Where-Object { $_.m
     }
 
     $body = ConvertTo-Json -InputObject $payload
+
     try {
         $groupParams = @{
             apiUri    = 'https://graph.microsoft.com/beta/groups' 
@@ -151,9 +156,8 @@ Import-Csv -Path $DataFilePath -Encoding $DataFileEncoding | Where-Object { $_.m
             method    = 'POST'
             authToken = $authToken.access_token
         }
-        ### $null = Invoke-AadApi @groupParams
-        $ret = Invoke-AadApi @groupParams
-        $ret 
+        $null = Invoke-AadApi @groupParams
+
     } catch {
         Write-Output ('Error creating group {0}. {1}' -f $payload.displayName, $_.Exception.Message)
     }
