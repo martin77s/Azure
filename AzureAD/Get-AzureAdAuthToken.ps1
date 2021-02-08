@@ -5,7 +5,7 @@ Description	: Authenticate and get the token from AzureAD
 Author		: Martin Schvartzman, Microsoft
 Last Update	: 2021/02/08
 Keywords	: AzureAD, AuthToken, GraphAPI
-References  : https://docs.microsoft.com/en-us/graph/api/resources/groups-overview?view=graph-rest-beta
+References  : https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/how-to-use-vm-token
 
  ============[DISCLAIMER]=========================================================================================================
   THIS SAMPLE CODE AND ANY RELATED INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, 
@@ -26,39 +26,47 @@ PARAM(
 	$TimeOut = 60
 )
 
-$ClientID = '1950a258-227b-4e31-a9cf-717495945fc2' # Azure PowerShell
-$Resource = "https://graph.microsoft.com/"
+$localEpoch = (Get-Date -Date '1970/01/01 00:00:00').AddMinutes((Get-TimeZone).BaseUtcOffset.TotalMinutes)
 
-$DeviceCodeRequestParams = @{
-	Method = 'POST'
-	Uri    = "https://login.microsoftonline.com/$TenantID/oauth2/devicecode"
-	Body   = @{
-		client_id = $ClientId
-		resource  = $Resource
-	}
-}
+if(-not ($global:aadApi_token -and $localEpoch.AddSeconds(($global:aadApi_token).expires_on) -gt (Get-Date))) {
 
-$DeviceCodeRequest = Invoke-RestMethod @DeviceCodeRequestParams
-Write-Host $DeviceCodeRequest.message -ForegroundColor Yellow
+	$ClientID = '1950a258-227b-4e31-a9cf-717495945fc2' # Azure PowerShell
+	$Resource = 'https://graph.microsoft.com/'
 
-do {
-	Start-Sleep -Seconds 3
-	$TimeOut -= 3
-
-	$TokenRequestParams = @{
+	$DeviceCodeRequestParams = @{
 		Method = 'POST'
-		Uri    = "https://login.microsoftonline.com/$TenantId/oauth2/token"
+		Uri    = "https://login.microsoftonline.com/$TenantID/oauth2/devicecode"
 		Body   = @{
-			grant_type = "urn:ietf:params:oauth:grant-type:device_code"
-			code       = $DeviceCodeRequest.device_code
-			client_id  = $ClientId
+			client_id = $ClientId
+			resource  = $Resource
 		}
 	}
-	try {
-		$token = Invoke-RestMethod @TokenRequestParams
-	} catch {
-		$token = $null
-	}
 
-} while ((-not $token) -and ($TimeOut -gt 0))
-$token
+	$DeviceCodeRequest = Invoke-RestMethod @DeviceCodeRequestParams
+	Write-Host $DeviceCodeRequest.message -ForegroundColor Yellow
+
+	do {
+		Start-Sleep -Seconds 3
+		$TimeOut -= 3
+
+		$TokenRequestParams = @{
+			Method = 'POST'
+			Uri    = "https://login.microsoftonline.com/$TenantId/oauth2/token"
+			Body   = @{
+				grant_type = 'urn:ietf:params:oauth:grant-type:device_code'
+				code       = $DeviceCodeRequest.device_code
+				client_id  = $ClientId
+			}
+		}
+		try {
+			$token = Invoke-RestMethod @TokenRequestParams
+		} catch {
+			$token = $null
+		}
+
+	} while ((-not $token) -and ($TimeOut -gt 0))
+	
+	$global:aadApi_token = $token
+}
+
+return $global:aadApi_token

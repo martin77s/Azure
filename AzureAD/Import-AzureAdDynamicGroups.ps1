@@ -26,8 +26,9 @@ References  : https://docs.microsoft.com/en-us/graph/api/resources/groups-overvi
 [CmdletBinding()]
 
 PARAM(
-    $TenantId = '00000000-0000-0000-0000-000000000000',
-    $DataFile = 'C:\Temp\groups.csv'
+    $TenantId = 'common',
+    $DataFilePath = 'C:\Temp\groups.csv',
+    [ValidateSet('Unicode','UTF7','UTF8','ASCII','UTF32','BigEndianUnicode','Default','OEM')]$DataFileEncoding = 'UTF8'
 )
 
 #endregion
@@ -39,43 +40,48 @@ function Connect-AadApi {
     
     PARAM($TimeOut = 60)
 
-    $ClientID = '1950a258-227b-4e31-a9cf-717495945fc2' # Azure PowerShell
-    $TenantID = 'common'
-    $Resource = "https://graph.microsoft.com/"
+    $localEpoch = (Get-Date -Date '1970/01/01 00:00:00').AddMinutes((Get-TimeZone).BaseUtcOffset.TotalMinutes)
 
-    $DeviceCodeRequestParams = @{
-        Method = 'POST'
-        Uri    = "https://login.microsoftonline.com/$TenantID/oauth2/devicecode"
-        Body   = @{
-            client_id = $ClientId
-            resource  = $Resource
-        }
-    }
+    if(-not ($global:aadApi_token -and $localEpoch.AddSeconds(($global:aadApi_token).expires_on) -gt (Get-Date))) {
 
-    $DeviceCodeRequest = Invoke-RestMethod @DeviceCodeRequestParams
-    Write-Host $DeviceCodeRequest.message -ForegroundColor Yellow
+        $ClientID = '1950a258-227b-4e31-a9cf-717495945fc2' # Azure PowerShell
+        $Resource = "https://graph.microsoft.com/"
 
-    do {
-        Start-Sleep -Seconds 3
-        $TimeOut -= 3
-
-        $TokenRequestParams = @{
+        $DeviceCodeRequestParams = @{
             Method = 'POST'
-            Uri    = "https://login.microsoftonline.com/$TenantId/oauth2/token"
+            Uri    = "https://login.microsoftonline.com/$TenantID/oauth2/devicecode"
             Body   = @{
-                grant_type = "urn:ietf:params:oauth:grant-type:device_code"
-                code       = $DeviceCodeRequest.device_code
-                client_id  = $ClientId
+                client_id = $ClientId
+                resource  = $Resource
             }
         }
-        try {
-            $token = Invoke-RestMethod @TokenRequestParams
-        } catch {
-            $token = $null
-        }
 
-    } while ((-not $token) -and ($TimeOut -gt 0))
-    $token
+        $DeviceCodeRequest = Invoke-RestMethod @DeviceCodeRequestParams
+        Write-Host $DeviceCodeRequest.message -ForegroundColor Yellow
+
+        do {
+            Start-Sleep -Seconds 3
+            $TimeOut -= 3
+
+            $TokenRequestParams = @{
+                Method = 'POST'
+                Uri    = "https://login.microsoftonline.com/$TenantId/oauth2/token"
+                Body   = @{
+                    grant_type = "urn:ietf:params:oauth:grant-type:device_code"
+                    code       = $DeviceCodeRequest.device_code
+                    client_id  = $ClientId
+                }
+            }
+            try {
+                $token = Invoke-RestMethod @TokenRequestParams
+            } catch {
+                $token = $null
+            }
+
+        } while ((-not $token) -and ($TimeOut -gt 0))
+        $global:aadApi_token = $token
+    }
+    return $global:aadApi_token
 }
 
 
@@ -89,8 +95,8 @@ function Invoke-AadApi {
 
     # Build the request headers:
     $headers = @{
-        "Authorization" = "Bearer $($authToken)";
-        "Content-Type"  = "application/json";
+        "Authorization" = "Bearer $($authToken)"
+        "Content-Type"  = "application/json; charset=utf-8"
     }
 
     # Build the params and call the API:
@@ -115,22 +121,23 @@ function Invoke-AadApi {
 
 $authToken = Connect-AadApi
 
-Import-Csv -Path $DataFile | Where-Object { $_.membershipType -eq 'Dynamic' } | Select-Object -First 2 | ForEach-Object {
+Import-Csv -Path $DataFilePath -Encoding $DataFileEncoding | Where-Object { $_.membershipType -eq 'Dynamic' } | ForEach-Object {
 
     $payload = @{
-        displayName = $_.'New Name'
-        mailNickname = $_.'New Name'
-        description = $_.'New Name'
-        membershipRule = ($_.'Dynamic Rule' -replace "''", '"') -replace '^or '
+        displayName                   = $_.'New Name'
+        mailNickname                  = $_.'New Name'
+        description                   = $_.'New Name'
+        membershipRule                = ($_.'Dynamic Rule' -replace "''", '"') -replace '^or '
         membershipRuleProcessingState = 'On'
     }
 
-    if($_.groupType -eq 'Security' ) { 
+    if ($_.groupType -eq 'Security' ) { 
         $payload['mailEnabled'] = $false
         $payload['securityEnabled'] = $true
         $payload['groupTypes'] = @('DynamicMembership')
     
-    } else { ## groupType = 'Microsoft 365'
+    } else {
+        ## groupType = 'Microsoft 365'
         $payload['mailEnabled'] = $true
         $payload['securityEnabled'] = $false
         $payload['groupTypes'] = @('DynamicMembership', 'Unified')
@@ -138,7 +145,15 @@ Import-Csv -Path $DataFile | Where-Object { $_.membershipType -eq 'Dynamic' } | 
 
     $body = ConvertTo-Json -InputObject $payload
     try {
-        $null = Invoke-AadApi -apiUri 'https://graph.microsoft.com/beta/groups' -payload $body -method POST -authToken $authToken.access_token
+        $groupParams = @{
+            apiUri    = 'https://graph.microsoft.com/beta/groups' 
+            payload   = $body 
+            method    = 'POST'
+            authToken = $authToken.access_token
+        }
+        ### $null = Invoke-AadApi @groupParams
+        $ret = Invoke-AadApi @groupParams
+        $ret 
     } catch {
         Write-Output ('Error creating group {0}. {1}' -f $payload.displayName, $_.Exception.Message)
     }
