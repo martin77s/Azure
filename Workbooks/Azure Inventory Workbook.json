@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "lenses": {
+      "0": {
+        "order": 0,
+        "parts": {}
+      }
+    },
+    "metadata": {
+      "model": {}
+    }
+  },
+  "name": "Azure Inventory Dashboard vNext",
+  "type": "Microsoft.Portal/dashboards",
+  "location": "INSERT LOCATION",
+  "tags": {
+    "hidden-title": "Azure Inventory Dashboard vNext"
+  },
+  "apiVersion": "2015-08-01-preview"
+}

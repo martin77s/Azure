@@ -1,0 +1,55 @@
+{
+	"properties": {
+		"displayName": "Enforce a tag value is in the list of allowed values or matches specified pattern",
+		"description": "Denies creation of resource if the specified tag value is not in the allowed values or does not match specified pattern.",
+		"mode": "Indexed",
+		"metadata": {
+			"version": "1.0.0",
+			"category": "Tags"
+		},
+		"parameters": {
+			"tagName": {
+				"type": "String",
+				"metadata": {
+					"displayName": "Tag Name",
+					"description": "Name of the tag, such as 'environment'"
+				}
+			},
+			"allowedValues": {
+				"type": "array",
+				"metadata": {
+					"displayName": "Allowed Values",
+					"description": "Allowed set of values."
+				}
+			},
+			"pattern": {
+				"type": "string",
+				"metadata": {
+					"displayName": "Pattern to Match",
+					"description": "Pattern which tag value will be matched against. Provide # to match a digit, ? for a letter, . to match any character, and any other character to match that actual character"
+				}
+			}
+		},
+		"policyRule": {
+			"if": {
+				"allOf": [
+					{
+						"field": "[concat('tags[', parameters('tagName'), ']')]",
+						"exists": "true"
+					},
+					{
+						"field": "[concat('tags[', parameters('tagName'), ']')]",
+						"notIn": "[parameters('allowedValues')]"
+					},
+					{
+						"field": "[concat('tags[', parameters('tagName'), ']')]",
+						"notMatch": "[parameters('pattern')]"
+					}
+				]
+			},
+			"then": {
+				"effect": "deny"
+			}
+		}
+	}
+}
