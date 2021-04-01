@@ -388,3 +388,22 @@ resources
 | project subscriptionId, resourceGroup, id, type, privateIp
 ```
 
+- - - 
+
+
+### Resource Groups without VMs
+
+```
+resourcecontainers
+| where type =~ "microsoft.resources/subscriptions/resourcegroups"
+| extend rgId = id
+| distinct rgId
+| join kind=leftouter (
+	resources
+	| where type =~ 'microsoft.compute/virtualmachines'
+	| extend rgId = strcat('/subscriptions/', subscriptionId,'/resourceGroups/', resourceGroup)
+	| distinct rgId
+) on rgId
+| where isempty(rgId1)
+| project id=rgId
+```
