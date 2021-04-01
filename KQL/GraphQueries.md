@@ -401,7 +401,7 @@ resourcecontainers
 | join kind=leftouter (
 	resources
 	| where type =~ 'microsoft.compute/virtualmachines'
-	| extend rgId = strcat('/subscriptions/', subscriptionId,'/resourceGroups/', resourceGroup)
+	| extend rgId = strcat('/subscriptions/', subscriptionId, '/resourceGroups/', resourceGroup)
 	| distinct rgId
 ) on rgId
 | where isempty(rgId1)
