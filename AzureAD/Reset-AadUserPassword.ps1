@@ -12,7 +12,7 @@ PARAM(
     [Parameter(Mandatory)] [string] $tenantId,
     [Parameter(Mandatory)] [string] $clientId,
     [Parameter(Mandatory)] [string] $clientSecret,
-    [Parameter(Mandatory)] [string] $user = 'myuser@mydomain.com',
+    [Parameter(Mandatory)] [string] $userPrincipalName ,
     [string] $newPassword = 'Qwerty!@3456',
     [bool] $forceChangePasswordNextSignIn = $false
 )
@@ -77,7 +77,7 @@ $authToken = Get-AzToken -TenantId $tenantId -ClientId $clientId -ClientSecret $
 
 
 # Get the user's profile
-$apiUri = 'https://graph.microsoft.com/v1.0/users/{0}' -f $user
+$apiUri = 'https://graph.microsoft.com/v1.0/users/{0}' -f $userPrincipalName
 $payload = '{}'
 $method = 'GET'
 $response = Invoke-AadApi -apiUri $apiUri -payload $payload -method $method -authToken $authToken
