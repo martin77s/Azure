@@ -4,8 +4,7 @@
 
 1. <a href="https://marketplace.visualstudio.com/items?itemName=msazurermtools.azurerm-vscode-tools" target="_blank">Azure Resource Manager (ARM) Tools</a>
 2. <a href="https://marketplace.visualstudio.com/items?itemName=bencoleman.armview" target="_blank">ARM Template Viewer</a>
-3. <a href="https://marketplace.visualstudio.com/items?itemName=wilfriedwoivre.arm-params-generator" target="_blank">ARM Params Generator</a>
-4. <a href="https://marketplace.visualstudio.com/items?itemName=TabNine.tabnine-vscode" target="_blank">TabNine</a>
+3. <a href="https://marketplace.visualstudio.com/items?itemName=TabNine.tabnine-vscode" target="_blank">TabNine</a>
 
 
 ## ARM Snippets
@@ -85,56 +84,74 @@ Get the tenant ID for the current deployment :
 
 Get an App Service host name with reference and resourceId:
 ```json
-"[reference(resourceId('Microsoft.Web/sites', parameters('app_name'))).hostNames[0]]"
+"appServiceHostName": "[reference(resourceId('Microsoft.Web/sites', parameters('appServiceName'))).hostNames[0]]"
 ```
 
 - - -
 
 Generate a valid URL for an App Service:
 ```json
-"[concat('https://', reference(resourceId('Microsoft.Web/sites', parameters('app_name'))).hostNames[0], '/')]"
+"appServiceUrl": "[concat('https://', reference(resourceId('Microsoft.Web/sites', parameters('appServiceName'))).hostNames[0], '/')]"
 ```
 
 - - -
 
 Get the outbound public IP addresses for an App Service:
 ```json
-"[reference(resourceId('Microsoft.Web/sites', parameters('app_name'))).outboundIpAddresses]"
+"appServiceOutboundIpAddresses": "[reference(resourceId('Microsoft.Web/sites', parameters('appServiceName'))).outboundIpAddresses]"
 ```
 
 - - -
 
 Get the Instrumentation Key for Application Insights:
 ```json
-"[reference(resourceId('Microsoft.Insights/components', parameters('app_insight_name'))).InstrumentationKey]"
+"appInsightsInstrumentationKey": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsResourceName'))).InstrumentationKey]"
 ```
 
 - - -
 
 Generate an Azure SQL DB connection string:
 ```json
-"[concat('Data Source=tcp:', reference(resourceId('Microsoft.Sql/servers', parameters('server_name'))).fullyQualifiedDomainName, ',1433;Initial Catalog=', parameters('db_name'), ';User Id=', parameters('sql_username'), '@', parameters('server_name'), ';Password=', parameters('sql_Password'), ';')]"
+"sqlConnectionString": "[concat('Data Source=tcp:', reference(resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))).fullyQualifiedDomainName, ',1433;Initial Catalog=', parameters('dbName'), ';User Id=', parameters('sqlUsername'), '@', parameters('sqlServerName'), ';Password=', parameters('sqlPassword'), ';')]"
 ```
 
 - - -
 
 Generate an Azure Storage connection string:
 ```json
-"[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storage_name'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storage_name')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]"
+"storageConnectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]"
 ```
 
 - - -
 
 Get the connection string for an Azure Service Bus namespace:
 ```json
-"[listKeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', parameters('namespaces_name'), 'RootManageSharedAccessKey'), providers('Microsoft.ServiceBus', 'namespaces').apiVersions[0]).primaryConnectionString]"
+"serviceBusConnectionString": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', parameters('namespaceName'), 'RootManageSharedAccessKey'), providers('Microsoft.ServiceBus', 'namespaces').apiVersions[0]).primaryConnectionString]"
+```
+
+- - - 
+
+Get the connection string for an Azure appConfiguration:
+```json
+"appConfigConnectionString": "[listKeys(parameters('appConfigResourceId'), providers('Microsoft.AppConfiguration', 'configurationStores').apiVersions[0]).value[0].connectionString]"
+```
+
+- - - 
+
+Get the connection string for an Azure Redis Cache:
+```json
+"RedisCacheConnectionString": "[concat(reference(parameters('redisCacheResourceId')).hostName, ':', reference(parameters('redisCacheResourceId')).sslPort, ',password=', listkeys(parameters('redisCacheResourceId'), providers('Microsoft.Cache', 'redis').apiVersions[0]).primaryKey, ',ssl=True,abortConnect=False,syncTimeout=2000,allowAdmin=true')]"
 ```
 
 - - -
 
-Concat the ResouceId of a resource:
+Get the ResouceId of a resource:
 ```json
-"[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Blah/', variables('blahName'))]",
+"myResourceId": "[resourceId('Microsoft.Storage/storageAccounts', variables('blahName'))]"
+
+OR
+
+"myResourceId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Storage/', variables('blahName'))]",
 ```
 
 - - -
