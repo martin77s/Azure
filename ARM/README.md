@@ -9,7 +9,8 @@
 
 ## ARM Snippets
 
-Using parameters:
+#### Using parameters:
+
 ```json
 "parameters": {
     "environmentName": {
@@ -29,7 +30,8 @@ Using parameters:
 
 - - -
 
-Using variables: 
+#### Using variables: 
+
 ```json
 "variables": {
     "environmentSettings": {
@@ -52,7 +54,8 @@ Using variables:
 
 - - -
 
-Calculating specific environment values:
+#### Calculating specific environment values:
+
 ```json
 "sku": {
     "name": "[variables('currentEnvironmentSettings').storageAccountSku]"
@@ -61,91 +64,104 @@ Calculating specific environment values:
 
 - - -
 
-Get the location for the current resource group:
+#### Get the location for the current resource group:
+
 ```json
 "[resourceGroup().location]"
 ```
 
 - - -
 
-Get the subscription ID for the current deployment:
+#### Get the subscription ID for the current deployment:
+
 ```json
 "[subscription().subscriptionId]"
 ```
 
 - - -
 
-Get the tenant ID for the current deployment :
+#### Get the tenant ID for the current deployment:
+
 ```json
 "[subscription().tenantId]"
 ```
 
 - - -
 
-Get an App Service host name with reference and resourceId:
+#### Get an App Service host name with reference and resourceId:
+
 ```json
 "appServiceHostName": "[reference(resourceId('Microsoft.Web/sites', parameters('appServiceName'))).hostNames[0]]"
 ```
 
 - - -
 
-Generate a valid URL for an App Service:
+#### Generate a valid URL for an App Service:
+
 ```json
 "appServiceUrl": "[concat('https://', reference(resourceId('Microsoft.Web/sites', parameters('appServiceName'))).hostNames[0], '/')]"
 ```
 
 - - -
 
-Get the outbound public IP addresses for an App Service:
+#### Get the outbound public IP addresses for an App Service:
+
 ```json
 "appServiceOutboundIpAddresses": "[reference(resourceId('Microsoft.Web/sites', parameters('appServiceName'))).outboundIpAddresses]"
 ```
 
 - - -
 
-Get the Instrumentation Key for Application Insights:
+#### Get the Instrumentation Key for Application Insights:
+
 ```json
 "appInsightsInstrumentationKey": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsResourceName'))).InstrumentationKey]"
 ```
 
 - - -
 
-Generate an Azure SQL DB connection string:
+#### Generate an Azure SQL DB connection string:
+
 ```json
 "sqlConnectionString": "[concat('Data Source=tcp:', reference(resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))).fullyQualifiedDomainName, ',1433;Initial Catalog=', parameters('dbName'), ';User Id=', parameters('sqlUsername'), '@', parameters('sqlServerName'), ';Password=', parameters('sqlPassword'), ';')]"
 ```
 
 - - -
 
-Generate an Azure Storage connection string:
+#### Generate an Azure Storage connection string:
+
 ```json
 "storageConnectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]"
 ```
 
 - - -
 
-Get the connection string for an Azure Service Bus namespace:
+#### Get the connection string for an Azure Service Bus namespace:
+
 ```json
 "serviceBusConnectionString": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', parameters('namespaceName'), 'RootManageSharedAccessKey'), providers('Microsoft.ServiceBus', 'namespaces').apiVersions[0]).primaryConnectionString]"
 ```
 
 - - - 
 
-Get the connection string for an Azure appConfiguration:
+#### Get the connection string for an Azure appConfiguration:
+
 ```json
 "appConfigConnectionString": "[listKeys(parameters('appConfigResourceId'), providers('Microsoft.AppConfiguration', 'configurationStores').apiVersions[0]).value[0].connectionString]"
 ```
 
 - - - 
 
-Get the connection string for an Azure Redis Cache:
+#### Get the connection string for an Azure Redis Cache:
+
 ```json
 "RedisCacheConnectionString": "[concat(reference(parameters('redisCacheResourceId')).hostName, ':', reference(parameters('redisCacheResourceId')).sslPort, ',password=', listkeys(parameters('redisCacheResourceId'), providers('Microsoft.Cache', 'redis').apiVersions[0]).primaryKey, ',ssl=True,abortConnect=False,syncTimeout=2000,allowAdmin=true')]"
 ```
 
 - - -
 
-Get the ResouceId of a resource:
+#### Get the ResouceId of a resource:
+
 ```json
 "myResourceId": "[resourceId('Microsoft.Storage/storageAccounts', variables('blahName'))]"
 
@@ -156,7 +172,7 @@ OR
 
 - - -
 
-Conditional resource deployment
+#### Conditional resource deployment:
 ```json
     "resources": [
         {
@@ -179,7 +195,8 @@ Conditional resource deployment
 
 - - -
 
-Extract the subscriptionId, ResourceGroup and ResourceName from a ResourceId
+#### Extract the subscriptionId, ResourceGroup and ResourceName from a ResourceId:
+
 ```json
 "parameters": {
     "vnetResourceId": {
@@ -195,7 +212,8 @@ Extract the subscriptionId, ResourceGroup and ResourceName from a ResourceId
 
 - - -
 
-Copy loop example 1:
+#### Copy loop example 1:
+
 ```json
 {
     "type": "Microsoft.Web/sites",
@@ -225,7 +243,8 @@ Copy loop example 1:
 ```
 - - -
 
-Copy loop example 2 (Handle the first item differently):
+#### Copy loop example 2 (Handle the first item differently):
+
 ```json
 {
     "type": "Microsoft.Network/routeTables",
@@ -252,8 +271,8 @@ Copy loop example 2 (Handle the first item differently):
 
 - - - 
 
+#### Calculate Static IP Address in a CopyLoop:
 
-Calculate Static IP Address in a CopyLoop:
 ```json
 "parameters": {
     "addressPrefix": {
@@ -296,7 +315,8 @@ Calculate Static IP Address in a CopyLoop:
 
 - - -
 
-Custom function
+#### Custom function:
+
 ```json
 "functions": [
     {
