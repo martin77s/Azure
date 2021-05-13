@@ -1,41 +1,44 @@
 # ActivityLogs KQL Queries
 
+## Subscriptions with new deployments
 
-## All Subscriptions
-
-```
-AzureActivity | summarize by SubscriptionId
-```
-
-- - - 
-
-## Active Resource Groups
-
-### Subscriptions with new deployments
-
-```
-AzureActivity 
-| extend Name = strcat("/", SubscriptionId, "/", ResourceGroup)
+```kql
+AzureActivity
 | where OperationNameValue == "Microsoft.Resources/deployments/write"
 | where ActivityStatus == "Succeeded"
-| summarize Count = count() by SubscriptionId, ResourceGroup, Name
+| summarize Count = count() by SubscriptionId, ResourceGroup
 | order by SubscriptionId, Count
 ```
 
-- - - 
+- - -
 
-## Idle Subscriptions
+## Subscriptions without successful write activities in the last month
 
-### Subscriptions without successful write activities in the last month
-
-```
+```kql
 AzureActivity | where TimeGenerated < ago(12m) | summarize by SubscriptionId
 | join kind=leftouter (
     AzureActivity | where TimeGenerated < ago(1m)
-    | where OperationNameValue endswith "write" 
-    | where ActivityStatus == "Succeeded" 
+    | where OperationNameValue endswith "write"
+    | where ActivityStatus == "Succeeded"
     | project SubscriptionId, CorrelationId
 ) on SubscriptionId
 | where isempty(CorrelationId)
 | project SubscriptionId
+```
+
+- - -
+
+## Policy Assignment changes
+
+```kql
+AzureActivity
+| where OperationNameValue == "MICROSOFT.AUTHORIZATION/POLICYASSIGNMENTS/WRITE" and ActivityStatusValue == "Start"
+| extend request = parse_json(tostring(parse_json(tostring(parse_json(Properties).requestbody)))).properties
+| extend role = tostring(parse_json(Authorization).evidence.role)
+| project TimeGenerated, CallerIpAddress, Caller, CallerRole = role,
+    PolicyDisplayName = request.displayName,
+    PolicyDefinitionId = request.policyDefinitionId,
+    PolicyParameters = request.parameters,
+    PolicyScope = request.scope,
+    PolicyEnforcementMode = request.enforcementMode
 ```
