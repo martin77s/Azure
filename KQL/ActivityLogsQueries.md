@@ -32,10 +32,12 @@ AzureActivity | where TimeGenerated < ago(12m) | summarize by SubscriptionId
 
 ```kql
 AzureActivity
-| where OperationNameValue == "MICROSOFT.AUTHORIZATION/POLICYASSIGNMENTS/WRITE" and ActivityStatusValue == "Start"
+| where ActivityStatusValue == "Start" and OperationNameValue contains "MICROSOFT.AUTHORIZATION/POLICYASSIGNMENTS"
+| extend Operation = strcat_array(split(OperationNameValue, "/", 2),"")
 | extend request = parse_json(tostring(parse_json(tostring(parse_json(Properties).requestbody)))).properties
 | extend role = tostring(parse_json(Authorization).evidence.role)
-| project TimeGenerated, CallerIpAddress, Caller, CallerRole = role,
+| extend policyAssignmentId = parse_json(Properties).entity
+| project TimeGenerated, CallerIpAddress, Caller, CallerRole = role, Operation, policyAssignmentId,
     PolicyDisplayName = request.displayName,
     PolicyDefinitionId = request.policyDefinitionId,
     PolicyParameters = request.parameters,
