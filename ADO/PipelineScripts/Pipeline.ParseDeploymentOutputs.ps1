@@ -4,7 +4,6 @@ Script Name	: Pipeline.ParseDeploymentOutputs.ps1
 Description	: Parse the ARM deployment output and create Pipeline variables from it
 Author		: Martin Schvartzman, Microsoft (maschvar@microsoft.com)
 Keywords	: Azure, Variables, DevOps, Pipeline
-Last Update	: 2020/02/27
 
 #>
 

@@ -4,8 +4,6 @@ Script Name	: KeyVault.AddPermissions.ps1
 Description	: Add AccessPolicies permissions to secrets
 Author		: Martin Schvartzman, Microsoft (maschvar@microsoft.com)
 Keywords	: Azure, KeyVault, DevOps, Pipeline
-Last Update	: 2020/07/21
-Updated By	: guyp@waves.com
 
 Notes		:
 For Applications (ServicePrincipals, App Registrations), use the Enterprise Application ObjectId and not the SPObjectId nor the Uri.
