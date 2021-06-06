@@ -1,0 +1,94 @@
+# Make sure you add the Contribute permissions to the service account on the repository
+# Project Settings -> Repositories -> Permissions -> Users (myRepoName Build Service) Contribute -> Allow
+
+# To add ARM-TTK to the repository, run:
+# git submodule add https://github.com/Azure/arm-ttk tools/arm-ttk
+
+
+trigger:
+  branches:
+    include:
+      - master
+  paths:
+    include:
+      - templates
+
+variables:
+  System.Debug: true
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+
+steps:
+- checkout: self
+  persistCredentials: true
+  condition: not(contains(variables['Build.SourceVersionMessage'], '[skip ci]'))
+  submodules: recursive
+
+
+- task: PowerShell@2
+  displayName: 'Generate readme.md files'
+  inputs:
+    targetType: 'inline'
+    script: |
+      $templates = dir $(Build.Repository.LocalPath)/templates -Recurse -include *deploy.json
+      Write-Verbose ('Found {0} relevant template(s)' -f $templates.Count) -Verbose
+      $readmes = $templates | ForEach-Object {
+        $(Build.Repository.LocalPath)/scripts/Pipeline.CreateMdFromJsonTemplate.ps1 -Path $_.FullName -PassThru
+      }
+      Write-Verbose ('Generated {0} readme.md file(s)' -f $readmes.Count) -Verbose
+      git config --global user.email "$(Build.QueuedById)@$(System.TeamProject)"
+      git config --global user.name "$(Build.Repository.Name)"
+      foreach($file in $readmes) { git add $file.FullName }
+      $message = git log -1 --pretty=format:%B --no-merges
+      git commit -m "$message - [skip ci]"
+      git push origin HEAD:$(Build.SourceBranchName)
+    errorActionPreference: 'continue'
+    pwsh: true
+
+
+- task: PowerShell@2
+  displayName: 'Run ARM TTK'
+  inputs:
+    targetType: 'inline'
+    script: |
+    
+      $ExcludeTests = @(
+        'IDs-Should-Be-Derived-From-ResourceIDs',
+        'Template-Should-Not-Contain-Blanks',
+        'Outputs-Must-Not-Contain-Secrets'
+      )
+
+      Write-Verbose 'Importing Modules'
+      Import-Module $(Build.Repository.LocalPath)/tools/arm-ttk/arm-ttk/arm-ttk.psd1 -Verbose
+      Import-Module $(Build.Repository.LocalPath)/tools/Export-NUnitXml.psm1 -Verbose
+      
+      Write-Verbose 'Calculating Tests to include' -Verbose
+      $IncludeTests = dir -Path $(Build.Repository.LocalPath)/tools/arm-ttk/unit-tests -Directory | 
+        Select-Object -ExpandProperty Name | Where-Object { -not ($ExcludeTests -contains $_) }
+
+      
+      $templates = dir $(Build.Repository.LocalPath)/templates -Recurse -include *deploy.json
+      $results = $templates | ForEach-Object {
+        Test-AzTemplate -TemplatePath $_.FullName -Test $IncludeTests -ErrorAction Continue -Verbose
+      }
+      
+      Export-NUnitXml -TestResults $results -Path '$(Build.Repository.LocalPath)/results'
+      if (($results.passed | Where-Object { $_ -eq $false } | Measure-Object).Count -gt 0) {
+          Write-Host ("##[error] Failures found in test results.")
+          $output = $results | Where-Object { $_.passed -eq $false } | Out-String
+          Write-Host $output
+      } else {
+          Write-Host "`nAll tests completed successfully"
+      }
+    pwsh: true
+    workingDirectory: '$(Build.Repository.LocalPath)/templates'
+
+
+- task: PublishTestResults@2
+  condition: always()
+  displayName: 'Publish ARM TTK results'
+  inputs:
+    testResultsFormat: 'NUnit'
+    testResultsFiles: '$(Build.Repository.LocalPath)/results/*.xml'
