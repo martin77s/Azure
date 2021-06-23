@@ -11,8 +11,11 @@ Reference	: https://docs.microsoft.com/en-us/rest/api/monitor/managementgroupdia
 
 PARAM(
     [Parameter(Mandatory = $true)] [string] $managementGroupId,
-    [Parameter(Mandatory = $true)] [string] $logAnalyticsWorkspace,
-    [Parameter(Mandatory = $false)] [string] $diagnosticSettingsName = 'diagnostics'
+    [Parameter(Mandatory = $false)] [string] $diagnosticSettingsName = 'diagnostics',
+    [Parameter(Mandatory = $false)] [string] $storageAccountId = $null,
+    [Parameter(Mandatory = $false)] [string] $logAnalyticsWorkspace = $null,
+    [Parameter(Mandatory = $false)] [string] $eventHubAuthorizationRuleId = $null,
+    [Parameter(Mandatory = $false)] [string] $eventHubName = $null
 )
 
 
@@ -25,27 +28,33 @@ function Get-AzAccessTokenFromCurrentUser {
 }
 
 $apiVersion = '2020-01-01-preview'
-
 $uri = 'https://management.azure.com/providers/microsoft.management/managementGroups/{0}/providers/microsoft.insights/diagnosticSettings/{1}?api-version={2}' -f `
     $managementGroupId, $diagnosticSettingsName, $apiVersion
 
-$body = @"
-{
-    "properties": {
-        "workspaceId": "$logAnalyticsWorkspace",
-        "logs": [
-        {
-            "category": "Administrative",
-            "enabled": true
+$properties = [PSCustomObject]@{
+    storageAccountId            = $storageAccountId
+    workspaceId                 = $logAnalyticsWorkspace
+    eventHubAuthorizationRuleId = $eventHubAuthorizationRuleId
+    eventHubName                = $eventHubName
+    logs                        = @(
+        [PSCustomObject]@{
+            category = 'Administrative'
+            enabled  = $true
         },
-        {
-            "category": "Policy",
-            "enabled": true
+        [PSCustomObject]@{
+            category = 'Policy'
+            enabled  = $true
         }
-        ]
-    }
+    )
 }
-"@
+
+if ([string]::IsNullOrEmpty($storageAccountId)) { $properties.PSObject.Properties.Remove('storageAccountId') }
+if ([string]::IsNullOrEmpty($logAnalyticsWorkspace)) { $properties.PSObject.Properties.Remove('workspaceId') }
+if ([string]::IsNullOrEmpty($eventHubAuthorizationRuleId) -or [string]::IsNullOrEmpty($eventHubName)) {
+    $properties.PSObject.Properties.Remove('eventHubAuthorizationRuleId')
+    $properties.PSObject.Properties.Remove('eventHubName')
+}
 
 $authToken = Get-AzAccessTokenFromCurrentUser
-Invoke-RestMethod -Uri $uri -Method PUT -Body $body -ContentType 'application/json' -Headers @{Authorization = $authToken }
+$jsonBody = @{ properties = $properties } | ConvertTo-Json -Depth 5
+Invoke-RestMethod -Uri $uri -Method PUT -Body $jsonBody -ContentType 'application/json' -Headers @{Authorization = $authToken }
