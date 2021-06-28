@@ -162,7 +162,9 @@ context.Request.Certificate.Thumbprint == "EXPECTED-THUMBPRINT-IN-UPPER-CASE"
 context.Deployment.Certificates.Any(c => c.Value.Thumbprint == context.Request.Certificate.Thumbprint) == true
 ```
 
-### Rate limit (limit 30 calls in 120 seconds) by the X-Forwarded-For
+## Advanced Policies
+
+#### Rate limit (limit 30 calls in 120 seconds) by the X-Forwarded-For
 
 ```c#
 <inbound>
