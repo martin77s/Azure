@@ -4,19 +4,19 @@ Cheat-sheet with common policy expressions often used in Azure API Management po
 
 ## Interact with HTTP headers
 
-#### Get HTTP header
+### Get HTTP header
 
 ```c#
 context.Request.Headers.GetValueOrDefault("header-name","optional-default-value")
 ```
 
-#### Check HTTP header existence
+### Check HTTP header existence
 
 ```c#
 context.Request.Headers.ContainsKey("header-name") == true
 ```
 
-#### Check if HTTP header has expected value
+### Check if HTTP header has expected value
 
 ```c#
 context.Request.Headers.GetValueOrDefault("header-name", "").Equals("expected-header-value", StringComparison.OrdinalIgnoreCase)
@@ -25,19 +25,19 @@ context.Request.Headers.GetValueOrDefault("header-name", "").Equals("expected-he
 ## Interact with URI parameters
 
 
-#### Get URI parameter
+### Get URI parameter
 
 ```c#
 context.Request.MatchedParameters.GetValueOrDefault("parameter-name","optional-default-value")
 ```
 
-#### Check URI parameter existence
+### Check URI parameter existence
 
 ```c#
 context.Request.MatchedParameters.ContainsKey("parameter-name") == true
 ```
 
-#### Check if URI parameter has expected value
+### Check if URI parameter has expected value
 
 ```c#
 context.Request.MatchedParameters.GetValueOrDefault("parameter-name", "").Equals("expected-value", StringComparison.OrdinalIgnoreCase) == true
@@ -46,19 +46,19 @@ context.Request.MatchedParameters.GetValueOrDefault("parameter-name", "").Equals
 ## Interact with query string parameters
 
 
-#### Get query string parameter
+### Get query string parameter
 
 ```c#
 context.Request.Url.Query.GetValueOrDefault("parameter-name", "optional-default-value")
 ```
 
-#### Check query string parameter existence
+### Check query string parameter existence
 
 ```c#
 context.Request.Url.Query.ContainsKey("parameter-name") == true
 ```
 
-#### Check if query string parameter has expected value
+### Check if query string parameter has expected value
 
 ```c#
 context.Request.Url.Query.GetValueOrDefault("parameter-name", "").Equals("expected-value", StringComparison.OrdinalIgnoreCase) == true
@@ -67,19 +67,19 @@ context.Request.Url.Query.GetValueOrDefault("parameter-name", "").Equals("expect
 ## Interact with policy variables
 
 
-#### Get policy variable *(assuming type string)*
+### Get policy variable *(assuming type string)*
 
 ```c#
 context.Variables.GetValueOrDefault<string>("variable-name","optional-default-value")
 ```
 
-#### Check policy variable existence
+### Check policy variable existence
 
 ```c#
 context.Variables.ContainsKey("variable-name") == true
 ```
 
-#### Check if policy variable has expected value *(assuming type string)*
+### Check if policy variable has expected value *(assuming type string)*
 
 ```c#
 context.Variables.GetValueOrDefault<string>("variable-name","").Equals("expected-value", StringComparison.OrdinalIgnoreCase)
@@ -88,19 +88,19 @@ context.Variables.GetValueOrDefault<string>("variable-name","").Equals("expected
 ## Interact with JSON bodies
 
 
-#### Get value from JSON body
+### Get value from JSON body
 
 ```c#
 (string)context.Request.Body.As<JObject>(preserveContent: true).SelectToken("root.child jsonpath")
 ```
 
-#### Get value from JSON response variable
+### Get value from JSON response variable
 
 ```c#
 (string)((IResponse)context.Variables["response-variable-name"]).Body.As<JObject>().SelectToken("root.child jsonpath")
 ```
 
-#### Add property to JSON body
+### Add property to JSON body
 
 ```c#
 JObject body = context.Request.Body.As<JObject>();
@@ -111,7 +111,7 @@ return body.ToString();
 ## Interact with JSON Web Tokens
 
 
-#### Read claim from bearer token
+### Read claim from bearer token
 
 ```c#
 context.Request.Headers.GetValueOrDefault("Authorization")?.Split(' ')?[1].AsJwt()?.Claims["claim-name"].FirstOrDefault()
@@ -120,43 +120,43 @@ context.Request.Headers.GetValueOrDefault("Authorization")?.Split(' ')?[1].AsJwt
 ## Interact with client certificates
 
 
-#### Check client certificate existence
+### Check client certificate existence
 
 ```c#
 context.Request.Certificate != null
 ```
 
-#### Check if client certificate is valid, including a certificate revocation check
+### Check if client certificate is valid, including a certificate revocation check
 
 ```c#
 context.Request.Certificate.Verify() == true
 ```
 
-#### Check if client certificate is valid, excluding a certificate revocation check
+### Check if client certificate is valid, excluding a certificate revocation check
 
 ```c#
 context.Request.Certificate.VerifyNoRevocation() == true
 ```
 
-#### Check if client certificate issuer has expected value
+### Check if client certificate issuer has expected value
 
 ```c#
 context.Request.Certificate.Issuer == "trusted-issuer"
 ```
 
-#### Check if client certificate subject has expected value
+### Check if client certificate subject has expected value
 
 ```c#
 context.Request.Certificate.SubjectName.Name == "expected-subject-name"
 ```
 
-#### Check if client certificate thumbprint has expected value
+### Check if client certificate thumbprint has expected value
 
 ```c#
 context.Request.Certificate.Thumbprint == "EXPECTED-THUMBPRINT-IN-UPPER-CASE"
 ```
 
-#### Check if client certificate is uploaded in API Management, based on thumbprint
+### Check if client certificate is uploaded in API Management, based on thumbprint
 
 ```c#
 context.Deployment.Certificates.Any(c => c.Value.Thumbprint == context.Request.Certificate.Thumbprint) == true
@@ -164,7 +164,7 @@ context.Deployment.Certificates.Any(c => c.Value.Thumbprint == context.Request.C
 
 ## Advanced Policies
 
-#### Rate limit (limit 30 calls in 120 seconds) by the X-Forwarded-For
+### Rate limit (limit 30 calls in 120 seconds) by the X-Forwarded-For
 
 ```c#
 <inbound>
@@ -177,5 +177,19 @@ context.Deployment.Certificates.Any(c => c.Value.Thumbprint == context.Request.C
             }</value>
     </set-header>
     <rate-limit-by-key calls="30" renewal-period="120" counter-key="@(context.Request.Headers.GetValueOrDefault("x-forwarded-for","0"))" />
+</inbound>
+```
+
+### Set backend base url based on a request header value (can be used for staging slots)
+
+```c#
+<inbound>
+    <base />
+    <choose>
+        <when condition="@(context.Request.Headers.GetValueOrDefault("is-staging") == "true")">
+            <set-backend-service base-url="@(String.Format("{0}-stg.{1}", context.Api.ServiceUrl.ToString().Split(new Char [] {'.'}, 2)))" />
+        </when>
+        <otherwise />
+    </choose>
 </inbound>
 ```
