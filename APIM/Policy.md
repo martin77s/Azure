@@ -1,6 +1,6 @@
 # Common policy expressions
 
-This cheat-sheet contains common policy expressions that are often used when authoring Azure API Management policies.
+Cheat-sheet with common policy expressions often used in Azure API Management policies
 
 ## Interact with HTTP headers
 
@@ -103,9 +103,9 @@ context.Variables.GetValueOrDefault<string>("variable-name","").Equals("expected
 #### Add property to JSON body
 
 ```c#
-JObject body = context.Request.Body.As<JObject>(); 
+JObject body = context.Request.Body.As<JObject>();
 body.Add(new JProperty("property-name", "property-value"));
-return body.ToString(); 
+return body.ToString();
 ```
 
 ## Interact with JSON Web Tokens
@@ -160,4 +160,20 @@ context.Request.Certificate.Thumbprint == "EXPECTED-THUMBPRINT-IN-UPPER-CASE"
 
 ```c#
 context.Deployment.Certificates.Any(c => c.Value.Thumbprint == context.Request.Certificate.Thumbprint) == true
+```
+
+### Rate limit (limit 30 calls in 120 seconds) by the X-Forwarded-For
+
+```c#
+<inbound>
+    <base />
+    <set-header name="x-forwarded-for" exists-action="override">
+        <value>@{
+            string headerValue = context.Request.Headers.GetValueOrDefault("x-forwarded-for","0");
+            string[] tokens = headerValue.Split(':');
+            if(tokens.Length == 2) { headerValue = tokens[0]; } return headerValue;
+            }</value>
+    </set-header>
+    <rate-limit-by-key calls="30" renewal-period="120" counter-key="@(context.Request.Headers.GetValueOrDefault("x-forwarded-for","0"))" />
+</inbound>
 ```
