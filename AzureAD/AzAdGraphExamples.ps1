@@ -4,7 +4,7 @@ Script Name	: AzAdGraphExamples.ps1
 Description	: Query Azure Active Directory with GraphAPI
 Author		: Martin Schvartzman, Microsoft
 Keywords	: AzureAD, AuthToken, GraphAPI
-References  : https://docs.microsoft.com/en-us/graph/api/overview?view=graph-rest-1.0
+References	: https://docs.microsoft.com/en-us/graph/api/overview?view=graph-rest-1.0
 
 #>
 
