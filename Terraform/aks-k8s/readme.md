@@ -1,4 +1,4 @@
-# Azure Linux VM example
+# Azure Kubernetes Services (AKS) example
 
 ## Set some variables
 
