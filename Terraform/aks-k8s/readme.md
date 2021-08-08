@@ -3,9 +3,11 @@
 ## Set some variables
 
 ```code
-$demoName = 'maschvar-tfdemo-vm'
+$demoName = 'maschvar-tfdemo-aks'
 $tenantId = 'xxxx-xxxx....'
 $subscriptionId = 'xxxx-xxxx....'
+$resourceGroupName = 'aksdemo-rg'
+$clusterName = 'aksdemo'
 ```
 
 ## Authenticate to Azure
@@ -37,6 +39,18 @@ $env:ARM_CLIENT_SECRET = $sp.password
 $env:ARM_TENANT_ID = $sp.tenant
 ```
 
+## Create an SSH key pair (WSL or CloudShell)
+
+```code
+ssh-keygen -m PEM -t rsa -b 4096
+```
+
+## Copy the SSH key pair locally
+
+```code
+copy \\wsl$\Ubuntu\home\sadmind\.ssh\id* .\.ssh\ -passthru
+```
+
 ## Initialize Terraform
 
 ```code
@@ -53,6 +67,12 @@ terraform plan
 
 ```code
 terraform apply
+```
+
+## Get the cluster credentials
+
+```code
+az aks get-credentials -g $resourceGroupName -n $clusterName
 ```
 
 ## Remove the deployment
