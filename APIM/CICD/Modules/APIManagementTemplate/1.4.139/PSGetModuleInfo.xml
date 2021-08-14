@@ -1,0 +1,143 @@
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
+  <Obj RefId="0">
+    <TN RefId="0">
+      <T>Microsoft.PowerShell.Commands.PSRepositoryItemInfo</T>
+      <T>System.Management.Automation.PSCustomObject</T>
+      <T>System.Object</T>
+    </TN>
+    <MS>
+      <S N="Name">APIManagementTemplate</S>
+      <Version N="Version">1.4.139</Version>
+      <S N="Type">Module</S>
+      <S N="Description">Extract Azure API Management to ARM templates</S>
+      <S N="Author">Mattias Lögdberg</S>
+      <Obj N="CompanyName" RefId="1">
+        <TN RefId="1">
+          <T>System.Object[]</T>
+          <T>System.Array</T>
+          <T>System.Object</T>
+        </TN>
+        <LST>
+          <S>lfalck</S>
+          <S>MLogdberg</S>
+        </LST>
+      </Obj>
+      <S N="Copyright">(c) 2018 Mattias LÃ¶gdberg</S>
+      <DT N="PublishedDate">2021-06-21T08:48:18+03:00</DT>
+      <Obj N="InstalledDate" RefId="2">
+        <DT>2021-06-22T13:08:35.5010753+03:00</DT>
+        <MS>
+          <Obj N="DisplayHint" RefId="3">
+            <TN RefId="2">
+              <T>Microsoft.PowerShell.Commands.DisplayHintType</T>
+              <T>System.Enum</T>
+              <T>System.ValueType</T>
+              <T>System.Object</T>
+            </TN>
+            <ToString>DateTime</ToString>
+            <I32>2</I32>
+          </Obj>
+        </MS>
+      </Obj>
+      <Nil N="UpdatedDate" />
+      <Nil N="LicenseUri" />
+      <URI N="ProjectUri">https://github.com/MLogdberg/APIManagementARMTemplateCreator</URI>
+      <Nil N="IconUri" />
+      <Obj N="Tags" RefId="4">
+        <TNRef RefId="1" />
+        <LST>
+          <S>PSModule</S>
+        </LST>
+      </Obj>
+      <Obj N="Includes" RefId="5">
+        <TN RefId="3">
+          <T>System.Collections.Hashtable</T>
+          <T>System.Object</T>
+        </TN>
+        <DCT>
+          <En>
+            <S N="Key">Cmdlet</S>
+            <Obj N="Value" RefId="6">
+              <TNRef RefId="1" />
+              <LST>
+                <S>Get-ParameterTemplate</S>
+                <S>Get-APIManagementTemplate</S>
+                <S>Write-APIManagementTemplates</S>
+              </LST>
+            </Obj>
+          </En>
+          <En>
+            <S N="Key">Workflow</S>
+            <Obj N="Value" RefId="7">
+              <TNRef RefId="1" />
+              <LST />
+            </Obj>
+          </En>
+          <En>
+            <S N="Key">DscResource</S>
+            <Ref N="Value" RefId="7" />
+          </En>
+          <En>
+            <S N="Key">RoleCapability</S>
+            <Ref N="Value" RefId="7" />
+          </En>
+          <En>
+            <S N="Key">Function</S>
+            <Ref N="Value" RefId="7" />
+          </En>
+          <En>
+            <S N="Key">Command</S>
+            <Obj N="Value" RefId="8">
+              <TNRef RefId="1" />
+              <LST>
+                <S>Get-ParameterTemplate</S>
+                <S>Get-APIManagementTemplate</S>
+                <S>Write-APIManagementTemplates</S>
+              </LST>
+            </Obj>
+          </En>
+        </DCT>
+      </Obj>
+      <Nil N="PowerShellGetFormatVersion" />
+      <Nil N="ReleaseNotes" />
+      <Obj N="Dependencies" RefId="9">
+        <TNRef RefId="1" />
+        <LST />
+      </Obj>
+      <S N="RepositorySourceLocation">https://www.powershellgallery.com/api/v2</S>
+      <S N="Repository">PSGallery</S>
+      <S N="PackageManagementProvider">NuGet</S>
+      <Obj N="AdditionalMetadata" RefId="10">
+        <TN RefId="4">
+          <T>System.Management.Automation.PSCustomObject</T>
+          <T>System.Object</T>
+        </TN>
+        <MS>
+          <S N="copyright">(c) 2018 Mattias LÃ¶gdberg</S>
+          <S N="description">Extract Azure API Management to ARM templates</S>
+          <S N="requireLicenseAcceptance">False</S>
+          <S N="isLatestVersion">True</S>
+          <S N="isAbsoluteLatestVersion">True</S>
+          <S N="versionDownloadCount">10</S>
+          <S N="downloadCount">2576</S>
+          <S N="packageSize">2994032</S>
+          <S N="published">2021-06-21 08:48:18 +03:00</S>
+          <S N="created">2021-06-21 08:48:18 +03:00</S>
+          <S N="lastUpdated">2021-06-22 09:02:29 +03:00</S>
+          <S N="tags">PSModule PSCmdlet_Get-ParameterTemplate PSCommand_Get-ParameterTemplate PSCmdlet_Get-APIManagementTemplate PSCommand_Get-APIManagementTemplate PSCmdlet_Write-APIManagementTemplates PSCommand_Write-APIManagementTemplates PSIncludes_Cmdlet</S>
+          <S N="developmentDependency">False</S>
+          <S N="updated">2021-06-22T09:02:29Z</S>
+          <S N="NormalizedVersion">1.4.139</S>
+          <S N="Authors">Mattias Lögdberg</S>
+          <S N="IsPrerelease">false</S>
+          <S N="ItemType">Module</S>
+          <S N="FileList">APIManagementTemplate.nuspec|APIManagementTemplate.dll|APIManagementTemplate.psd1|Microsoft.IdentityModel.Clients.ActiveDirectory.dll|Newtonsoft.Json.dll|System.Management.Automation.dll</S>
+          <S N="GUID">c160333e-a6d8-4cd8-8413-84e1389fe9db</S>
+          <S N="DotNetFrameworkVersion">4.5.2</S>
+          <S N="CompanyName">Unknown</S>
+        </MS>
+      </Obj>
+      <S N="InstalledLocation">C:\Program Files\PowerShell\Modules\APIManagementTemplate\1.4.139</S>
+    </MS>
+  </Obj>
+</Objs>

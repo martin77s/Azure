@@ -1,0 +1,1803 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "environment": {
+            "type": "string",
+            "allowedValues": [
+                "lab",
+                "dev",
+                "test",
+                "prod"
+            ],
+            "defaultValue": "dev",
+            "metadata": {
+                "description": "Required. Environment code (dev/test/prod)"
+            }
+        },
+        "applicationName": {
+            "type": "string",
+            "metadata": {
+                "description": "Used in the resource names as prefix"
+            }
+        },
+        "servicePrincipalId": {
+            "type": "string",
+            "metadata": {
+                "description": "Service principal id for access permissions on the keyvault"
+            }
+        },
+        "allowedPublicIPsToFrom": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Optional. comma separated list of public IPs to allow access to the resources"
+            }
+        },
+        "DNSServerAddress": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The DNS address(es) of the DNS Server(s) used by the VNET in CSV format"
+            }
+        },
+        "networkPrefix": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. Address prefix for the virtual network (10.X)"
+            }
+        },
+        "hubVnetResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. ResourceId for the hub vnet. Used for the two-way vnet-peering"
+            }
+        },
+        "usePeeringGateway": {
+            "type": "bool",
+            "metadata": {
+                "description": "Required. Use useRemoteGateways in the target peered virtual network"
+            }
+        },
+        "wafAllowWebInBound": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. Deny all other internet connectivity"
+            }
+        },
+        "privateAddressSpace": {
+            "type": "string",
+            "defaultValue": "192.168.15.0/24",
+            "metadata": {
+                "description": "Required. The private Address Space for Vlan15"
+            }
+        },
+        "redisDssSkuName": {
+            "type": "string",
+            "metadata": {
+                "description": "Redis Dss sku name"
+            }
+        },
+        "redisDssSkuFamily": {
+            "type": "string",
+            "defaultValue": "C",
+            "metadata": {
+                "description": "Redis Dss sku name"
+            }
+        },
+        "redisDssSkuCount": {
+            "type": "int",
+            "metadata": {
+                "description": "Redis Dss sku count"
+            }
+        },
+        "redisDswSkuName": {
+            "type": "string",
+            "metadata": {
+                "description": "Redis Dsw sku name"
+            }
+        },
+        "redisDswSkuFamily": {
+            "type": "string",
+            "defaultValue": "C",
+            "metadata": {
+                "description": "Redis Dsw sku name"
+            }
+        },
+        "redisDswSkuCount": {
+            "type": "int",
+            "metadata": {
+                "description": "Redis Dsw sku count"
+            }
+        },
+        "logAnalyticsSku": {
+            "type": "string",
+            "allowedValues": [
+                "Free",
+                "Standard",
+                "Premium",
+                "PerNode",
+                "PerGB2018",
+                "Standalone",
+                "CapacityReservation"
+            ],
+            "defaultValue": "PerGB2018",
+            "metadata": {
+                "description": "logAnalytics pricing tier"
+            }
+        },
+        "logAnalyticsCapacityReservationLevel": {
+            "type": "int",
+            "defaultValue": 10,
+            "minValue": 1,
+            "maxValue": 5000,
+            "metadata": {
+                "description": "Optional. GB/day commitment (Required and used if logAnalyticsSku is CapacityReservation)"
+            }
+        },
+        "logAnalyticsRetentionInDays": {
+            "type": "int",
+            "defaultValue": 120,
+            "minValue": 30,
+            "maxValue": 730,
+            "metadata": {
+                "description": "The workspace data retention in days, between 30 and 730."
+            }
+        },
+        "diagnosticLogRetentionInDays": {
+            "type": "int",
+            "defaultValue": 30,
+            "minValue": 0,
+            "maxValue": 365,
+            "metadata": {
+                "description": "Optional. Specifies the number of days that logs will be kept for, a value of 0 will retain data indefinitely"
+            }
+        },
+        "cuaId": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Optional. Customer Usage Attribution id (GUID). This GUID must be previously registered"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Optional. Location for all Resources"
+            }
+        }
+    },
+    "variables": {
+        "pidName": "[concat('pid-', parameters('cuaId'))]",
+        "applicationPrefix": "[if(empty(parameters('applicationName')), '', concat('-', parameters('applicationName')))]",
+
+        // Calculate resource names:
+        "vnetName": "[concat(parameters('environment'), variables('applicationPrefix'), '-infra-vnet')]",
+        "svcNsgName": "[concat(parameters('environment'), variables('applicationPrefix'), '-svcvm-nsg')]",
+        "wafNsgName": "[concat(parameters('environment'), variables('applicationPrefix'), '-waf-nsg')]",
+        "wafAllowWebInBound": "[split(parameters('wafAllowWebInBound'),',')]",
+        "sqlVmNsgName": "[concat(parameters('environment'), variables('applicationPrefix'), '-sqlvm-nsg')]",
+        "natGatewayName": "[concat(parameters('environment'), variables('applicationPrefix'), '-nat')]",
+        "natGatewayPip": "[concat(parameters('environment'), variables('applicationPrefix'), '-nat-pip')]",
+        "DNSServerAddress": "[split(parameters('DNSServerAddress'), ',')]",
+        "vnetId": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "localPeeringName": "[concat('Peering-',variables('vnetName'),'-to-',variables('remoteVnetName'))]",
+        "remoteVnetSubscriptionId": "[split(parameters('hubVnetResourceId'),'/')[2]]",
+        "remoteVnetResourceGroupName": "[split(parameters('hubVnetResourceId'),'/')[4]]",
+        "remoteVnetName": "[split(parameters('hubVnetResourceId'),'/')[8]]",
+        "remotePeeringName": "[concat('Peering-',variables('remoteVnetName'),'-to-',variables('vnetName'))]",
+        "storageAccountName": "[replace(toLower(concat(parameters('environment'), variables('applicationPrefix'),'strg')),'-', '')]",
+        "logAnalyticsName": "[concat(parameters('environment'), variables('applicationPrefix'), '-la')]",
+
+        "keyVaultDss": "[concat(parameters('environment'), variables('applicationPrefix'), '-dss-kv')]",
+        "keyVaultDsw": "[concat(parameters('environment'), variables('applicationPrefix'), '-dsw-kv')]",
+        "keyVaultNames": "[createArray(variables('keyVaultDss'), variables('keyVaultDsw'))]",
+
+        "appConfigDss": "[concat(parameters('environment'), variables('applicationPrefix'), '-dss-appconfig')]",
+        "appConfigDsw": "[concat(parameters('environment'), variables('applicationPrefix'), '-dsw-appconfig')]",
+        "appConfigNames": "[createArray(variables('appConfigDss'), variables('appConfigDsw'))]",
+
+        "redisCacheDss": "[concat(parameters('environment'), variables('applicationPrefix'), '-dss-redis')]",
+        "redisCacheDsw": "[concat(parameters('environment'), variables('applicationPrefix'), '-dsw-redis')]",
+        "redisCacheNames": "[createArray(variables('redisCacheDss'), variables('redisCacheDsw'))]", // Used for the privateEndpoints and firewall rules CopyLoops
+
+        // Calculate address spaces:
+        "vnetAddressRange": "[replace('X.X.0.0/16', 'X.X', parameters('networkPrefix'))]",
+        "subnets": {
+            "functions": {
+                "name": "functions-subnet",
+                "addressPrefix": "[replace('X.X.1.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "privateLinks": {
+                "name": "plinks-subnet",
+                "addressPrefix": "[replace('X.X.2.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "waf": {
+                "name": "waf-subnet",
+                "addressPrefix": "[replace('X.X.3.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "sqlVm": {
+                "name": "sqlvm-subnet",
+                "addressPrefix": "[replace('X.X.4.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "register": {
+                "name": "register-subnet",
+                "addressPrefix": "[replace('X.X.5.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "www": {
+                "name": "www-subnet",
+                "addressPrefix": "[replace('X.X.6.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "internal": {
+                "name": "internal-subnet",
+                "addressPrefix": "[replace('X.X.7.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "msgrs": {
+                "name": "msgrs-subnet",
+                "addressPrefix": "[replace('X.X.8.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "mysql": {
+                "name": "mysql-subnet",
+                "addressPrefix": "[replace('X.X.9.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "beta": {
+                "name": "beta-subnet",
+                "addressPrefix": "[replace('X.X.10.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "svcVm": {
+                "name": "svcvm-subnet",
+                "addressPrefix": "[replace('X.X.11.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "onlpfunctions": {
+                "name": "onlpfunctions-subnet",
+                "addressPrefix": "[replace('X.X.12.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "betaonlpfunctions": {
+                "name": "betaonlpfunctions-subnet",
+                "addressPrefix": "[replace('X.X.13.0/24', 'X.X', parameters('networkPrefix'))]"
+            },
+            "register2": {
+                "name": "register2-subnet",
+                "addressPrefix": "[replace('X.X.14.0/24', 'X.X', parameters('networkPrefix'))]"
+            }
+        },
+
+        // LogAnalytics Sku object:
+        "logAnalyticsSku": {
+            "name": "[parameters('logAnalyticsSku')]"
+        },
+        "logAnalyticsSkuWithCapacity": {
+            "name": "[parameters('logAnalyticsSku')]",
+            "capacityReservationLevel": "[parameters('logAnalyticsCapacityReservationLevel')]"
+        },
+
+        // Calculate resource Ids:
+        "privateLinkSubnetId": "[concat(variables('vnetId'), '/subnets/', variables('subnets').privateLinks.name)]",
+        "logAnalyticsSolutions": {
+            "solution": [
+                {
+                    "name": "[concat('Security', '(', variables('logAnalyticsName'), ')')]",
+                    "marketplaceName": "Security"
+                },
+                {
+                    "name": "[concat('KeyVaultAnalytics', '(', variables('logAnalyticsName'), ')')]",
+                    "marketplaceName": "KeyVaultAnalytics"
+                },
+                {
+                    "name": "[concat('VMInsights', '(', variables('logAnalyticsName'), ')')]",
+                    "marketplaceName": "VMInsights"
+                }
+            ]
+        },
+        "storageAccountResourceId": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccountName'))]",
+        "logAnalyticsResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]",
+        "diagnosticSettingName": "diagnostics",
+        "allowedPublicIPsToFrom": "[if(equals(parameters('allowedPublicIPsToFrom'), ''), createArray(), split(parameters('allowedPublicIPsToFrom'), ','))]",
+        "copy": [
+            {
+                "name": "firewallRules",
+                "count": "[length(variables('allowedPublicIPsToFrom'))]",
+                "input": {
+                    "name": "[concat('Allow_', replace(replace(split(variables('allowedPublicIPsToFrom')[copyIndex('firewallRules')],'|')[0],'.','_'),'/','_'))]",
+                    "startIpAddress": "[split(variables('allowedPublicIPsToFrom')[copyIndex('firewallRules')],'|')[1]]",
+                    "endIpAddress": "[split(variables('allowedPublicIPsToFrom')[copyIndex('firewallRules')],'|')[2]]"
+                }
+            }
+        ]
+    },
+    "resources": [
+
+        // CUA deployment:
+        {
+            "condition": "[not(empty(parameters('cuaId')))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2021-01-01",
+            "name": "[variables('pidName')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                    ]
+                }
+            }
+        },
+
+        // Diagnostics Storage Account:
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2021-04-01",
+            "name": "[variables('storageAccountName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "allowBlobPublicAccess": false,
+                "minimumTlsVersion": "TLS1_2",
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Storage/storageAccounts/providers/diagnosticsettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('storageAccountName'), '/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[variables('logAnalyticsResourceId')]",
+                        "[variables('storageAccountResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "Microsoft.Storage/storageAccounts/blobServices/providers/diagnosticsettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('storageAccountName'),'/default/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[variables('logAnalyticsResourceId')]",
+                        "[variables('storageAccountResourceId')]"
+                    ],
+                    "properties": {
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "Microsoft.Storage/storageAccounts/tableServices/providers/diagnosticsettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('storageAccountName'),'/default/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[variables('logAnalyticsResourceId')]",
+                        "[variables('storageAccountResourceId')]"
+                    ],
+                    "properties": {
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "Microsoft.Storage/storageAccounts/fileServices/providers/diagnosticsettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('storageAccountName'),'/default/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[variables('logAnalyticsResourceId')]",
+                        "[variables('storageAccountResourceId')]"
+                    ],
+                    "properties": {
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "Microsoft.Storage/storageAccounts/queueServices/providers/diagnosticsettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('storageAccountName'),'/default/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[variables('logAnalyticsResourceId')]",
+                        "[variables('storageAccountResourceId')]"
+                    ],
+                    "properties": {
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "logs": [
+                            {
+                                "category": "StorageRead",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageWrite",
+                                "enabled": true
+                            },
+                            {
+                                "category": "StorageDelete",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "Transaction",
+                                "enabled": true
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // LogAnalytics Workspace:
+        {
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "apiVersion": "2020-10-01",
+            "name": "[variables('logAnalyticsName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "sku": "[if(equals(parameters('logAnalyticsSku'), 'CapacityReservation'), variables('logAnalyticsSkuWithCapacity'), variables('logAnalyticsSku'))]",
+                "retentionInDays": "[parameters('logAnalyticsRetentionInDays')]"
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.OperationalInsights/workspaces/providers/diagnosticsettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('logAnalyticsName'),'/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "dependsOn": [
+                        "[variables('storageAccountResourceId')]",
+                        "[variables('logAnalyticsResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "logs": [
+                            {
+                                "category": "Audit",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // LogAnalytics Solutions:
+        {
+            "type": "Microsoft.OperationsManagement/solutions",
+            "apiVersion": "2015-11-01-preview",
+            "name": "[concat(variables('logAnalyticsSolutions').solution[copyIndex('solutionCopy')].Name)]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+            ],
+            "copy": {
+                "name": "solutionCopy",
+                "count": "[length(variables('logAnalyticsSolutions').solution)]"
+            },
+            "properties": {
+                "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+            },
+            "plan": {
+                "name": "[variables('logAnalyticsSolutions').solution[copyIndex('solutionCopy')].name]",
+                "product": "[concat('OMSGallery/', variables('logAnalyticsSolutions').solution[copyIndex('solutionCopy')].marketplaceName)]",
+                "promotionCode": "",
+                "publisher": "Microsoft"
+            }
+        },
+
+        // Network Security Groups:
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-06-01",
+            "location": "[parameters('location')]",
+            "name": "[variables('svcNsgName')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Allow-HTTPS-OutBound",
+                        "properties": {
+                            "description": "Allow outbound HTTPS traffic",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1000,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "Deny-Internet-Outbound",
+                        "properties": {
+                            "description": "Deny outbound traffic",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "Internet",
+                            "access": "Deny",
+                            "priority": 2000,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "Allow-RDP-InBound",
+                        "properties": {
+                            "description": "Allow inbound RDP traffic",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "3389",
+                            "sourceAddressPrefix": "[parameters('privateAddressSpace')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 2010,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "Allow-SMB-InBound",
+                        "properties": {
+                            "description": "Allow inbound SMB traffic",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "[parameters('privateAddressSpace')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 2200,
+                            "direction": "Inbound",
+                            "destinationPortRanges": [
+                                "139",
+                                "445"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Network/networkSecurityGroups/providers/diagnosticSettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('svcNsgName'),'/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[variables('svcNsgName')]",
+                        "[variables('storageAccountResourceId')]",
+                        "[variables('logAnalyticsResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "logs": [
+                            {
+                                "category": "NetworkSecurityGroupEvent",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            },
+                            {
+                                "category": "NetworkSecurityGroupRuleCounter",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-06-01",
+            "location": "[parameters('location')]",
+            "name": "[variables('wafNsgName')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Alow-GatewayManager-InBound",
+                        "properties": {
+                            "description": "Allow inbound connectivity from the GatewayManager tag",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "GatewayManager",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 2000,
+                            "direction": "Inbound",
+                            "destinationPortRange": "65200-65535"
+                        }
+                    },
+                    {
+                        "name": "Allow-LoadBalancer-InBound",
+                        "properties": {
+                            "description": "Allow inbound connectivity from the LoadBalancer tag",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "AzureLoadBalancer",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 2100,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "Allow-Web-InBound",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 2200,
+                            "direction": "Inbound",
+                            "destinationPortRanges": [ "80", "443" ],
+                            "sourceAddressPrefixes": "[variables('wafAllowWebInBound')]"
+                        }
+                    },
+                    {
+                        "name": "Deny-Internet-InBound",
+                        "properties": {
+                            "description": "Deny all other internet connectivity",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "Internet",
+                            "destinationAddressPrefix": "*",
+                            "access": "Deny",
+                            "priority": 2300,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Network/networkSecurityGroups/providers/diagnosticSettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('wafNsgName'),'/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[variables('wafNsgName')]",
+                        "[variables('storageAccountResourceId')]",
+                        "[variables('logAnalyticsResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "logs": [
+                            {
+                                "category": "NetworkSecurityGroupEvent",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            },
+                            {
+                                "category": "NetworkSecurityGroupRuleCounter",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-06-01",
+            "location": "[parameters('location')]",
+            "name": "[variables('sqlVmNsgName')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Allow-SMTP-OutBound",
+                        "properties": {
+                            "description": "Allow outbound SMTP traffic",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "25",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1000,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "Allow-HTTPS-OutBound",
+                        "properties": {
+                            "description": "Allow outbound HTTPS traffic for SSIS",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1100,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "Allow-SSH-OutBound",
+                        "properties": {
+                            "description": "Allow outbound SSH traffic for SSIS",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1200,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "Allow-FTP-OutBound",
+                        "properties": {
+                            "description": "Allow outbound FTP traffic for SSIS",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "21",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1300,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "Allow-SQL-OutBound",
+                        "properties": {
+                            "description": "Allow outbound traffic for SQL replication on the test environment only",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "[if(equals(parameters('environment'), 'test'), 'Allow', 'Deny')]",
+                            "priority": 1400,
+                            "direction": "Outbound",
+                            "destinationPortRanges": [
+                                "1433",
+                                "5022"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "Deny-Internet-OutBound",
+                        "properties": {
+                            "description": "Deny outbound traffic",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "Internet",
+                            "access": "Deny",
+                            "priority": 2000,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "Allow-SQL-InBound",
+                        "properties": {
+                            "description": "Allow inbound SQL server traffic",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 2000,
+                            "direction": "Inbound",
+                            "destinationPortRanges": [
+                                "1433"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "Allow-RDP-InBound",
+                        "properties": {
+                            "description": "Allow inbound RDP traffic",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "3389",
+                            "sourceAddressPrefix": "[parameters('privateAddressSpace')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 2010,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "Allow-SMB-InBound",
+                        "properties": {
+                            "description": "Allow inbound SMB traffic",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "[parameters('privateAddressSpace')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 2200,
+                            "direction": "Inbound",
+                            "destinationPortRanges": [
+                                "139",
+                                "445"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Network/networkSecurityGroups/providers/diagnosticSettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('sqlVmNsgName'),'/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[variables('sqlVmNsgName')]",
+                        "[variables('storageAccountResourceId')]",
+                        "[variables('logAnalyticsResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "logs": [
+                            {
+                                "category": "NetworkSecurityGroupEvent",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            },
+                            {
+                                "category": "NetworkSecurityGroupRuleCounter",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // Virtual Networks:
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-04-01",
+            "name": "[variables('vnetName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('svcNsgName'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('wafNsgName'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('sqlVmNsgName'))]",
+                "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]",
+                "[variables('storageAccountResourceId')]",
+                "[variables('logAnalyticsResourceId')]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('vnetAddressRange')]"
+                    ]
+                },
+                "dhcpOptions": {
+                    "dnsServers": "[variables('DNSServerAddress')]"
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('subnets').functions.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').functions.addressPrefix]",
+                            "delegations": [
+                                {
+                                    "name": "delegation",
+                                    "properties": {
+                                        "serviceName": "Microsoft.Web/serverfarms"
+                                    }
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled",
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').privateLinks.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').privateLinks.addressPrefix]",
+                            "privateEndpointNetworkPolicies": "Disabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').waf.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').waf.addressPrefix]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('wafNsgName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').sqlVm.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').sqlVm.addressPrefix]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('sqlVmNsgName'))]"
+                            },
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').register.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').register.addressPrefix]",
+                            "delegations": [
+                                {
+                                    "name": "delegation",
+                                    "properties": {
+                                        "serviceName": "Microsoft.Web/serverfarms"
+                                    }
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled",
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').www.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').www.addressPrefix]",
+                            "delegations": [
+                                {
+                                    "name": "delegation",
+                                    "properties": {
+                                        "serviceName": "Microsoft.Web/serverfarms"
+                                    }
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled",
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').internal.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').internal.addressPrefix]",
+                            "delegations": [
+                                {
+                                    "name": "delegation",
+                                    "properties": {
+                                        "serviceName": "Microsoft.Web/serverfarms"
+                                    }
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled",
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').msgrs.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').msgrs.addressPrefix]",
+                            "delegations": [
+                                {
+                                    "name": "delegation",
+                                    "properties": {
+                                        "serviceName": "Microsoft.Web/serverfarms"
+                                    }
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled",
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').mysql.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').mysql.addressPrefix]",
+                            "privateEndpointNetworkPolicies": "Disabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').beta.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').beta.addressPrefix]",
+                            "delegations": [
+                                {
+                                    "name": "delegation",
+                                    "properties": {
+                                        "serviceName": "Microsoft.Web/serverfarms"
+                                    }
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled",
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').svcVm.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').svcVm.addressPrefix]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('svcNsgName'))]"
+                            },
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').onlpfunctions.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').onlpfunctions.addressPrefix]",
+                            "delegations": [
+                                {
+                                    "name": "delegation",
+                                    "properties": {
+                                        "serviceName": "Microsoft.Web/serverfarms"
+                                    }
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled",
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').betaonlpfunctions.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').betaonlpfunctions.addressPrefix]",
+                            "delegations": [
+                                {
+                                    "name": "delegation",
+                                    "properties": {
+                                        "serviceName": "Microsoft.Web/serverfarms"
+                                    }
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled",
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('subnets').register2.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnets').register2.addressPrefix]",
+                            "delegations": [
+                                {
+                                    "name": "delegation",
+                                    "properties": {
+                                        "serviceName": "Microsoft.Web/serverfarms"
+                                    }
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled",
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways/', variables('natGatewayName'))]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Network/virtualNetworks/providers/diagnosticSettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('vNetName'),'/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "logs": [
+                            {
+                                "category": "VMProtectionAlerts",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // Vnet Peering:
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "apiVersion": "2019-11-01",
+            "name": "[concat(variables('vnetName'), concat('/', variables('localPeeringName')))]",
+            "properties": {
+                "remoteVirtualNetwork": {
+                    "id": "[parameters('hubVnetResourceId')]"
+                },
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "useRemoteGateways": "[parameters('usePeeringGateway')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+            ]
+        },
+        {
+            "name": "RemotePeeringDeployment",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2021-01-01",
+            "subscriptionId": "[variables('remoteVnetSubscriptionId')]",
+            "resourceGroup": "[variables('remoteVnetResourceGroupName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                            "apiVersion": "2019-11-01",
+                            "name": "[concat(variables('remoteVnetName'), concat('/', variables('remotePeeringName')))]",
+                            "properties": {
+                                "remoteVirtualNetwork": {
+                                    "id": "[variables('vnetId')]"
+                                },
+                                "allowVirtualNetworkAccess": true,
+                                "allowForwardedTraffic": true,
+                                "allowGatewayTransit": true
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+
+        // Public IP Address (for the NAT GW)
+        {
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2021-02-01",
+            "name": "[variables('natGatewayPip')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "zones": [
+                "1",
+                "2",
+                "3"
+            ],
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Network/publicIpAddresses/providers/diagnosticSettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('natGatewayPip'),'/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[variables('natGatewayPip')]",
+                        "[variables('storageAccountResourceId')]",
+                        "[variables('logAnalyticsResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "logs": [
+                            {
+                                "category": "DDoSProtectionNotifications",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            },
+                            {
+                                "category": "DDoSMitigationFlowLogs",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            },
+                            {
+                                "category": "DDoSMitigationReports",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // NAT Gateway:
+        {
+            "type": "Microsoft.Network/natGateways",
+            "apiVersion": "2021-02-01",
+            "name": "[variables('natGatewayName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIpAddresses/', variables('natGatewayPip'))]"
+            ],
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAddresses": [
+                    {
+                        "id": "[resourceId('Microsoft.Network/publicIpAddresses/', variables('natGatewayPip'))]"
+                    }
+                ],
+                "idleTimeoutInMinutes": 4
+            }
+        },
+
+        // KeyVaults:
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2019-09-01",
+            "copy": {
+                "name": "keyVaultsCopy",
+                "count": "[length(variables('keyVaultNames'))]"
+            },
+            "name": "[variables('keyVaultNames')[copyIndex('keyVaultsCopy')]]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[variables('storageAccountResourceId')]",
+                "[variables('logAnalyticsResourceId')]"
+            ],
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "Standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "accessPolicies": [
+                    {
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[parameters('servicePrincipalId')]",
+                        "permissions": {
+                            "keys": [
+                                "All"
+                            ],
+                            "secrets": [
+                                "All"
+                            ],
+                            "certificates": [
+                                "All"
+                            ]
+                        }
+                    }
+                ],
+                "enabledForDeployment": false,
+                "enabledForDiskEncryption": false,
+                "enabledForTemplateDeployment": false,
+                "enableSoftDelete": true,
+                "enableRbacAuthorization": true
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.KeyVault/vaults/providers/diagnosticsettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('keyVaultNames')[copyIndex('keyVaultsCopy')] , '/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', concat(variables('keyVaultNames')[copyIndex('keyVaultsCopy')]))]",
+                        "[variables('storageAccountResourceId')]",
+                        "[variables('logAnalyticsResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "logs": [
+                            {
+                                "category": "AuditEvent",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // Redis Cache for DSS:
+        {
+            "type": "Microsoft.Cache/Redis",
+            "apiVersion": "2020-12-01",
+            "name": "[variables('redisCacheDss')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "sku": {
+                    "name": "[parameters('redisDssSkuName')]",
+                    "family": "[parameters('redisDssSkuFamily')]",
+                    "capacity": "[parameters('redisDssSkuCount')]"
+                },
+                "enableNonSslPort": false
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Cache/Redis/providers/diagnosticsettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('redisCacheDss'), '/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Cache/Redis', concat(variables('redisCacheDss')))]",
+                        "[variables('storageAccountResourceId')]",
+                        "[variables('logAnalyticsResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // Redis Cache for DSW:
+        {
+            "type": "Microsoft.Cache/Redis",
+            "apiVersion": "2020-12-01",
+            "name": "[variables('redisCacheDsw')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "sku": {
+                    "name": "[parameters('redisDswSkuName')]",
+                    "family": "[parameters('redisDswSkuFamily')]",
+                    "capacity": "[parameters('redisDswSkuCount')]"
+                },
+                "enableNonSslPort": false
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Cache/Redis/providers/diagnosticsettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('redisCacheDsw') , '/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Cache/Redis', concat(variables('redisCacheDsw')))]",
+                        "[variables('storageAccountResourceId')]",
+                        "[variables('logAnalyticsResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[variables('storageAccountResourceId')]",
+                        "workspaceId": "[variables('logAnalyticsResourceId')]",
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // Redis Cache private endpoints:
+        {
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2021-02-01",
+            "copy": {
+                "name": "redisCachePeCopy",
+                "count": "[length(variables('redisCacheNames'))]"
+            },
+            "name": "[concat(variables('redisCacheNames')[copyIndex('redisCachePeCopy')], '-plink')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[variables('vnetId')]",
+                "[resourceId('Microsoft.Cache/Redis', concat(variables('redisCacheDss')))]",
+                "[resourceId('Microsoft.Cache/Redis', concat(variables('redisCacheDsw')))]"
+            ],
+            "properties": {
+                "subnet": {
+                    "id": "[variables('privateLinkSubnetId')]"
+                },
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "[concat(variables('redisCacheNames')[copyIndex('redisCachePeCopy')], '-plink')]",
+                        "properties": {
+                            "privateLinkServiceId": "[resourceId('Microsoft.Cache/Redis', variables('redisCacheNames')[copyIndex('redisCachePeCopy')])]",
+                            "groupIds": [ "redisCache" ],
+                            "privateLinkServiceConnectionState": {
+                                "status": "Approved",
+                                "description": "Auto-approved",
+                                "actionsRequired": "None"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Redis Cache firewall rules:
+        {
+            "type": "Microsoft.Cache/Redis/firewallRules",
+            "apiVersion": "2020-06-01",
+            "copy": {
+                "name": "firewallRulesCopy",
+                "count": "[length(variables('firewallRules'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(variables('redisCacheNames')[0], '/', variables('firewallRules')[copyIndex('firewallRulesCopy')].name)]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Cache/Redis', variables('redisCacheNames')[0])]"
+            ],
+            "location": "[parameters('location')]",
+            "properties": {
+                "startIP": "[variables('firewallRules')[copyIndex('firewallRulesCopy')].startIpAddress]",
+                "endIP": "[variables('firewallRules')[copyIndex('firewallRulesCopy')].endIpAddress]"
+            }
+        },
+        {
+            "type": "Microsoft.Cache/Redis/firewallRules",
+            "apiVersion": "2020-06-01",
+            "copy": {
+                "name": "firewallRulesCopy",
+                "count": "[length(variables('firewallRules'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(variables('redisCacheNames')[1], '/', variables('firewallRules')[copyIndex('firewallRulesCopy')].name)]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Cache/Redis', variables('redisCacheNames')[1])]"
+            ],
+            "location": "[parameters('location')]",
+            "properties": {
+                "startIP": "[variables('firewallRules')[copyIndex('firewallRulesCopy')].startIpAddress]",
+                "endIP": "[variables('firewallRules')[copyIndex('firewallRulesCopy')].endIpAddress]"
+            }
+        },
+
+        // App Configurations:
+        {
+            "type": "Microsoft.AppConfiguration/configurationStores",
+            "apiVersion": "2020-06-01",
+            "copy": {
+                "name": "appConfigsCopy",
+                "count": "[length(variables('appConfigNames'))]"
+            },
+            "name": "[concat(variables('appConfigNames')[copyIndex('appConfigsCopy')])]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "standard"
+            },
+            "properties": {
+
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            }
+        }
+    ],
+    "outputs": {
+        "diagnosticStorageAccountName": {
+            "type": "string",
+            "value": "[variables('storageAccountName')]",
+            "metadata": {
+                "description": "The Resource name of the Storage Account"
+            }
+        },
+        "diagnosticStorageAccountResourceId": {
+            "type": "string",
+            "value": "[variables('storageAccountResourceId')]",
+            "metadata": {
+                "description": "The ResourceId of the Storage Account"
+            }
+        },
+        "logAnalyticsName": {
+            "type": "string",
+            "value": "[variables('logAnalyticsName')]",
+            "metadata": {
+                "description": "The Workspace name of the Log Analytics"
+            }
+        },
+        "logAnalyticsResourceId": {
+            "type": "string",
+            "value": "[variables('logAnalyticsResourceId')]",
+            "metadata": {
+                "description": "The ResourceId of the Log Analytics"
+            }
+        },
+        "logAnalyticsWorkspaceId": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName')), '2020-10-01').customerId]",
+            "metadata": {
+                "description": "The Log Analytics WorkspaceId"
+            }
+        },
+        "vnetName": {
+            "type": "string",
+            "value": "[variables('vnetName')]",
+            "metadata": {
+                "description": "The virtual network name"
+            }
+        },
+        "vnetId": {
+            "type": "string",
+            "value": "[variables('vnetId')]",
+            "metadata": {
+                "description": "The virtual network "
+            }
+        },
+        "subnets": {
+            "type": "object",
+            "value": "[variables('subnets')]",
+            "metadata": {
+                "description": "The array of subnet names and addresses"
+            }
+        },
+        "natGatewayPublicIpAddress": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('natGatewayPip'))).IpAddress]",
+            "metadata": {
+                "description": "The NAT gateway Public IP Address"
+            }
+        },
+        "redisDssName": {
+            "type": "string",
+            "value": "[variables('redisCacheDss')]",
+            "metadata": {
+                "description": "The DSS RedisCache resource name"
+            }
+        },
+        "redisDswName": {
+            "type": "string",
+            "value": "[variables('redisCacheDsw')]",
+            "metadata": {
+                "description": "The DSW RedisCache resource name"
+            }
+        },
+        "redisDssResourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Cache/Redis', variables('redisCacheDss'))]",
+            "metadata": {
+                "description": "The DSS RedisCache resource id"
+            }
+        },
+        "redisDswResourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Cache/Redis', variables('redisCacheDsw'))]",
+            "metadata": {
+                "description": "The DSW RedisCache resource id"
+            }
+        },
+        "appConfigDssName": {
+            "type": "string",
+            "value": "[variables('appConfigDss')]",
+            "metadata": {
+                "description": "The DSS AppConfig resource id"
+            }
+        },
+        "appConfigDswName": {
+            "type": "string",
+            "value": "[variables('appConfigDsw')]",
+            "metadata": {
+                "description": "The DSW AppConfig resource name"
+            }
+        },
+        "appConfigDssResourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.AppConfiguration/configurationStores', variables('appConfigDss'))]",
+            "metadata": {
+                "description": "The DSS AppConfig resource id"
+            }
+        },
+        "appConfigDswResourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.AppConfiguration/configurationStores', variables('appConfigDsw'))]",
+            "metadata": {
+                "description": "The DSW AppConfig resource id"
+            }
+        },
+        "kvDssName": {
+            "type": "string",
+            "value": "[variables('keyVaultDss')]",
+            "metadata": {
+                "description": "The DSS keyVault resource id"
+            }
+        },
+        "kvDswName": {
+            "type": "string",
+            "value": "[variables('keyVaultDsw')]",
+            "metadata": {
+                "description": "The DSW keyVault resource name"
+            }
+        },
+        "keyVaultDssResourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultDss'))]",
+            "metadata": {
+                "description": "The DSS keyVault resource id"
+            }
+        },
+        "keyVaultDswResourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultDsw'))]",
+            "metadata": {
+                "description": "The DSW keyVault resource id"
+            }
+        }
+    }
+}

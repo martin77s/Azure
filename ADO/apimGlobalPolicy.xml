@@ -1,0 +1,28 @@
+<policies>
+    <inbound>
+        <ip-filter action="allow">
+            <!-- allowedPublicIPsForAPIM -->
+            %allowedPublicIPsForAPIM%
+
+            <!-- wafPublicIP -->
+            <address>%wafPublicIP%</address>
+
+            <!-- apimCorsProxyIP -->
+            <address>%apimCorsProxyIP%</address>
+        </ip-filter>
+        <choose>
+            <when condition="@(context.Request.Headers.GetValueOrDefault("is-staging") == "true")">
+                <set-backend-service base-url="@(String.Format("{0}-stg.{1}", context.Api.ServiceUrl.ToString().Split(new Char [] {'.'}, 2)))" />
+            </when>
+            <when condition="@(context.Request.Headers.GetValueOrDefault("is-beta") == "true")">
+                <set-backend-service base-url="@(String.Format("{0}-{1}-beta-{2}", context.Api.ServiceUrl.ToString().Split('-')))" />
+            </when>
+            <otherwise />
+        </choose>
+    </inbound>
+    <backend>
+        <forward-request />
+    </backend>
+    <outbound />
+    <on-error />
+</policies>

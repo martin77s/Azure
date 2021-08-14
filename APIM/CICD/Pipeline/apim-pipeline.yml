@@ -1,0 +1,226 @@
+# ------------------------------------------------------------------------------------------
+# Make sure the "<Project Name> Build Service (<Organization>)"
+#   has the Contribute = allow permissions on the specific repository
+# ------------------------------------------------------------------------------------------
+
+name: ${{upper(parameters.sourceEnvironment)}}-to-${{upper(parameters.targetEnvironment)}}-$(Date:yyyyMMdd)$(Rev:.r)
+
+# ------------------------------------------------------------------------------------------
+# Set the pipeline's parameters
+# ------------------------------------------------------------------------------------------
+parameters:
+  - name: sourceEnvironment
+    displayName: 'The source environment'
+    type: string
+    values:
+      - lab
+      - dev
+      - test
+      - prod
+    default: 'dev'
+
+  - name: targetEnvironment
+    displayName: 'The target environment'
+    type: string
+    values:
+      - lab
+      - dev
+      - test
+      - prod
+    default: 'lab'
+
+  - name: apiFilter
+    displayName: "APIs filter: * | endswith(path,'StaffService')"
+    # Filter for what API's to exort i.e: path eq 'api/v1/currencyconverter' or endswith(path,'currencyconverter').
+    # In addition to this, is it also possible to filter on productname i.e.: productname eq 'product-x')
+    type: string
+    default: '*'
+
+  - name: skipPushBackToRepo
+    displayName: 'Skip push templates back to repository'
+    type: boolean
+    values:
+      - false
+
+  - name: skipDeploymentToTarget
+    displayName: 'Skip deploying to target'
+    type: boolean
+    values:
+      - false
+
+  - name: useSavedModuleVersion
+    displayName: "Used the saved module version (don't download latest)"
+    type: boolean
+    values:
+      - false
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Set trigger to 'none' for manual deployment only
+# ------------------------------------------------------------------------------------------
+trigger:
+- none
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Load the variables from external files
+# ------------------------------------------------------------------------------------------
+variables:
+- template: '/Pipeline/apim-variables.yml'
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Set the Job details (Note: All the settings and tasks after this, need to be indented)
+# ------------------------------------------------------------------------------------------
+jobs:
+- job: 'APIM_CD'
+  timeoutInMinutes: 120
+  cancelTimeoutInMinutes: 3
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Set the ADO agent pool (Windows is required for the APIManagementARMTemplateCreator module)
+# Because the current module version uses System.Windows.Forms assembly,
+# hence it needs Windows PowerShell and not PSCore
+# ------------------------------------------------------------------------------------------
+  pool:
+    vmImage: 'windows-latest'
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Start the pipeline steps
+# ------------------------------------------------------------------------------------------
+  steps:
+  - checkout: self
+    persistCredentials: true
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Build the pipeline variables from the environment files
+# ------------------------------------------------------------------------------------------
+  - task: PowerShell@2
+    displayName: 'Build the pipeline variables from the environment files'
+    inputs:
+      targetType: 'filePath'
+      filePath: '$(System.DefaultWorkingDirectory)/PipelineScripts/Pipeline.ApimSetVariables.ps1'
+      arguments: "-sourceEnvironment '${{parameters.sourceEnvironment}}' -targetEnvironment '${{parameters.targetEnvironment}}'"
+      pwsh: true
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Verify the APIManagementARMTemplateCreator module
+# ------------------------------------------------------------------------------------------
+  - task: PowerShell@2
+    displayName: 'Verify the APIManagementARMTemplateCreator module'
+    inputs:
+      targetType: 'filePath'
+      filePath: '$(System.DefaultWorkingDirectory)/PipelineScripts/Pipeline.ApimVerifyCiCdModule.ps1'
+      arguments: '-ModuleName "APIManagementTemplate" -SavedModulesPath "$(System.DefaultWorkingDirectory)/Modules" -useSavedModuleVersion "${{parameters.useSavedModuleVersion}}"'
+      pwsh: false # Needs to be ps and not pscore
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Extract the template from the source environment
+# ------------------------------------------------------------------------------------------
+  - task: AzureCLI@2
+    displayName: 'Extract the template from the source environment'
+    inputs:
+      azureSubscription: 'Online Services - IaC - ${{parameters.sourceEnvironment}}'
+      scriptType: ps # Needs to be ps and not pscore
+      scriptPath: '$(System.DefaultWorkingDirectory)/PipelineScripts/Pipeline.ApimExtractTemplate.ps1'
+      arguments: '-SourceEnvironment "$(sourceEnvironment)" -SourceSubscriptionId "$(sourceSubscriptionId)" -apiFilters "${{parameters.apiFilter}}" -APIManagementTemplateModule "$(modulePath)"'
+      addSpnToEnvironment: 'true'
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Transform the template for the target environment
+# ------------------------------------------------------------------------------------------
+  - task: PowerShell@2
+    displayName: 'Transform the template for the target environment'
+    inputs:
+      targetType: 'filePath'
+      filePath: '$(System.DefaultWorkingDirectory)/PipelineScripts/Pipeline.ApimTransformTemplate.ps1'
+      arguments: "-TemplateFile '$(templateFile)' -TargetEnvironment '$(targetEnvironment)' -TargetSubscriptionId '$(targetSubscriptionId)'"
+      pwsh: true
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Push the generated templates to the repo
+# ------------------------------------------------------------------------------------------
+  - task: PowerShell@2
+    displayName: 'Push the generated templates to the repo'
+    condition: "and(succeeded(), eq('${{ parameters.skipPushBackToRepo }}', false))"
+    inputs:
+      pwsh: true
+      errorActionPreference: 'silentlyContinue'
+      failOnStderr: false
+      ignoreLASTEXITCODE: true
+      targetType: 'inline'
+      script: |
+        $templates = dir $(Build.Repository.LocalPath)/APIM -Recurse -Include *apim*.json |
+          Where-Object { $_.Name -match 'apim-extracted|apim-transformed' }
+        if ($templates.Count -gt 0) {
+          Write-Verbose ('Found {0} relevant template(s)' -f $templates.Count) -Verbose
+          git config --global user.email "$(Build.QueuedById)@$(System.TeamProject)"
+          git config --global user.name "$(Build.Repository.Name)"
+          foreach($file in $templates) { git add $($file.FullName) }
+          git commit -m "APIM extracted and transformed templates - [skip ci]"
+          git push origin HEAD:$(Build.SourceBranchName)
+        } else {
+            Write-Host ('##[warning] No templates found to commit back. {0}' -f $_.Exception.Message)
+        }
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Set apimDeploymentName variable from the current DateTime
+# ------------------------------------------------------------------------------------------
+  - task: PowerShell@2
+    displayName: 'Set apimDeploymentName variable from the current DateTime'
+    condition: "and(succeeded(), eq('${{ parameters.skipDeploymentToTarget }}', false))"
+    inputs:
+      targetType: 'inline'
+      script: |
+        Write-Host ("##vso[task.setvariable variable=apimDeploymentName]apim-{0}" -f $(Get-Date -Format yyyyMMddhhmm))
+      errorActionPreference: 'continue'
+      pwsh: true
+# ------------------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------------------
+# Deploy the template against the target environment
+# ------------------------------------------------------------------------------------------
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: 'Deploy the template against the target environment'
+    condition: "and(succeeded(), eq('${{ parameters.skipDeploymentToTarget }}', false))"
+    inputs:
+      azureResourceManagerConnection: 'Online Services - IaC - ${{parameters.targetEnvironment}}'
+      subscriptionId: '$(targetSubscriptionId)'
+      resourceGroupName: '$(targetEnvironment)-onls-publish-rg'
+      location: '$(location)'
+      csmFile: '$(templateFile)'
+      deploymentName: '$(apimDeploymentName)'
+      deploymentOutputs: 'apim-cicd'
+# ------------------------------------------------------------------------------------------

@@ -2,7 +2,6 @@
 
 Script Name	: Pipeline.GetLastDeploymentOutputs.ps1
 Description	: Create ADO pipeline variables from the last successful deployment in the resourceGroup
-Author		: Martin Schvartzman, Microsoft (maschvar@microsoft.com)
 Keywords	: Azure, ARM, Variables, DevOps, Pipeline
 
 #>
@@ -24,13 +23,32 @@ if(-not($lastDeployment)){
 }
 
 foreach ($key in $lastDeployment.Outputs.Keys) {
+
     $type = ($lastDeployment.Outputs[$key].Type).ToLower()
-    $variableAttributes = @("task.setvariable variable=$($key)")
-    if ($type -eq 'securestring') { $variableAttributes += 'isSecret=true' }
-    if ($lastDeployment.Outputs[$key].Type -eq 'Array') {
-        $value = $lastDeployment.Outputs[$key].Value.ToString() | ConvertFrom-Json  | ConvertTo-Json -AsArray -Compress
+    $variableValue = $lastDeployment.Outputs[$key].Value.ToString()
+
+    if ($type -eq 'string') {
+        Write-Host ('##vso[task.setvariable variable={0}]{1}' -f $key, $variableValue)
+
+    } elseif ($type -eq 'securestring') {
+        Write-Host ('##vso[task.setvariable variable={0};isSecret=true]{1}' -f $key, $variableValue)
+
+    } elseif ($type -eq 'array') {
+        $variableValue = $lastDeployment.Outputs[$key].Value.ToString() | ConvertFrom-Json  | ConvertTo-Json -AsArray -Compress
+        Write-Host ('##vso[task.setvariable variable={0}]{1}' -f $key, $variableValue)
+
+    } elseif ($type -eq 'object') {
+        $props = $lastDeployment.Outputs[$key].Value
+        $props.GetEnumerator() | ForEach-Object {
+            $propName = $_.Key
+            $props[$propName].GetEnumerator() | ForEach-Object {
+                $variableName = '{0}_{1}_{2}' -f $key, $propName, $_.Key
+                $variableValue = $_.Value
+                Write-Host ('##vso[task.setvariable variable={0}]{1}' -f $variableName, $variableValue)
+            }
+        }
+
     } else {
-        $value = $lastDeployment.Outputs[$key].Value
+        throw "Type '$type' is not supported for '$($_.Name)'"
     }
-    Write-Host ("##vso[{0}]{1}" -f ($variableAttributes -join ';'), $value)
 }

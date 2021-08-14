@@ -1,0 +1,2299 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "environment": {
+            "type": "string",
+            "allowedValues": [
+                "lab",
+                "dev",
+                "test",
+                "prod"
+            ],
+            "defaultValue": "dev",
+            "metadata": {
+                "description": "Required. Environment code (dev/test/prod)"
+            }
+        },
+        "applicationName": {
+            "type": "string",
+            "metadata": {
+                "description": "Used in the resource names as prefix"
+            }
+        },
+        "apiManagementSku": {
+            "type": "string",
+            "allowedValues": [
+                "Developer",
+                "Basic",
+                "Standard",
+                "Premium"
+            ],
+            "metadata": {
+                "description": "API Management Sku Size"
+            }
+        },
+        "apiManagementSkuCount": {
+            "type": "int",
+            "allowedValues": [
+                1,
+                2
+            ],
+            "defaultValue": 1,
+            "metadata": {
+                "description": "Optional. The number of API Management instances to be configured"
+            }
+        },
+        "publisherEmail": {
+            "type": "string",
+            "metadata": {
+                "description": "API Management Publisher Email Address"
+            }
+        },
+        "publisherName": {
+            "type": "string",
+            "metadata": {
+                "description": "API Management Publisher Name"
+            }
+        },
+        "allowedPublicIPsForAPIM": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Optional. String that represents the public IP ranges that are allowed access to API Management Service APIs"
+            }
+        },
+        "apimCorsProxyIP": {
+            "type": "string",
+            "defaultValue": "13.91.254.72",
+            "metadata": {
+                "description": "Optional. The API Management service cors proxy public IP (default = 13.91.254.72)"
+            }
+        },
+        "apimGlobalPolicy": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The API Management global policy string"
+            }
+        },
+        "wafMinCapacity": {
+            "type": "int",
+            "defaultValue": 1,
+            "minValue": 0,
+            "maxValue": 125,
+            "metadata": {
+                "description": "Optional. The number of WAF instances to be configured"
+            }
+        },
+        "wafMaxCapacity": {
+            "type": "int",
+            "defaultValue": 2,
+            "minValue": 2,
+            "maxValue": 125,
+            "metadata": {
+                "description": "Optional. The number of WAF instances to be configured"
+            }
+        },
+        "wafSslBase64CertificateData": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Required. The SSL base64-coded Certificate that will be used to configure the HTTPS listeners"
+            }
+        },
+        "wafSslCertificatePassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Required. The password of the SSL base64-coded Certificate that will be used to configure the HTTPS listeners"
+            }
+        },
+        "sslCertificateThumbprint": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Thumbprint of the PFX certificate"
+            }
+        },
+        "firewallMode": {
+            "type": "string",
+            "allowedValues": [
+                "Prevention",
+                "Detection"
+            ],
+            "metadata": {
+                "description": "Required. The firewall mode (Prevention | Detection)"
+            }
+        },
+        "stagingSlotName": {
+            "type": "string",
+            "defaultValue": "stg",
+            "metadata": {
+                "description": "Optional. The name of the staging slot"
+            }
+        },
+        "registerFqdn": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The FQDN address for the register.waves.com listner"
+            }
+        },
+        "registerWebs": {
+            "type": "array",
+            "metadata": {
+                "description": "Required. The register backend webApps to be configured"
+            }
+        },
+        "registerAPIs": {
+            "type": "array",
+            "metadata": {
+                "description": "Required. The register backend APIs to be configured"
+            }
+        },
+        "registerDefaultBackend": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The default backend for the register WAF rule"
+            }
+        },
+        "wwwFqdn": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The FQDN address for the www.waves.com listner"
+            }
+        },
+        "internalFqdn": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The FQDN address for the internal.waves.com backend hostname"
+            }
+        },
+        "wwwWebs": {
+            "type": "array",
+            "metadata": {
+                "description": "Required. The www backend webApps to be configured"
+            }
+        },
+        "wwwAPIsPath": {
+            "type": "string",
+            "defaultValue": "/2code/Handlers/IP-Block/waves/*",
+            "metadata": {
+                "description": "Required. The path to the www APIs"
+            }
+        },
+        "internalFqdnFormat": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The FQDN address format for the internalAppName.waves.com listner"
+            }
+        },
+        "internalRedirectsTo": {
+            "type": "string",
+            "defaultValue": "StaffConsole",
+            "metadata": {
+                "description": "Required. The internal application name that internal.waves.com listner redirects to"
+            }
+        },
+        "internalWebs": {
+            "type": "array",
+            "metadata": {
+                "description": "Required. The internal backend webApps to be configured"
+            }
+        },
+        "internalAPIs": {
+            "type": "array",
+            "metadata": {
+                "description": "Required. The internal backend APIs to be configured"
+            }
+        },
+        "internalDevTestOnlyWebs": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Optional. The DevTestOnly internal backend webApps to be configured"
+            }
+        },
+        "internalDevTestOnlyAPIs": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Optional. The DevTestOnly internal backend APIs to be configured"
+            }
+        },
+        "msgrsFqdn": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The FQDN address for the msgrs.waves.com listner"
+            }
+        },
+        "msgrsWebs": {
+            "type": "array",
+            "metadata": {
+                "description": "Required. The msgrs backend webapp to be configured"
+            }
+        },
+        "betaFqdn": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The FQDN address for the beta.waves.com listner"
+            }
+        },
+        "betaAPIs": {
+            "type": "array",
+            "metadata": {
+                "description": "Required. The beta backend APIs to be configured"
+            }
+        },
+        "betaDefaultBackend": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The default backend for the beta WAF rule"
+            }
+        },
+        "vnetId": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The Resource Id for the environment's VNET"
+            }
+        },
+        "wafSubnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The name of the subnet for the WAF"
+            }
+        },
+        "wafSubnetAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The CIDR of the subnet for the WAF"
+            }
+        },
+        "diagnosticStorageAccountResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource Id for the diagnostics storage account"
+            }
+        },
+        "logAnalyticsResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource Id for the Log Analytics workspace."
+            }
+        },
+        "diagnosticLogRetentionInDays": {
+            "type": "int",
+            "defaultValue": 30,
+            "minValue": 0,
+            "maxValue": 365,
+            "metadata": {
+                "description": "Optional. Specifies the number of days that logs will be kept for, a value of 0 will retain data indefinitely"
+            }
+        },
+        "cuaId": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Optional. Customer Usage Attribution id (GUID). This GUID must be previously registered"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Optional. Location for all Resources"
+            }
+        }
+    },
+    "variables": {
+
+        // Calculate resource names:
+        "pidName": "[concat('pid-', parameters('cuaId'))]",
+        "applicationPrefix": "[if(empty(parameters('applicationName')), '', concat('-', parameters('applicationName')))]",
+        "apiManagementServiceName": "[concat(parameters('environment'), variables('applicationPrefix'), '-apim')]",
+        "appInsightsName": "[concat(parameters('environment'), variables('applicationPrefix'), '-apim-ai')]",
+        "wafName": "[concat(parameters('environment'), variables('applicationPrefix'), '-waf')]",
+        "wafPublicIPName": "[concat(parameters('environment'), variables('applicationPrefix'), '-waf-pip')]",
+        "wafSubnetResourceId": "[concat(parameters('vnetId'), '/subnets/', parameters('wafSubnetName'))]",
+        "diagnosticSettingName": "diagnostics",
+
+        // Staging slots related variables:
+        "registerFqdnDotLocation": "[indexOf(parameters('registerFqdn'), '.')]",
+        "slotRegisterFqdn": "[format('{0}-{1}{2}', take(parameters('registerFqdn'), variables('registerFqdnDotLocation')), parameters('stagingSlotName'), skip(parameters('registerFqdn'), variables('registerFqdnDotLocation')))]",
+
+        "wwwFqdnDotLocation": "[indexOf(parameters('wwwFqdn'), '.')]",
+        "slotWwwFqdn": "[format('{0}-{1}{2}', take(parameters('wwwFqdn'), variables('wwwFqdnDotLocation')), parameters('stagingSlotName'), skip(parameters('wwwFqdn'), variables('wwwFqdnDotLocation')))]",
+
+        // DevTestOnly related variables:
+        "internalWebs": "[union(parameters('internalWebs'), parameters('internalDevTestOnlyWebs'))]",
+        "internalAPIs": "[union(parameters('internalAPIs'), parameters('internalDevTestOnlyAPIs'))]",
+
+        // WAF Configuration and child properties:
+        "wafPrivateIPAddress": "[replace(parameters('wafSubnetAddressPrefix'),'.0/24', '.10')]", // Private static IP address for the WAF
+        "sku": {
+            "name": "WAF_v2",
+            "tier": "WAF_v2"
+        },
+        "wafConfiguration": {
+            "enabled": true,
+            "firewallMode": "[parameters('firewallMode')]",
+            "ruleSetType": "OWASP",
+            "ruleSetVersion": "3.0",
+            "requestBodyCheck": true,
+            "maxRequestBodySizeInKb": 128
+        },
+        "wafSslCertificateName": "[concat('waves-', parameters('sslCertificateThumbprint'))]",
+        "sslCertificates": [
+            {
+                "name": "[variables('wafSslCertificateName')]",
+                "properties": {
+                    "data": "[parameters('wafSslBase64CertificateData')]",
+                    "password": "[parameters('wafSslCertificatePassword')]"
+                }
+            }
+        ],
+        "gatewayIpConfigurations": [
+            {
+                "type": "Microsoft.Network/applicationGateways/gatewayIPConfigurations",
+                "name": "gatewayIpConfiguration01",
+                "properties": {
+                    "subnet": {
+                        "id": "[variables('wafSubnetResourceId')]"
+                    }
+                }
+            }
+        ],
+        "frontendIpConfigurations": [
+            {
+                "type": "Microsoft.Network/applicationGateways/frontendIPConfigurations",
+                "name": "private-ip",
+                "properties": {
+                    "privateIPAllocationMethod": "Static",
+                    "privateIPAddress": "[variables('wafPrivateIPAddress')]",
+                    "subnet": {
+                        "id": "[variables('wafSubnetResourceId')]"
+                    }
+                }
+            },
+            {
+                "name": "public-ip",
+                "properties": {
+                    "PublicIPAddress": {
+                        "id": "[variables('wafPublicIPResourceId')]"
+                    }
+                }
+            }
+        ],
+        "frontendPorts": [
+            {
+                "type": "Microsoft.Network/applicationGateways/frontendPorts",
+                "name": "httpPort80",
+                "properties": {
+                    "port": 80
+                }
+            },
+            {
+                "type": "Microsoft.Network/applicationGateways/frontendPorts",
+                "name": "httpsPort443",
+                "properties": {
+                    "port": 443
+                }
+            }
+        ],
+        "httpListeners": [
+            {
+                "name": "http-www",
+                "properties": {
+                    "hostName": "[tolower(parameters('wwwFqdn'))]",
+                    "requireServerNameIndication": false,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpPort80')]"
+                    },
+                    "protocol": "Http"
+                }
+            },
+            {
+                "name": "[concat('http-www-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "hostName": "[tolower(variables('slotWwwFqdn'))]",
+                    "requireServerNameIndication": false,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpPort80')]"
+                    },
+                    "protocol": "Http"
+                }
+            },
+            {
+                "name": "https-www",
+                "properties": {
+                    "hostName": "[tolower(parameters('wwwFqdn'))]",
+                    "requireServerNameIndication": true,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpsPort443')]"
+                    },
+                    "protocol": "Https",
+                    "sslCertificate": {
+                        "id": "[concat(variables('wafResourceId'), '/sslCertificates/', variables('wafSslCertificateName'))]"
+                    }
+                }
+            },
+            {
+                "name": "[concat('https-www-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "hostName": "[tolower(variables('slotWwwFqdn'))]",
+                    "requireServerNameIndication": true,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpsPort443')]"
+                    },
+                    "protocol": "Https",
+                    "sslCertificate": {
+                        "id": "[concat(variables('wafResourceId'), '/sslCertificates/', variables('wafSslCertificateName'))]"
+                    }
+                }
+            },
+            {
+                "name": "http-register",
+                "properties": {
+                    "hostName": "[tolower(parameters('registerFqdn'))]",
+                    "requireServerNameIndication": false,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpPort80')]"
+                    },
+                    "protocol": "Http"
+                }
+            },
+            {
+                "name": "[concat('http-register-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "hostName": "[tolower(variables('slotRegisterFqdn'))]",
+                    "requireServerNameIndication": false,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpPort80')]"
+                    },
+                    "protocol": "Http"
+                }
+            },
+            {
+                "name": "https-register",
+                "properties": {
+                    "hostName": "[tolower(parameters('registerFqdn'))]",
+                    "requireServerNameIndication": true,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpsPort443')]"
+                    },
+                    "protocol": "Https",
+                    "sslCertificate": {
+                        "id": "[concat(variables('wafResourceId'), '/sslCertificates/', variables('wafSslCertificateName'))]"
+                    }
+                }
+            },
+            {
+                "name": "[concat('https-register-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "hostName": "[tolower(variables('slotRegisterFqdn'))]",
+                    "requireServerNameIndication": true,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpsPort443')]"
+                    },
+                    "protocol": "Https",
+                    "sslCertificate": {
+                        "id": "[concat(variables('wafResourceId'), '/sslCertificates/', variables('wafSslCertificateName'))]"
+                    }
+                }
+            },
+            {
+                "name": "http-beta",
+                "properties": {
+                    "hostName": "[tolower(parameters('betaFqdn'))]",
+                    "requireServerNameIndication": false,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpPort80')]"
+                    },
+                    "protocol": "Http"
+                }
+            },
+            {
+                "name": "https-beta",
+                "properties": {
+                    "hostName": "[tolower(parameters('betaFqdn'))]",
+                    "requireServerNameIndication": true,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpsPort443')]"
+                    },
+                    "protocol": "Https",
+                    "sslCertificate": {
+                        "id": "[concat(variables('wafResourceId'), '/sslCertificates/', variables('wafSslCertificateName'))]"
+                    }
+                }
+            },
+            {
+                "name": "http-msgrs",
+                "properties": {
+                    "hostName": "[tolower(parameters('msgrsFqdn'))]",
+                    "requireServerNameIndication": false,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpPort80')]"
+                    },
+                    "protocol": "Http"
+                }
+            },
+            {
+                "name": "https-msgrs",
+                "properties": {
+                    "hostName": "[tolower(parameters('msgrsFqdn'))]",
+                    "requireServerNameIndication": true,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpsPort443')]"
+                    },
+                    "protocol": "Https",
+                    "sslCertificate": {
+                        "id": "[concat(variables('wafResourceId'), '/sslCertificates/', variables('wafSslCertificateName'))]"
+                    }
+                }
+            },
+            {
+                "name": "http-internal",
+                "properties": {
+                    "hostName": "[tolower(parameters('internalFqdn'))]",
+                    "requireServerNameIndication": false,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpPort80')]"
+                    },
+                    "protocol": "Http"
+                }
+            },
+            {
+                "name": "https-internal",
+                "properties": {
+                    "hostName": "[tolower(parameters('internalFqdn'))]",
+                    "requireServerNameIndication": true,
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpsPort443')]"
+                    },
+                    "protocol": "Https",
+                    "sslCertificate": {
+                        "id": "[concat(variables('wafResourceId'), '/sslCertificates/', variables('wafSslCertificateName'))]"
+                    }
+                }
+            },
+            {
+                "name": "default",
+                "properties": {
+                    "frontendIPConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                    },
+                    "frontendPort": {
+                        "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpPort80')]"
+                    },
+                    "protocol": "Http"
+                }
+            }
+        ],
+        "wwwPathRules": [
+            {
+                "name": "wwwAPIs",
+                "properties": {
+                    "paths": [
+                        "[parameters('wwwAPIsPath')]"
+                    ],
+                    "backendAddressPool": {
+                        "id": "[concat(variables('wafResourceId'), '/backendAddressPools/APIM')]"
+                    },
+                    "backendHttpSettings": {
+                        "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/APIM')]"
+                    }
+                }
+            }
+        ],
+        "wwwPathRules-stg": [
+            {
+                "name": "wwwAPIs-stg",
+                "properties": {
+                    "paths": [
+                        "[parameters('wwwAPIsPath')]"
+                    ],
+                    "backendAddressPool": {
+                        "id": "[concat(variables('wafResourceId'), '/backendAddressPools/APIM')]"
+                    },
+                    "backendHttpSettings": {
+                        "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/APIM')]"
+                    }
+                }
+            }
+        ],
+        "betaAPIsMockPathRules": [
+            {
+                "name": "betaAPIsMockPathRules",
+                "properties": {
+                    "paths": [
+                        "/betaAPIsMockPathRules/*"
+                    ],
+                    "backendAddressPool": {
+                        "id": "[concat(variables('wafResourceId'), '/backendAddressPools/APIM')]"
+                    },
+                    "backendHttpSettings": {
+                        "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/APIM')]"
+                    }
+                }
+            }
+        ],
+        "urlPathMaps": [
+            {
+                "name": "register",
+                "properties": {
+                    "pathRules": "[union(variables('registerWebsPathRules'), variables('registerAPIsPathRules'))]",
+                    "defaultBackendAddressPool": {
+                        "id": "[concat(variables('wafResourceId'), '/backendAddressPools/', parameters('registerDefaultBackend'))]"
+                    },
+                    "defaultBackendHttpSettings": {
+                        "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/', parameters('registerDefaultBackend'))]"
+                    }
+                }
+            },
+            {
+                "name": "[concat('register-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "pathRules": "[union(variables('registerWebsPathRules-stg'), variables('registerAPIsPathRules-stg'))]",
+                    "defaultBackendAddressPool": {
+                        "id": "[concat(variables('wafResourceId'), '/backendAddressPools/', parameters('registerDefaultBackend'), '-', parameters('stagingSlotName'))]"
+                    },
+                    "defaultBackendHttpSettings": {
+                        "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/', parameters('registerDefaultBackend'), '-', parameters('stagingSlotName'))]"
+                    }
+                }
+            },
+            {
+                "name": "www",
+                "properties": {
+                    "pathRules": "[variables('wwwPathRules')]",
+                    "defaultBackendAddressPool": {
+                        "id": "[concat(variables('wafResourceId'), '/backendAddressPools/', parameters('wwwWebs')[0])]"
+                    },
+                    "defaultBackendHttpSettings": {
+                        "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/', parameters('wwwWebs')[0])]"
+                    }
+                }
+            },
+            {
+                "name": "[concat('www-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "pathRules": "[variables('wwwPathRules-stg')]",
+                    "defaultBackendAddressPool": {
+                        "id": "[concat(variables('wafResourceId'), '/backendAddressPools/', parameters('wwwWebs')[0], '-', parameters('stagingSlotName'))]"
+                    },
+                    "defaultBackendHttpSettings": {
+                        "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/', parameters('wwwWebs')[0], '-', parameters('stagingSlotName'))]"
+                    }
+                }
+            },
+            {
+                "name": "beta",
+                "properties": {
+                    "pathRules": "[if(equals(length(parameters('betaAPIs')), 0), variables('betaAPIsMockPathRules'), variables('betaAPIsPathRules'))]",
+                    "defaultBackendAddressPool": {
+                        "id": "[concat(variables('wafResourceId'), '/backendAddressPools/', parameters('betaDefaultBackend'))]"
+                    },
+                    "defaultBackendHttpSettings": {
+                        "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/', parameters('betaDefaultBackend'))]"
+                    }
+                }
+            }
+        ],
+        "redirectConfigurations": [
+            {
+                "name": "www-enforceHttps",
+                "properties": {
+                    "redirectType": "Permanent",
+                    "targetListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-www')]"
+                    },
+                    "includePath": true,
+                    "includeQueryString": true,
+                    "requestRoutingRules": [
+                        {
+                            "id": "[concat(variables('wafResourceId'), '/requestRoutingRules/www-enforceHttps')]"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "[concat('www-enforceHttps-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "redirectType": "Permanent",
+                    "targetListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-www-', parameters('stagingSlotName'))]"
+                    },
+                    "includePath": true,
+                    "includeQueryString": true,
+                    "requestRoutingRules": [
+                        {
+                            "id": "[concat(variables('wafResourceId'), '/requestRoutingRules/www-enforceHttps-', parameters('stagingSlotName'))]"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "register-enforceHttps",
+                "properties": {
+                    "redirectType": "Permanent",
+                    "targetListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-register')]"
+                    },
+                    "includePath": true,
+                    "includeQueryString": true,
+                    "requestRoutingRules": [
+                        {
+                            "id": "[concat(variables('wafResourceId'), '/requestRoutingRules/register-enforceHttps')]"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "[concat('register-enforceHttps-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "redirectType": "Permanent",
+                    "targetListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-register-', parameters('stagingSlotName'))]"
+                    },
+                    "includePath": true,
+                    "includeQueryString": true,
+                    "requestRoutingRules": [
+                        {
+                            "id": "[concat(variables('wafResourceId'), '/requestRoutingRules/register-enforceHttps-', parameters('stagingSlotName'))]"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "beta-enforceHttps",
+                "properties": {
+                    "redirectType": "Permanent",
+                    "targetListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-beta')]"
+                    },
+                    "includePath": true,
+                    "includeQueryString": true,
+                    "requestRoutingRules": [
+                        {
+                            "id": "[concat(variables('wafResourceId'), '/requestRoutingRules/beta-enforceHttps')]"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "msgrs-enforceHttps",
+                "properties": {
+                    "redirectType": "Permanent",
+                    "targetListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-msgrs')]"
+                    },
+                    "includePath": true,
+                    "includeQueryString": true,
+                    "requestRoutingRules": [
+                        {
+                            "id": "[concat(variables('wafResourceId'), '/requestRoutingRules/msgrs-enforceHttps')]"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "internal-enforceHttps",
+                "properties": {
+                    "redirectType": "Permanent",
+                    "targetListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-internal')]"
+                    },
+                    "includePath": true,
+                    "includeQueryString": true,
+                    "requestRoutingRules": [
+                        {
+                            "id": "[concat(variables('wafResourceId'), '/requestRoutingRules/internal-enforceHttps')]"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "[concat('internal-redirects-to-', parameters('internalRedirectsTo'))]",
+                "properties": {
+                    "redirectType": "Permanent",
+                    "targetListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-', parameters('internalRedirectsTo'))]"
+                    },
+                    "includePath": true,
+                    "includeQueryString": true,
+                    "requestRoutingRules": [
+                        {
+                            "id": "[concat(variables('wafResourceId'), '/requestRoutingRules/internal-redirects-to-', parameters('internalRedirectsTo'))]"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "default-enforceHttps",
+                "properties": {
+                    "redirectType": "Permanent",
+                    "targetListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-www')]"
+                    },
+                    "includePath": false,
+                    "includeQueryString": false,
+                    "requestRoutingRules": [
+                        {
+                            "id": "[concat(variables('wafResourceId'), '/requestRoutingRules/default-enforceHttps')]"
+                        }
+                    ]
+                }
+            }
+        ],
+        "requestRoutingRules": [
+            {
+                "name": "www-enforceHttps",
+                "properties": {
+                    "ruleType": "Basic",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/http-www')]"
+                    },
+                    "redirectConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/redirectConfigurations/www-enforceHttps')]"
+                    }
+                }
+            },
+            {
+                "name": "[concat('www-enforceHttps-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "ruleType": "Basic",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/http-www-', parameters('stagingSlotName'))]"
+                    },
+                    "redirectConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/redirectConfigurations/www-enforceHttps-', parameters('stagingSlotName'))]"
+                    }
+                }
+            },
+            {
+                "name": "register-enforceHttps",
+                "properties": {
+                    "ruleType": "Basic",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/http-register')]"
+                    },
+                    "redirectConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/redirectConfigurations/register-enforceHttps')]"
+                    }
+                }
+            },
+            {
+                "name": "[concat('register-enforceHttps-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "ruleType": "Basic",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/http-register-', parameters('stagingSlotName'))]"
+                    },
+                    "redirectConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/redirectConfigurations/register-enforceHttps-', parameters('stagingSlotName'))]"
+                    }
+                }
+            },
+            {
+                "name": "beta-enforceHttps",
+                "properties": {
+                    "ruleType": "Basic",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/http-beta')]"
+                    },
+                    "redirectConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/redirectConfigurations/beta-enforceHttps')]"
+                    }
+                }
+            },
+            {
+                "name": "msgrs-enforceHttps",
+                "properties": {
+                    "ruleType": "Basic",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/http-msgrs')]"
+                    },
+                    "redirectConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/redirectConfigurations/msgrs-enforceHttps')]"
+                    }
+                }
+            },
+            {
+                "name": "register",
+                "properties": {
+                    "ruleType": "PathBasedRouting",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-register')]"
+                    },
+                    "urlPathMap": {
+                        "id": "[concat(variables('wafResourceId'), '/urlPathMaps/register')]"
+                    }
+                }
+            },
+            {
+                "name": "[concat('register-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "ruleType": "PathBasedRouting",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-register-', parameters('stagingSlotName'))]"
+                    },
+                    "urlPathMap": {
+                        "id": "[concat(variables('wafResourceId'), '/urlPathMaps/register-', parameters('stagingSlotName'))]"
+                    }
+                }
+            },
+            {
+                "name": "www",
+                "properties": {
+                    "ruleType": "PathBasedRouting",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-www')]"
+                    },
+                    "urlPathMap": {
+                        "id": "[concat(variables('wafResourceId'), '/urlPathMaps/www')]"
+                    }
+                }
+            },
+            {
+                "name": "[concat('www-', parameters('stagingSlotName'))]",
+                "properties": {
+                    "ruleType": "PathBasedRouting",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-www-', parameters('stagingSlotName'))]"
+                    },
+                    "urlPathMap": {
+                        "id": "[concat(variables('wafResourceId'), '/urlPathMaps/www-', parameters('stagingSlotName'))]"
+                    }
+                }
+            },
+            {
+                "name": "beta",
+                "properties": {
+                    "ruleType": "PathBasedRouting",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-beta')]"
+                    },
+                    "urlPathMap": {
+                        "id": "[concat(variables('wafResourceId'), '/urlPathMaps/beta')]"
+                    }
+                }
+            },
+            {
+                "name": "msgrs",
+                "properties": {
+                    "ruleType": "Basic",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-msgrs')]"
+                    },
+                    "backendAddressPool": {
+                        "id": "[concat(variables('wafResourceId'), '/backendAddressPools/msgrs')]"
+                    },
+                    "backendHttpSettings": {
+                        "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/msgrs')]"
+                    }
+                }
+            },
+            {
+                "name": "internal-enforceHttps",
+                "properties": {
+                    "ruleType": "Basic",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/http-internal')]"
+                    },
+                    "redirectConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/redirectConfigurations/internal-enforceHttps')]"
+                    }
+                }
+            },
+            {
+                "name": "[concat('internal-redirects-to-', parameters('internalRedirectsTo'))]",
+                "properties": {
+                    "ruleType": "Basic",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/https-internal')]"
+                    },
+                    "redirectConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/redirectConfigurations/internal-redirects-to-', parameters('internalRedirectsTo'))]"
+                    }
+                }
+            },
+            {
+                "name": "default-enforceHttps",
+                "properties": {
+                    "ruleType": "Basic",
+                    "httpListener": {
+                        "id": "[concat(variables('wafResourceId'), '/httpListeners/default')]"
+                    },
+                    "redirectConfiguration": {
+                        "id": "[concat(variables('wafResourceId'), '/redirectConfigurations/www-enforceHttps')]"
+                    }
+                }
+            }
+        ],
+        "rewriteRuleIsBeta": [
+            {
+                "name": "IsBetaHeader",
+                "properties": {
+                    "rewriteRules": [
+                        {
+                            "ruleSequence": 100,
+                            "name": "IsBetaHeader",
+                            "actionSet": {
+                                "requestHeaderConfigurations": [
+                                    {
+                                        "headerName": "is-beta",
+                                        "headerValue": "true"
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    //"pathRules": "[variables('betaAPIsPathRuleIds')]",
+                    "urlPathMaps": [
+                        {
+                            "id": "[concat(variables('wafResourceId'), '/urlPathMaps/beta')]"
+                        }
+                    ]
+                }
+            }
+        ],
+
+        // Calculate resource Ids
+        "appInsightsresourceId": "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+        "wafResourceId": "[resourceId('Microsoft.Network/applicationGateways', variables('wafName'))]",
+        "wafPublicIPResourceId": "[resourceId('Microsoft.Network/publicIPAddresses', variables('wafPublicIPName'))]",
+        "apiManagementServiceResourceId": "[resourceId('Microsoft.ApiManagement/service', variables('apiManagementServiceName'))]",
+
+        // Copy loops:
+        "copy": [
+            {
+                "name": "registerWebsBackendPools",
+                "count": "[length(parameters('registerWebs'))]",
+                "input": {
+                    "name": "[parameters('registerWebs')[copyIndex('registerWebsBackendPools')]]",
+                    "type": "Microsoft.Network/applicationGateways/backendAddressPools",
+                    "properties": {
+                        "backendAddresses": [
+                            {
+                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('registerWebs')[copyIndex('registerWebsBackendPools')]))]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "registerWebsBackendPools-stg",
+                "count": "[length(parameters('registerWebs'))]",
+                "input": {
+                    "name": "[concat(parameters('registerWebs')[copyIndex('registerWebsBackendPools-stg')], '-', parameters('stagingSlotName'))]",
+                    "type": "Microsoft.Network/applicationGateways/backendAddressPools",
+                    "properties": {
+                        "backendAddresses": [
+                            {
+                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('registerWebs')[copyIndex('registerWebsBackendPools-stg')], '-', parameters('stagingSlotName'))))]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "registerAPIsBackendPools",
+                "count": "[length(parameters('registerAPIs'))]",
+                "input": {
+                    "name": "[parameters('registerAPIs')[copyIndex('registerAPIsBackendPools')]]",
+                    "type": "Microsoft.Network/applicationGateways/backendAddressPools",
+                    "properties": {
+                        "backendAddresses": [
+                            {
+                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('registerAPIs')[copyIndex('registerAPIsBackendPools')]))]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "registerAPIsBackendPools-stg",
+                "count": "[length(parameters('registerAPIs'))]",
+                "input": {
+                    "name": "[concat(parameters('registerAPIs')[copyIndex('registerAPIsBackendPools-stg')], '-', parameters('stagingSlotName'))]",
+                    "type": "Microsoft.Network/applicationGateways/backendAddressPools",
+                    "properties": {
+                        "backendAddresses": [
+                            {
+                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('registerAPIs')[copyIndex('registerAPIsBackendPools-stg')], '-', parameters('stagingSlotName'))))]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "wwwWebsBackendPools",
+                "count": "[length(parameters('wwwWebs'))]",
+                "input": {
+                    "name": "[parameters('wwwWebs')[copyIndex('wwwWebsBackendPools')]]",
+                    "type": "Microsoft.Network/applicationGateways/backendAddressPools",
+                    "properties": {
+                        "backendAddresses": [
+                            {
+                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('wwwWebs')[copyIndex('wwwWebsBackendPools')]))]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "wwwWebsBackendPools-stg",
+                "count": "[length(parameters('wwwWebs'))]",
+                "input": {
+                    "name": "[concat(parameters('wwwWebs')[copyIndex('wwwWebsBackendPools-stg')], '-', parameters('stagingSlotName'))]",
+                    "type": "Microsoft.Network/applicationGateways/backendAddressPools",
+                    "properties": {
+                        "backendAddresses": [
+                            {
+                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('wwwWebs')[copyIndex('wwwWebsBackendPools-stg')], '-', parameters('stagingSlotName'))))]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "internalWebsBackendPools",
+                "count": "[length(variables('internalWebs'))]",
+                "input": {
+                    "name": "[variables('internalWebs')[copyIndex('internalWebsBackendPools')]]",
+                    "type": "Microsoft.Network/applicationGateways/backendAddressPools",
+                    "properties": {
+                        "backendAddresses": [
+                            {
+                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), variables('internalWebs')[copyIndex('internalWebsBackendPools')]))]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "betaAPIsBackendPools",
+                "count": "[length(parameters('betaAPIs'))]",
+                "input": {
+                    "name": "[parameters('betaAPIs')[copyIndex('betaAPIsBackendPools')]]",
+                    "type": "Microsoft.Network/applicationGateways/backendAddressPools",
+                    "properties": {
+                        "backendAddresses": [
+                            {
+                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('betaAPIs')[copyIndex('betaAPIsBackendPools')]))]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "msgrsWebsBackendPools",
+                "count": "[length(parameters('msgrsWebs'))]",
+                "input": {
+                    "name": "[parameters('msgrsWebs')[copyIndex('msgrsWebsBackendPools')]]",
+                    "type": "Microsoft.Network/applicationGateways/backendAddressPools",
+                    "properties": {
+                        "backendAddresses": [
+                            {
+                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('msgrsWebs')[copyIndex('msgrsWebsBackendPools')]))]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "apimBackendPool",
+                "count": 1,
+                "input": {
+                    "name": "APIM",
+                    "type": "Microsoft.Network/applicationGateways/backendAddressPools",
+                    "properties": {
+                        "backendAddresses": [
+                            {
+                                "fqdn": "[tolower(concat(variables('apiManagementServiceName'), '.azure-api.net'))]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "registerProbes",
+                "count": "[length(parameters('registerWebs'))]",
+                "input": {
+                    "type": "Microsoft.Network/applicationGateways/probes",
+                    "name": "[parameters('registerWebs')[copyIndex('registerProbes')]]",
+                    "properties": {
+                        "interval": 30,
+                        "minServers": 0,
+                        "timeout": 120,
+                        "unhealthyThreshold": 8,
+                        "protocol": "Https",
+                        "path": "[concat('/',parameters('registerWebs')[copyIndex('registerProbes')])]",
+                        "pickHostNameFromBackendHttpSettings": false,
+                        "host": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('registerWebs')[copyIndex('registerProbes')]))]"
+                    }
+                }
+            },
+            {
+                "name": "registerProbes-stg",
+                "count": "[length(parameters('registerWebs'))]",
+                "input": {
+                    "type": "Microsoft.Network/applicationGateways/probes",
+                    "name": "[concat(parameters('registerWebs')[copyIndex('registerProbes-stg')], '-', parameters('stagingSlotName'))]",
+                    "properties": {
+                        "interval": 30,
+                        "minServers": 0,
+                        "timeout": 120,
+                        "unhealthyThreshold": 8,
+                        "protocol": "Https",
+                        "path": "[concat('/',parameters('registerWebs')[copyIndex('registerProbes-stg')])]",
+                        "pickHostNameFromBackendHttpSettings": false,
+                        "host": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('registerWebs')[copyIndex('registerProbes-stg')], '-', parameters('stagingSlotName'))))]"
+                    }
+                }
+            },
+            {
+                "name": "wwwProbes",
+                "count": "[length(parameters('wwwWebs'))]",
+                "input": {
+                    "type": "Microsoft.Network/applicationGateways/probes",
+                    "name": "[parameters('wwwWebs')[copyIndex('wwwProbes')]]",
+                    "properties": {
+                        "interval": 30,
+                        "minServers": 0,
+                        "timeout": 120,
+                        "unhealthyThreshold": 8,
+                        "protocol": "Https",
+                        "path": "/",
+                        "pickHostNameFromBackendHttpSettings": true
+                    }
+                }
+            },
+            {
+                "name": "wwwProbes-stg",
+                "count": "[length(parameters('wwwWebs'))]",
+                "input": {
+                    "type": "Microsoft.Network/applicationGateways/probes",
+                    "name": "[concat(parameters('wwwWebs')[copyIndex('wwwProbes-stg')], '-', parameters('stagingSlotName'))]",
+                    "properties": {
+                        "interval": 30,
+                        "minServers": 0,
+                        "timeout": 120,
+                        "unhealthyThreshold": 8,
+                        "protocol": "Https",
+                        "path": "/",
+                        "pickHostNameFromBackendHttpSettings": true
+                    }
+                }
+            },
+            {
+                "name": "internalProbes",
+                "count": "[length(variables('internalWebs'))]",
+                "input": {
+                    "type": "Microsoft.Network/applicationGateways/probes",
+                    "name": "[variables('internalWebs')[copyIndex('internalProbes')]]",
+                    "properties": {
+                        "interval": 30,
+                        "minServers": 0,
+                        "timeout": 120,
+                        "unhealthyThreshold": 8,
+                        "protocol": "Https",
+                        "path": "/",
+                        "pickHostNameFromBackendHttpSettings": false,
+                        "host": "[tolower(format(parameters('internalFqdnFormat'), variables('internalWebs')[copyIndex('internalProbes')]))]",
+                        "match": {
+                            "statusCodes": [
+                                "200-399",
+                                "401"
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "name": "msgrsProbes",
+                "count": "[length(parameters('msgrsWebs'))]",
+                "input": {
+                    "type": "Microsoft.Network/applicationGateways/probes",
+                    "name": "[parameters('msgrsWebs')[copyIndex('msgrsProbes')]]",
+                    "properties": {
+                        "interval": 30,
+                        "minServers": 0,
+                        "timeout": 120,
+                        "unhealthyThreshold": 8,
+                        "protocol": "Https",
+                        "path": "/",
+                        "pickHostNameFromBackendHttpSettings": true
+                    }
+                }
+            },
+            {
+                "name": "apimProbe",
+                "count": 1,
+                "input": {
+                    "type": "Microsoft.Network/applicationGateways/probes",
+                    "name": "APIM",
+                    "properties": {
+                        "interval": 30,
+                        "minServers": 0,
+                        "timeout": 120,
+                        "unhealthyThreshold": 8,
+                        "protocol": "Https",
+                        "path": "/status-0123456789abcdef",
+                        "pickHostNameFromBackendHttpSettings": false,
+                        "host": "[concat(variables('apiManagementServiceName'), '.azure-api.net')]"
+                    }
+                }
+            },
+            {
+                "name": "registerWebsHttpSettings",
+                "count": "[length(parameters('registerWebs'))]",
+                "input": {
+                    "name": "[parameters('registerWebs')[copyIndex('registerWebsHttpSettings')]]",
+                    "properties": {
+                        "Port": 443,
+                        "Protocol": "Https",
+                        "cookieBasedAffinity": "Disabled",
+                        "requestTimeout": 60,
+                        "pickHostNameFromBackendAddress": true,
+                        "probeEnabled": true,
+                        "probe": {
+                            "id": "[concat(variables('wafResourceId'), '/probes/', parameters('registerWebs')[copyIndex('registerWebsHttpSettings')])]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "registerWebsHttpSettings-stg",
+                "count": "[length(parameters('registerWebs'))]",
+                "input": {
+                    "name": "[concat(parameters('registerWebs')[copyIndex('registerWebsHttpSettings-stg')], '-', parameters('stagingSlotName'))]",
+                    "properties": {
+                        "Port": 443,
+                        "Protocol": "Https",
+                        "cookieBasedAffinity": "Disabled",
+                        "requestTimeout": 60,
+                        "pickHostNameFromBackendAddress": true,
+                        "probeEnabled": true,
+                        "probe": {
+                            "id": "[concat(variables('wafResourceId'), '/probes/', concat(parameters('registerWebs')[copyIndex('registerWebsHttpSettings-stg')]), '-', parameters('stagingSlotName'))]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "wwwWebsHttpSettings",
+                "count": "[length(parameters('wwwWebs'))]",
+                "input": {
+                    "name": "[parameters('wwwWebs')[copyIndex('wwwWebsHttpSettings')]]",
+                    "properties": {
+                        "Port": 443,
+                        "Protocol": "Https",
+                        "cookieBasedAffinity": "Disabled",
+                        "requestTimeout": 60,
+                        "path": "/",
+                        "pickHostNameFromBackendAddress": false,
+                        "hostName": "[tolower(parameters('wwwFqdn'))]",
+                        "probeEnabled": true,
+                        "probe": {
+                            "id": "[concat(variables('wafResourceId'), '/probes/', parameters('wwwWebs')[copyIndex('wwwWebsHttpSettings')])]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "wwwWebsHttpSettings-stg",
+                "count": "[length(parameters('wwwWebs'))]",
+                "input": {
+                    "name": "[concat(parameters('wwwWebs')[copyIndex('wwwWebsHttpSettings-stg')], '-', parameters('stagingSlotName'))]",
+                    "properties": {
+                        "Port": 443,
+                        "Protocol": "Https",
+                        "cookieBasedAffinity": "Disabled",
+                        "requestTimeout": 60,
+                        "path": "/",
+                        "pickHostNameFromBackendAddress": false,
+                        "hostName": "[tolower(variables('slotWwwFqdn'))]",
+                        "probeEnabled": true,
+                        "probe": {
+                            "id": "[concat(variables('wafResourceId'), '/probes/', concat(parameters('wwwWebs')[copyIndex('wwwWebsHttpSettings-stg')], '-', parameters('stagingSlotName')))]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "internalWebsHttpSettings",
+                "count": "[length(variables('internalWebs'))]",
+                "input": {
+                    "name": "[variables('internalWebs')[copyIndex('internalWebsHttpSettings')]]",
+                    "properties": {
+                        "Port": 443,
+                        "Protocol": "Https",
+                        "cookieBasedAffinity": "Disabled",
+                        "requestTimeout": 60,
+                        "pickHostNameFromBackendAddress": false,
+                        "hostName": "[tolower(format(parameters('internalFqdnFormat'), variables('internalWebs')[copyIndex('internalWebsHttpSettings')]))]",
+                        "probeEnabled": true,
+                        "probe": {
+                            "id": "[concat(variables('wafResourceId'), '/probes/', variables('internalWebs')[copyIndex('internalWebsHttpSettings')])]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "msgrsWebsHttpSettings",
+                "count": "[length(parameters('msgrsWebs'))]",
+                "input": {
+                    "name": "[parameters('msgrsWebs')[copyIndex('msgrsWebsHttpSettings')]]",
+                    "properties": {
+                        "Port": 443,
+                        "Protocol": "Https",
+                        "cookieBasedAffinity": "Disabled",
+                        "requestTimeout": 60,
+                        "pickHostNameFromBackendAddress": false,
+                        "hostName": "[tolower(parameters('msgrsFqdn'))]",
+                        "probeEnabled": true,
+                        "probe": {
+                            "id": "[concat(variables('wafResourceId'), '/probes/', parameters('msgrsWebs')[copyIndex('msgrsWebsHttpSettings')])]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "apimHttpSettings",
+                "count": 1,
+                "input": {
+                    "name": "APIM",
+                    "properties": {
+                        "Port": 443,
+                        "Protocol": "Https",
+                        "cookieBasedAffinity": "Disabled",
+                        "requestTimeout": 60,
+                        "pickHostNameFromBackendAddress": true,
+                        "probeEnabled": true,
+                        "probe": {
+                            "id": "[concat(variables('wafResourceId'), '/probes/APIM')]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "registerWebsPathRules",
+                "count": "[length(parameters('registerWebs'))]",
+                "input": {
+                    "name": "[parameters('registerWebs')[copyIndex('registerWebsPathRules')]]",
+                    "properties": {
+                        "paths": [
+                            "[concat('/', parameters('registerWebs')[copyIndex('registerWebsPathRules')], '/*')]"
+                        ],
+                        "backendAddressPool": {
+                            "id": "[concat(variables('wafResourceId'), '/backendAddressPools/', parameters('registerWebs')[copyIndex('registerWebsPathRules')])]"
+                        },
+                        "backendHttpSettings": {
+                            "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/', parameters('registerWebs')[copyIndex('registerWebsPathRules')])]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "registerWebsPathRules-stg",
+                "count": "[length(parameters('registerWebs'))]",
+                "input": {
+                    "name": "[concat(parameters('registerWebs')[copyIndex('registerWebsPathRules-stg')], '-', parameters('stagingSlotName'))]",
+                    "properties": {
+                        "paths": [
+                            "[concat('/', parameters('registerWebs')[copyIndex('registerWebsPathRules-stg')], '/*')]"
+                        ],
+                        "backendAddressPool": {
+                            "id": "[concat(variables('wafResourceId'), '/backendAddressPools/', parameters('registerWebs')[copyIndex('registerWebsPathRules-stg')], '-', parameters('stagingSlotName'))]"
+                        },
+                        "backendHttpSettings": {
+                            "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/', parameters('registerWebs')[copyIndex('registerWebsPathRules-stg')], '-', parameters('stagingSlotName'))]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "registerAPIsPathRules",
+                "count": "[length(parameters('registerAPIs'))]",
+                "input": {
+                    "name": "[parameters('registerAPIs')[copyIndex('registerAPIsPathRules')]]",
+                    "properties": {
+                        "paths": [
+                            "[concat('/', parameters('registerAPIs')[copyIndex('registerAPIsPathRules')], '/*')]"
+                        ],
+                        "backendAddressPool": {
+                            "id": "[concat(variables('wafResourceId'), '/backendAddressPools/APIM')]"
+                        },
+                        "backendHttpSettings": {
+                            "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/APIM')]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "registerAPIsPathRules-stg",
+                "count": "[length(parameters('registerAPIs'))]",
+                "input": {
+                    "name": "[concat(parameters('registerAPIs')[copyIndex('registerAPIsPathRules-stg')], '-', parameters('stagingSlotName'))]",
+                    "properties": {
+                        "paths": [
+                            "[concat('/', parameters('registerAPIs')[copyIndex('registerAPIsPathRules-stg')], '/*')]"
+                        ],
+                        "backendAddressPool": {
+                            "id": "[concat(variables('wafResourceId'), '/backendAddressPools/APIM')]"
+                        },
+                        "backendHttpSettings": {
+                            "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/APIM')]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "internalWebsPathRules",
+                "count": "[length(variables('internalWebs'))]",
+                "input": {
+                    "name": "[variables('internalWebs')[copyIndex('internalWebsPathRules')]]",
+                    "properties": {
+                        "paths": [
+                            "[concat('/', variables('internalWebs')[copyIndex('internalWebsPathRules')], '/*')]"
+                        ],
+                        "backendAddressPool": {
+                            "id": "[concat(variables('wafResourceId'), '/backendAddressPools/', variables('internalWebs')[copyIndex('internalWebsPathRules')])]"
+                        },
+                        "backendHttpSettings": {
+                            "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/', variables('internalWebs')[copyIndex('internalWebsPathRules')])]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "betaAPIsPathRules",
+                "count": "[length(parameters('betaAPIs'))]",
+                "input": {
+                    "name": "[parameters('betaAPIs')[copyIndex('betaAPIsPathRules')]]",
+                    "properties": {
+                        "paths": [
+                            "[concat('/', replace(parameters('betaAPIs')[copyIndex('betaAPIsPathRules')], 'beta-', ''), '/*')]"
+                        ],
+                        "backendAddressPool": {
+                            "id": "[concat(variables('wafResourceId'), '/backendAddressPools/APIM')]"
+                        },
+                        "backendHttpSettings": {
+                            "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/APIM')]"
+                        },
+                        "rewriteRuleSet": {
+                            "id": "[concat(variables('wafResourceId'), '/rewriteRuleSets/IsBetaHeader')]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "httpListenersInternal",
+                "count": "[length(variables('internalWebs'))]",
+                "input": {
+                    "name": "[concat('http-', variables('internalWebs')[copyIndex('httpListenersInternal')])]",
+                    "properties": {
+                        "hostName": "[tolower(format(parameters('internalFqdnFormat'), variables('internalWebs')[copyIndex('httpListenersInternal')]))]",
+                        "requireServerNameIndication": false,
+                        "frontendIPConfiguration": {
+                            "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                        },
+                        "frontendPort": {
+                            "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpPort80')]"
+                        },
+                        "protocol": "Http"
+                    }
+                }
+            },
+            {
+                "name": "httpListenersInternalHttps",
+                "count": "[length(variables('internalWebs'))]",
+                "input": {
+                    "name": "[concat('https-', variables('internalWebs')[copyIndex('httpListenersInternalHttps')])]",
+                    "properties": {
+                        "hostName": "[tolower(format(parameters('internalFqdnFormat'), variables('internalWebs')[copyIndex('httpListenersInternalHttps')]))]",
+                        "requireServerNameIndication": false,
+                        "frontendIPConfiguration": {
+                            "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                        },
+                        "frontendPort": {
+                            "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpsPort443')]"
+                        },
+                        "protocol": "Https",
+                        "sslCertificate": {
+                            "id": "[concat(variables('wafResourceId'), '/sslCertificates/', variables('wafSslCertificateName'))]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "httpListenersInternalApis",
+                "count": "[length(variables('internalAPIs'))]",
+                "input": {
+                    "name": "[concat('http-', variables('internalAPIs')[copyIndex('httpListenersInternalApis')])]",
+                    "properties": {
+                        "hostName": "[tolower(format(parameters('internalFqdnFormat'), variables('internalAPIs')[copyIndex('httpListenersInternalApis')]))]",
+                        "requireServerNameIndication": false,
+                        "frontendIPConfiguration": {
+                            "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                        },
+                        "frontendPort": {
+                            "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpPort80')]"
+                        },
+                        "protocol": "Http"
+                    }
+                }
+            },
+            {
+                "name": "httpListenersInternalApisHttps",
+                "count": "[length(variables('internalAPIs'))]",
+                "input": {
+                    "name": "[concat('https-', variables('internalAPIs')[copyIndex('httpListenersInternalApisHttps')])]",
+                    "properties": {
+                        "hostName": "[tolower(format(parameters('internalFqdnFormat'), variables('internalAPIs')[copyIndex('httpListenersInternalApisHttps')]))]",
+                        "requireServerNameIndication": false,
+                        "frontendIPConfiguration": {
+                            "id": "[concat(variables('wafResourceId'), '/frontendIPConfigurations/public-ip')]"
+                        },
+                        "frontendPort": {
+                            "id": "[concat(variables('wafResourceId'), '/frontendPorts/httpsPort443')]"
+                        },
+                        "protocol": "Https",
+                        "sslCertificate": {
+                            "id": "[concat(variables('wafResourceId'), '/sslCertificates/', variables('wafSslCertificateName'))]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "urlPathMapsInternal",
+                "count": "[length(variables('internalWebs'))]",
+                "input": {
+                    "name": "[variables('internalWebs')[copyIndex('urlPathMapsInternal')]]",
+                    "properties": {
+                        "pathRules": "[variables('internalWebsPathRules')]",
+                        "defaultBackendAddressPool": {
+                            "id": "[concat(variables('wafResourceId'), '/backendAddressPools/', variables('internalWebs')[copyIndex('urlPathMapsInternal')])]"
+                        },
+                        "defaultBackendHttpSettings": {
+                            "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/', variables('internalWebs')[copyIndex('urlPathMapsInternal')])]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "redirectConfigurationsInternal",
+                "count": "[length(variables('internalWebs'))]",
+                "input": {
+                    "name": "[concat(variables('internalWebs')[copyIndex('redirectConfigurationsInternal')], '-enforceHttps')]",
+                    "properties": {
+                        "redirectType": "Permanent",
+                        "targetListener": {
+                            "id": "[concat(variables('wafResourceId'), '/httpListeners/https-', variables('internalWebs')[copyIndex('redirectConfigurationsInternal')])]"
+                        },
+                        "includePath": true,
+                        "includeQueryString": true,
+                        "requestRoutingRules": [
+                            {
+                                "id": "[concat(variables('wafResourceId'), '/requestRoutingRules/', variables('internalWebs')[copyIndex('redirectConfigurationsInternal')], '-enforceHttps')]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "redirectConfigurationsInternalApis",
+                "count": "[length(variables('internalAPIs'))]",
+                "input": {
+                    "name": "[concat(variables('internalAPIs')[copyIndex('redirectConfigurationsInternalApis')], '-enforceHttps')]",
+                    "properties": {
+                        "redirectType": "Permanent",
+                        "targetListener": {
+                            "id": "[concat(variables('wafResourceId'), '/httpListeners/https-', variables('internalAPIs')[copyIndex('redirectConfigurationsInternalApis')])]"
+                        },
+                        "includePath": true,
+                        "includeQueryString": true,
+                        "requestRoutingRules": [
+                            {
+                                "id": "[concat(variables('wafResourceId'), '/requestRoutingRules/', variables('internalAPIs')[copyIndex('redirectConfigurationsInternalApis')], '-enforceHttps')]"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "requestRoutingRulesInternal",
+                "count": "[length(variables('internalWebs'))]",
+                "input": {
+                    "name": "[variables('internalWebs')[copyIndex('requestRoutingRulesInternal')]]",
+                    "properties": {
+                        "ruleType": "Basic",
+                        "httpListener": {
+                            "id": "[concat(variables('wafResourceId'), '/httpListeners/https-', variables('internalWebs')[copyIndex('requestRoutingRulesInternal')])]"
+                        },
+                        "backendAddressPool": {
+                            "id": "[concat(variables('wafResourceId'), '/backendAddressPools/', variables('internalWebs')[copyIndex('requestRoutingRulesInternal')])]"
+                        },
+                        "backendHttpSettings": {
+                            "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/', variables('internalWebs')[copyIndex('requestRoutingRulesInternal')])]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "requestRoutingRulesInternalApis",
+                "count": "[length(variables('internalAPIs'))]",
+                "input": {
+                    "name": "[variables('internalAPIs')[copyIndex('requestRoutingRulesInternalApis')]]",
+                    "properties": {
+                        "ruleType": "Basic",
+                        "httpListener": {
+                            "id": "[concat(variables('wafResourceId'), '/httpListeners/https-', variables('internalAPIs')[copyIndex('requestRoutingRulesInternalApis')])]"
+                        },
+                        "backendAddressPool": {
+                            "id": "[concat(variables('wafResourceId'), '/backendAddressPools/APIM')]"
+                        },
+                        "backendHttpSettings": {
+                            "id": "[concat(variables('wafResourceId'), '/backendHttpSettingsCollection/APIM')]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "requestRoutingRulesInternalEnforceHttps",
+                "count": "[length(variables('internalWebs'))]",
+                "input": {
+                    "name": "[concat(variables('internalWebs')[copyIndex('requestRoutingRulesInternalEnforceHttps')], '-enforceHttps')]",
+                    "properties": {
+                        "ruleType": "Basic",
+                        "httpListener": {
+                            "id": "[concat(variables('wafResourceId'), '/httpListeners/http-', variables('internalWebs')[copyIndex('requestRoutingRulesInternalEnforceHttps')])]"
+                        },
+                        "redirectConfiguration": {
+                            "id": "[concat(variables('wafResourceId'), '/redirectConfigurations/', variables('internalWebs')[copyIndex('requestRoutingRulesInternalEnforceHttps')], '-enforceHttps')]"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "requestRoutingRulesInternalApisEnforceHttps",
+                "count": "[length(variables('internalAPIs'))]",
+                "input": {
+                    "name": "[concat(variables('internalAPIs')[copyIndex('requestRoutingRulesInternalApisEnforceHttps')], '-enforceHttps')]",
+                    "properties": {
+                        "ruleType": "Basic",
+                        "httpListener": {
+                            "id": "[concat(variables('wafResourceId'), '/httpListeners/http-', variables('internalAPIs')[copyIndex('requestRoutingRulesInternalApisEnforceHttps')])]"
+                        },
+                        "redirectConfiguration": {
+                            "id": "[concat(variables('wafResourceId'), '/redirectConfigurations/', variables('internalAPIs')[copyIndex('requestRoutingRulesInternalApisEnforceHttps')], '-enforceHttps')]"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "resources": [
+        // CUA deployment:
+        {
+            "condition": "[not(empty(parameters('cuaId')))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2021-01-01",
+            "name": "[variables('pidName')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                    ]
+                }
+            }
+        },
+
+        // Application Insights:
+        {
+            "type": "Microsoft.Insights/Components",
+            "apiVersion": "2020-02-02-preview",
+            "name": "[variables('appInsightsName')]",
+            "location": "[parameters('location')]",
+            "kind": "web",
+            "properties": {
+                "ApplicationId": "[variables('appInsightsName')]",
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[parameters('logAnalyticsResourceId')]"
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Insights/Components/providers/diagnosticSettings",
+                    "name": "[concat(variables('appInsightsName'),'/microsoft.insights/', variables('diagnosticSettingName'))]",
+                    "dependsOn": [
+                        "[variables('appInsightsresourceId')]"
+                    ],
+                    "apiVersion": "2017-05-01-preview",
+                    "properties": {
+                        "name": "[variables('diagnosticSettingName')]",
+                        "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                        "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                        "logs": [
+                            {
+                                "category": "AppAvailabilityResults",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppBrowserTimings",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppEvents",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppMetrics",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppDependencies",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppExceptions",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppPageViews",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppPerformanceCounters",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppRequests",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppSystemEvents",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppTraces",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // API Management Service:
+        {
+            "type": "Microsoft.ApiManagement/service",
+            "apiVersion": "2020-12-01",
+            "name": "[variables('apiManagementServiceName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[variables('appInsightsresourceId')]"
+            ],
+            "sku": {
+                "name": "[parameters('apiManagementSku')]",
+                "capacity": "[parameters('apiManagementSkuCount')]"
+            },
+            "properties": {
+                "publisherEmail": "[parameters('publisherEmail')]",
+                "publisherName": "[parameters('publisherName')]"
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.ApiManagement/service/providers/diagnosticSettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('apiManagementServiceName'), '/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "dependsOn": [
+                        "[variables('apiManagementServiceResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                        "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                        "logAnalyticsDestinationType": "Dedicated",
+                        "logs": [
+                            {
+                                "category": "GatewayLogs",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "Microsoft.ApiManagement/service/loggers",
+                    "apiVersion": "2019-12-01",
+                    "name": "[concat(variables('apiManagementServiceName'),'/', variables('appInsightsName'))]",
+                    "dependsOn": [
+                        "[variables('apiManagementServiceResourceId')]",
+                        "[variables('appInsightsresourceId')]"
+                    ],
+                    "properties": {
+                        "loggerType": "applicationInsights",
+                        "credentials": {
+                            "instrumentationKey": "[reference(variables('appInsightsresourceId'), '2015-05-01').instrumentationKey]"
+                        },
+                        "isBuffered": true,
+                        "resourceId": "[variables('appInsightsresourceId')]"
+                    }
+                },
+                {
+                    "type": "Microsoft.ApiManagement/service/diagnostics",
+                    "apiVersion": "2019-12-01",
+                    "name": "[concat(variables('apiManagementServiceName'), '/applicationinsights')]",
+                    "dependsOn": [
+                        "[variables('apiManagementServiceResourceId')]",
+                        "[resourceId('Microsoft.ApiManagement/service/loggers', variables('apiManagementServiceName'), variables('appInsightsName'))]"
+                    ],
+                    "properties": {
+                        "alwaysLog": "allErrors",
+                        "httpCorrelationProtocol": "Legacy",
+                        "logClientIp": true,
+                        "loggerId": "[resourceId('Microsoft.ApiManagement/service/loggers', variables('apiManagementServiceName'), variables('appInsightsName'))]",
+                        "sampling": {
+                            "samplingType": "fixed",
+                            "percentage": 100
+                        }
+                    }
+                },
+                {
+                    "type": "Microsoft.ApiManagement/service/policies",
+                    "apiVersion": "2020-06-01-preview",
+                    "name": "[concat(variables('apiManagementServiceName'), '/policy')]",
+                    "dependsOn": [
+                        "[variables('apiManagementServiceResourceId')]",
+                        "[variables('wafPublicIPResourceId')]"
+                    ],
+                    "properties": {
+                        "value": "[replace(replace(replace(parameters('apimGlobalPolicy'), '%allowedPublicIPsForAPIM%', parameters('allowedPublicIPsForAPIM')),'%apimCorsProxyIP%', parameters('apimCorsProxyIP')), '%wafPublicIP%', reference(variables('wafPublicIPResourceId'), '2020-08-01').IpAddress)]",
+                        "format": "rawxml"
+                    }
+                }
+            ]
+        },
+
+        // Public IP Address:
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2021-02-01",
+            "name": "[variables('wafPublicIPName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard",
+                "tier": "Regional"
+            },
+            "zones": [
+                "1",
+                "2",
+                "3"
+            ],
+            "properties": {
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Static",
+                "idleTimeoutInMinutes": 30
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Network/publicIPAddresses/providers/diagnosticsettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('wafPublicIPName'),'/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "dependsOn": [
+                        "[variables('wafPublicIPResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                        "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                        "logs": [
+                            {
+                                "category": "DDoSProtectionNotifications",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            },
+                            {
+                                "category": "DDoSMitigationFlowLogs",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            },
+                            {
+                                "category": "DDoSMitigationReports",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // Application Gateway (WAF):
+        {
+            "type": "Microsoft.Network/applicationGateways",
+            "name": "[variables('wafName')]",
+            "apiVersion": "2021-02-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[variables('wafPublicIPResourceId')]"
+            ],
+            "properties": {
+                "sku": "[variables('sku')]",
+                "gatewayIPConfigurations": "[variables('gatewayIPConfigurations')]",
+                "frontendIPConfigurations": "[variables('frontendIPConfigurations')]",
+                "sslCertificates": "[variables('sslCertificates')]",
+                "frontendPorts": "[variables('frontendPorts')]",
+                "httpListeners": "[union(variables('httpListeners'), variables('httpListenersInternal'), variables('httpListenersInternalHttps'), variables('httpListenersInternalApis'), variables('httpListenersInternalApisHttps'))]",
+                "backendAddressPools": "[union(variables('apimBackendPool'), variables('registerWebsBackendPools'), variables('registerWebsBackendPools-stg'), variables('wwwWebsBackendPools'), variables('wwwWebsBackendPools-stg'), variables('internalWebsBackendPools'), variables('registerAPIsBackendPools'), variables('registerAPIsBackendPools-stg'), variables('betaAPIsBackendPools'), variables('msgrsWebsBackendPools'))]",
+                "probes": "[union(variables('apimProbe'), variables('registerProbes'), variables('registerProbes-stg'), variables('internalProbes'), variables('wwwProbes'), variables('wwwProbes-stg'), variables('wwwProbes-stg'), variables('msgrsProbes'))]",
+                "backendHttpSettingsCollection": "[union(variables('apimHttpSettings'), variables('registerWebsHttpSettings'), variables('registerWebsHttpSettings-stg'), variables('internalWebsHttpSettings'), variables('wwwWebsHttpSettings'), variables('wwwWebsHttpSettings-stg'), variables('msgrsWebsHttpSettings'))]",
+                "urlPathMaps": "[union(variables('urlPathMaps'), variables('urlPathMapsInternal'))]",
+                "redirectConfigurations": "[union(variables('redirectConfigurations'), variables('redirectConfigurationsInternal'), variables('redirectConfigurationsInternalApis'))]",
+                "requestRoutingRules": "[union(variables('requestRoutingRules'), variables('requestRoutingRulesInternal'), variables('requestRoutingRulesInternalApis'), variables('requestRoutingRulesInternalEnforceHttps'), variables('requestRoutingRulesInternalApisEnforceHttps'))]",
+                "rewriteRuleSets": "[variables('rewriteRuleIsBeta')]",
+                "webApplicationFirewallConfiguration": "[variables('wafConfiguration')]",
+                "enableHttp2": true,
+                "autoscaleConfiguration": {
+                    "minCapacity": "[parameters('wafMinCapacity')]",
+                    "maxCapacity": "[parameters('wafMaxCapacity')]"
+                }
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Network/applicationGateways/providers/diagnosticSettings",
+                    "apiVersion": "2017-05-01-preview",
+                    "name": "[concat(variables('wafName'), '/Microsoft.Insights/', variables('diagnosticSettingName'))]",
+                    "dependsOn": [
+                        "[variables('wafResourceId')]"
+                    ],
+                    "properties": {
+                        "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                        "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                        "logs": [
+                            {
+                                "category": "ApplicationGatewayPerformanceLog",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            },
+                            {
+                                "category": "ApplicationGatewayAccessLog",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            },
+                            {
+                                "category": "ApplicationGatewayFirewallLog",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "timeGrain": "PT1M",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]",
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "functions": [
+        {
+            "namespace": "waves",
+            "members": {
+                "concatWebAppFQDN": {
+                    "parameters": [
+                        {
+                            "name": "environment",
+                            "type": "string"
+                        },
+                        {
+                            "name": "applicationPrefix",
+                            "type": "string"
+                        },
+                        {
+                            "name": "name",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('environment'), parameters('applicationPrefix'), '-', parameters('name'), '.azurewebsites.net')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "apiManagementServiceName": {
+            "type": "string",
+            "value": "[variables('apiManagementServiceName')]",
+            "metadata": {
+                "description": "The Api Management Service Name"
+            }
+        },
+        "apiManagementServiceResourceId": {
+            "type": "string",
+            "value": "[variables('apiManagementServiceResourceId')]",
+            "metadata": {
+                "description": "The Resource Id of the Api Management Service"
+            }
+        },
+        "apiManagementServicePublicIP": {
+            "type": "string",
+            "value": "[reference(variables('apiManagementServiceResourceId'), '2020-06-01-preview').publicIPAddresses[0]]",
+            "metadata": {
+                "description": "The public IP address of the Api Management Service"
+            }
+        },
+        "apiManagementServiceFqdn": {
+            "type": "string",
+            "value": "[tolower(concat(variables('apiManagementServiceResourceId'), '.azure-api.net'))]",
+            "metadata": {
+                "description": "The FQDN of the Api Management Service"
+            }
+        },
+        "wafPublicIP": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('wafPublicIPName'))).IpAddress]",
+            "metadata": {
+                "description": "WAF Public IP Address"
+            }
+        }
+    }
+}

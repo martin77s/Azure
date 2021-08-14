@@ -1,7 +1,7 @@
 <#
 
 Script Name	: Pipeline.UpdateDscVersionVariable.ps1
-Description	:
+Description	: Update the dscVersion variable in the pipeline according to the last modified date of the dsc.zip file.
 Keywords	: Azure, DSC, StorageAccount, Container, Blob
 
 #>

@@ -1,0 +1,2073 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "environment": {
+            "type": "string",
+            "allowedValues": [
+                "lab",
+                "dev",
+                "test",
+                "prod"
+            ],
+            "defaultValue": "dev",
+            "metadata": {
+                "description": "Required. Environment code (dev/test/prod)"
+            }
+        },
+        "applicationName": {
+            "type": "string",
+            "metadata": {
+                "description": "Used in the resource names as prefix"
+            }
+        },
+        "registerAppServicePlanSku": {
+            "type": "string",
+            "allowedValues": [
+                "P1V2",
+                "P2V2",
+                "P3V2",
+                "P1V3",
+                "P2V3",
+                "P3V3"
+            ],
+            "defaultValue": "P1V3",
+            "metadata": {
+                "description": "Optional. Defines the instance plan size to be used for the app service plan"
+            }
+        },
+        "registerAppServicePlanInstanceCount": {
+            "type": "int",
+            "defaultValue": 1,
+            "metadata": {
+                "description": "Optional. Defines the instance plan count (scale out)"
+            }
+        },
+        "registerAppServicePlanVnetIntegrationSubnet": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The name of the subnet to integrate the AppService webApps with"
+            }
+        },
+        "register2AppServicePlanSku": {
+            "type": "string",
+            "allowedValues": [
+                "P1V2",
+                "P2V2",
+                "P3V2",
+                "P1V3",
+                "P2V3",
+                "P3V3"
+            ],
+            "defaultValue": "P1V3",
+            "metadata": {
+                "description": "Optional. Defines the instance plan size to be used for the app service plan"
+            }
+        },
+        "register2AppServicePlanInstanceCount": {
+            "type": "int",
+            "defaultValue": 1,
+            "metadata": {
+                "description": "Optional. Defines the instance plan count (scale out)"
+            }
+        },
+        "register2AppServicePlanVnetIntegrationSubnet": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The name of the subnet to integrate the AppService webApps with"
+            }
+        },
+        "stagingSlotName": {
+            "type": "string",
+            "defaultValue": "stg",
+            "metadata": {
+                "description": "Optional. The name of the staging slot"
+            }
+        },
+        "vnetId": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. The Resource Id for the environment's VNET"
+            }
+        },
+        "appConfigDssResourceId": {
+            "type": "String",
+            "metadata": {
+                "description": "Required. DSS App Configuration resource Id"
+            }
+        },
+        "redisDssResourceId": {
+            "type": "String",
+            "metadata": {
+                "description": "Required. DSS Redis resource Id"
+            }
+        },
+        "centralCertThumbprint": {
+            "type": "string",
+            "metadata": {
+                "description": "Required. Central certificate thumbprint"
+            }
+        },
+        "allowedPublicIPs": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Optional. comma separated list of public IPs to allow access to the resources"
+            }
+        },
+        "diagnosticStorageAccountResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource Id for the diagnostics storage account"
+            }
+        },
+        "logAnalyticsResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource Id for the Log Analytics workspace."
+            }
+        },
+        "diagnosticLogRetentionInDays": {
+            "type": "int",
+            "defaultValue": 30,
+            "minValue": 0,
+            "maxValue": 365,
+            "metadata": {
+                "description": "Optional. Specifies the number of days that logs will be kept for, a value of 0 will retain data indefinitely"
+            }
+        },
+        "applicationLogRetentionInDays": {
+            "type": "int",
+            "defaultValue": 180,
+            "minValue": 0,
+            "maxValue": 99999,
+            "metadata": {
+                "description": "Optional. Specifies the number of days that logs will be kept for"
+            }
+        },
+        "applicationLogSasStringFormat": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Required. The string format of the storage account SAS token"
+            }
+        },
+        "dynatraceEnvironmentId": {
+            "type": "String",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Optional. Dynatrace Tenant Id"
+            }
+        },
+        "dynatraceApiToken": {
+            "type": "String",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Optional. Dynatrace API token"
+            }
+        },
+        "cuaId": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Optional. Customer Usage Attribution id (GUID). This GUID must be previously registered"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Optional. Location for all Resources"
+            }
+        }
+    },
+    "variables": {
+        "pidName": "[concat('pid-', parameters('cuaId'))]",
+        "applicationPrefix": "[if(empty(parameters('applicationName')), '', concat('-', parameters('applicationName')))]",
+        "appInsightsName": "[concat(parameters('environment'), variables('applicationPrefix'), '-register-ai')]",
+        "appInsightsresourceId": "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+        "diagnosticSettingName": "diagnostics",
+        "ServiceTypeTagValue": "Register",
+        "vNetIntegrationName": "vnet-integration-register",
+        "httpLogsRetentionInDays": 21,
+        "httpLogsRetentionInMB": 50,
+
+        "appServicePlans": {
+            "plans": [
+                {
+                    "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-register-asp')]",
+                    "sku": "[parameters('registerAppServicePlanSku')]",
+                    "instanceCount": "[parameters('registerAppServicePlanInstanceCount')]",
+                    "vNetIntegrationSubnetId": "[concat(parameters('vnetId') ,'/subnets/', parameters('registerAppServicePlanVnetIntegrationSubnet'))]"
+                },
+                {
+                    "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-register2-asp')]",
+                    "sku": "[parameters('register2AppServicePlanSku')]",
+                    "instanceCount": "[parameters('register2AppServicePlanInstanceCount')]",
+                    "vNetIntegrationSubnetId": "[concat(parameters('vnetId') ,'/subnets/', parameters('register2AppServicePlanVnetIntegrationSubnet'))]"
+                }
+            ]
+        },
+
+        "webApps_register_asp": [
+            "Certification",
+            "CertificationSales",
+            "Payment",
+            "TSPS",
+            "VS",
+            "VSSD",
+            "WSS"
+        ],
+        "webAPIs_register_asp": [
+            "AutoUpdate",
+            "CAService",
+            "Central",
+            "DiscountService",
+            "ExternalActivation",
+            "ExternalSatellite",
+            "FAQService",
+            "MacAddressService",
+            "MacAddressesWService",
+            "OnlinePresets",
+            "PaymentService",
+            "PriceListServices",
+            "PriceUpdateService",
+            "SessionManagerService",
+            "ShippingService",
+            "SubletService",
+            "TaxService",
+            "VSSDServiceSite",
+            "WavesCampaignService",
+            "WavesVssdService"
+        ],
+        "webAPIs_register2_asp": [
+            "OnlpManagerService",
+            "OnlpCommissionService",
+            "OnlpService",
+            "OnlpClientService"
+        ],
+
+        "webAppsWithArrAffinity": [
+            "Payment",
+            "TSPS",
+            "VS"
+        ],
+        "webAPIsSetHealthCheckManually": {
+            "CAService": "/CAservice/ClientAccount.svc/HealthCheck/KeepAlive",
+            "Central": "/Central/Central.svc/HealthCheck/KeepAlive",
+            "MacAddressesWService": "/MacAddressesWService/service1.asmx/KeepAlive",
+            "WavesVssdService": "/WavesVSSDService/api/HealthCheck/KeepAlive",
+            "WavesCampaignService": "/WavesCampaignService/api/healthcheck/keepalive",
+            "PriceListServices": "/PriceListServices/ServicePriceList.svc/Healthcheck/KeepAlive",
+            "OnlinePresets": "/hostingstart.html"
+        },
+        "allowedPublicIPs": "[if(equals(parameters('allowedPublicIPs'), ''), createArray(), split(parameters('allowedPublicIPs'), ','))]",
+        "copy": [
+            {
+                "name": "ipSecurityRestrictions",
+                "count": "[length(variables('allowedPublicIPs'))]",
+                "input": {
+                    "name": "[concat('allowedPublicIP-', copyIndex('ipSecurityRestrictions'))]",
+                    "priority": "[add(int(1000), copyIndex('ipSecurityRestrictions'))]",
+                    "description": "[concat('Allow ', variables('allowedPublicIPs')[copyIndex('ipSecurityRestrictions')])]",
+                    "action": "Allow",
+                    "ipAddress": "[variables('allowedPublicIPs')[copyIndex('ipSecurityRestrictions')]]"
+                }
+            }
+        ]
+    },
+    "resources": [
+        // CUA deployment:
+        {
+            "condition": "[not(empty(parameters('cuaId')))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2021-01-01",
+            "name": "[variables('pidName')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                    ]
+                }
+            }
+        },
+
+        // Application Insights:
+        {
+            "type": "Microsoft.Insights/Components",
+            "apiVersion": "2020-02-02-preview",
+            "name": "[variables('appInsightsName')]",
+            "location": "[parameters('location')]",
+            "kind": "web",
+            "properties": {
+                "ApplicationId": "[variables('appInsightsName')]",
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[parameters('logAnalyticsResourceId')]"
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Insights/Components/providers/diagnosticSettings",
+                    "name": "[concat(variables('appInsightsName'),'/microsoft.insights/', variables('diagnosticSettingName'))]",
+                    "dependsOn": [
+                        "[variables('appInsightsresourceId')]"
+                    ],
+                    "apiVersion": "2017-05-01-preview",
+                    "properties": {
+                        "name": "[variables('diagnosticSettingName')]",
+                        "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                        "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                        "logs": [
+                            {
+                                "category": "AppAvailabilityResults",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppBrowserTimings",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppEvents",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppMetrics",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppDependencies",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppExceptions",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppPageViews",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppPerformanceCounters",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppRequests",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppSystemEvents",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            },
+                            {
+                                "category": "AppTraces",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "enabled": true,
+                                    "days": "[parameters('diagnosticLogRetentionInDays')]"
+                                }
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // App Service Plan:
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "appServicePlansCopy",
+                "count": "[length(variables('appServicePlans').plans)]"
+            },
+            "name": "[variables('appServicePlans').plans[copyIndex('appServicePlansCopy')].name]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[variables('appServicePlans').plans[copyIndex('appServicePlansCopy')].sku]"
+            },
+            "kind": "app",
+            "properties": {
+                "perSiteScaling": false,
+                "maximumElasticWorkerCount": 1,
+                "isSpot": false,
+                "reserved": false,
+                "numberOfWorkers": "[variables('appServicePlans').plans[copyIndex('appServicePlansCopy')].instanceCount]"
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Web/serverfarms/providers/diagnosticSettings",
+                    "name": "[concat(variables('appServicePlans').plans[copyIndex('appServicePlansCopy')].name,'/microsoft.insights/', variables('diagnosticSettingName'))]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[copyIndex('appServicePlansCopy')].name)]"
+                    ],
+                    "apiVersion": "2017-05-01-preview",
+                    "properties": {
+                        "name": "[variables('diagnosticSettingName')]",
+                        "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                        "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+
+        // Register 1 WebApps:
+        {
+            "type": "Microsoft.Web/Sites",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAppsCopy",
+                "count": "[length(variables('webApps_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsCopy')])]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "appServicePlansCopy",
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[0].name)]",
+                "[variables('appInsightsresourceId')]"
+            ],
+            "kind": "app",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "tags": {
+                "ServiceType": "[variables('ServiceTypeTagValue')]",
+                "hidden-related:diagnostics/changeAnalysisScanEnabled": "true"
+            },
+            "properties": {
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[0].name)]",
+                "clientAffinityEnabled": "[if(contains(variables('webAppsWithArrAffinity'), variables('webApps_register_asp')[copyIndex('webAppsCopy')]), true(), false())]",
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "httpsOnly": true,
+                "siteConfig": {
+                    "ipSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictionsUseMain": false,
+                    "ftpsState": "FtpsOnly",
+                    "minTlsVersion": "1.2",
+                    "scmMinTlsVersion": "1.2"
+                }
+            }
+        },
+
+        // Register 1 WebApps slots:
+        {
+            "type": "Microsoft.Web/Sites/slots",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAppsSlotsCopy",
+                "count": "[length(variables('webApps_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsSlotsCopy')], '/', parameters('stagingSlotName'))]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[0].name)]",
+                "[variables('appInsightsresourceId')]"
+            ],
+            "kind": "app",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "tags": {
+                "ServiceType": "[variables('ServiceTypeTagValue')]",
+                "StagingSlot": "true"
+            },
+            "properties": {
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[0].name)]",
+                "clientAffinityEnabled": "[if(contains(variables('webAppsWithArrAffinity'), variables('webApps_register_asp')[copyIndex('webAppsSlotsCopy')]), true(), false())]",
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "httpsOnly": true,
+                "siteConfig": {
+                    "ipSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictionsUseMain": false,
+                    "ftpsState": "FtpsOnly",
+                    "minTlsVersion": "1.2",
+                    "scmMinTlsVersion": "1.2"
+                }
+            }
+        },
+
+        // Register 1 WebApps diagnostic settings:
+        {
+            "type": "Microsoft.Web/Sites/providers/diagnosticsettings",
+            "apiVersion": "2017-05-01-preview",
+            "copy": {
+                "name": "webAppsDiagCopy",
+                "count": "[length(variables('webApps_register_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsDiagCopy')]), '/Microsoft.Insights/service')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsDiagCopy')]))]"
+            ],
+            "properties": {
+                "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                "logs": [
+                    {
+                        "category": "AppServiceHTTPLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceConsoleLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAppLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceFileAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "days": "[parameters('diagnosticLogRetentionInDays')]",
+                            "enabled": true
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Register 1 WebApps slots diagnostic settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/providers/diagnosticsettings",
+            "apiVersion": "2017-05-01-preview",
+            "copy": {
+                "name": "webAppsDiagSlotsCopy",
+                "count": "[length(variables('webApps_register_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsDiagSlotsCopy')], '/', parameters('stagingSlotName'), '/Microsoft.Insights/service')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsDiagSlotsCopy')]), parameters('stagingSlotName'))]"
+            ],
+            "properties": {
+                "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                "logs": [
+                    {
+                        "category": "AppServiceHTTPLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceConsoleLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAppLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceFileAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "days": "[parameters('diagnosticLogRetentionInDays')]",
+                            "enabled": true
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Register 1 WebApps SlotConfigNames:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAppsSlotConfigNameCopy",
+                "count": "[length(variables('webApps_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsSlotConfigNameCopy')], '/slotConfigNames')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsSlotConfigNameCopy')]))]"
+            ],
+            "properties": {
+                "appSettingNames": [
+                    "is-staging"
+                ]
+            }
+        },
+
+        // Register 1 WebApps appsettings:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAppsConfigCopy",
+                "count": "[length(variables('webApps_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsConfigCopy')], '/appsettings')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsConfigCopy')]))]",
+                "webAppsSlotConfigNameCopy"
+            ],
+            "properties": {
+                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey]",
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": "[concat('InstrumentationKey=', reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey)]",
+                "WEBSITE_HTTPLOGGING_RETENTION_DAYS": "[variables('httpLogsRetentionInDays')]",
+                "APPINSIGHTS_PROFILERFEATURE_VERSION": "1.0.0",
+                "APPINSIGHTS_SNAPSHOTFEATURE_VERSION": "1.0.0",
+                "ApplicationInsightsAgent_EXTENSION_VERSION": "~2",
+                "DiagnosticServices_EXTENSION_VERSION": "~3",
+                "DIAGNOSTICS_AZUREBLOBCONTAINERSASURL": "[format(parameters('applicationLogSasStringFormat'), tolower(variables('webApps_register_asp')[copyIndex('webAppsConfigCopy')]))]",
+                "DIAGNOSTICS_AZUREBLOBRETENTIONINDAYS": "[parameters('applicationLogRetentionInDays')]",
+                "InstrumentationEngine_EXTENSION_VERSION": "disabled",
+                "SnapshotDebugger_EXTENSION_VERSION": "disabled",
+                "XDT_MicrosoftApplicationInsights_BaseExtensions": "disabled",
+                "XDT_MicrosoftApplicationInsights_Mode": "recommended",
+                "XDT_MicrosoftApplicationInsights_PreemptSdk": "1",
+                "WEBSITE_VNET_ROUTE_ALL": "1",
+                "WEBSITE_TIME_ZONE": "Eastern Standard Time",
+                "AppConfigConnectionString": "[listKeys(parameters('appConfigDssResourceId'), '2020-06-01').value[0].connectionString]",
+                "RedisConnectionString": "[concat(reference(parameters('redisDssResourceId'), '2020-12-01').hostName, ':', reference(parameters('redisDssResourceId'), '2020-12-01').sslPort, ',password=', listkeys(parameters('redisDssResourceId'), '2020-12-01').primaryKey, ',ssl=true,abortConnect=false,syncTimeout=5000,allowAdmin=false')]",
+                "is-staging": "false",
+                "DT_TENANT": "[parameters('dynatraceEnvironmentId')]",
+                "DT_API_TOKEN": "[parameters('dynatraceApiToken')]"
+            }
+        },
+
+        // Register 1 WebApps slots appsettings:
+        {
+            "type": "Microsoft.Web/Sites/slots/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAppsConfigSlotsCopy",
+                "count": "[length(variables('webApps_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsConfigSlotsCopy')], '/', parameters('stagingSlotName'), '/appsettings')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsConfigSlotsCopy')]), parameters('stagingSlotName'))]",
+                "webAppsSlotConfigNameCopy"
+            ],
+            "properties": {
+                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey]",
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": "[concat('InstrumentationKey=', reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey)]",
+                "WEBSITE_HTTPLOGGING_RETENTION_DAYS": "[variables('httpLogsRetentionInDays')]",
+                "APPINSIGHTS_PROFILERFEATURE_VERSION": "1.0.0",
+                "APPINSIGHTS_SNAPSHOTFEATURE_VERSION": "1.0.0",
+                "ApplicationInsightsAgent_EXTENSION_VERSION": "~2",
+                "DiagnosticServices_EXTENSION_VERSION": "~3",
+                "DIAGNOSTICS_AZUREBLOBCONTAINERSASURL": "[format(parameters('applicationLogSasStringFormat'), tolower(concat(variables('webApps_register_asp')[copyIndex('webAppsConfigSlotsCopy')], '-', parameters('stagingSlotName'))))]",
+                "DIAGNOSTICS_AZUREBLOBRETENTIONINDAYS": "[parameters('applicationLogRetentionInDays')]",
+                "InstrumentationEngine_EXTENSION_VERSION": "disabled",
+                "SnapshotDebugger_EXTENSION_VERSION": "disabled",
+                "XDT_MicrosoftApplicationInsights_BaseExtensions": "disabled",
+                "XDT_MicrosoftApplicationInsights_Mode": "recommended",
+                "XDT_MicrosoftApplicationInsights_PreemptSdk": "1",
+                "WEBSITE_VNET_ROUTE_ALL": "1",
+                "WEBSITE_TIME_ZONE": "Eastern Standard Time",
+                "AppConfigConnectionString": "[listKeys(parameters('appConfigDssResourceId'), '2020-06-01').value[0].connectionString]",
+                "RedisConnectionString": "[concat(reference(parameters('redisDssResourceId'), '2020-12-01').hostName, ':', reference(parameters('redisDssResourceId'), '2020-12-01').sslPort, ',password=', listkeys(parameters('redisDssResourceId'), '2020-12-01').primaryKey, ',ssl=true,abortConnect=false,syncTimeout=5000,allowAdmin=false')]",
+                "is-staging": "true",
+                "DT_TENANT": "[parameters('dynatraceEnvironmentId')]",
+                "DT_API_TOKEN": "[parameters('dynatraceApiToken')]"
+            }
+        },
+
+        // Register 1 WebApps log settings:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAppsSettingsCopy",
+                "count": "[length(variables('webApps_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsSettingsCopy')], '/logs')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsSettingsCopy')]))]",
+                "webAppsConfigCopy"
+            ],
+            "properties": {
+                "applicationLogs": {
+                    "fileSystem": {
+                        "level": "Warning"
+                    },
+                    "azureTableStorage": {
+                        "level": "Off",
+                        "sasUrl": null
+                    },
+                    "azureBlobStorage": {
+                        "level": "Information",
+                        "sasUrl": "[format(parameters('applicationLogSasStringFormat'), tolower(variables('webApps_register_asp')[copyIndex('webAppsSettingsCopy')]))]",
+                        "retentionInDays": "[parameters('applicationLogRetentionInDays')]"
+                    }
+                },
+                "httpLogs": {
+                    "fileSystem": {
+                        "retentionInMb": "[variables('httpLogsRetentionInMB')]",
+                        "retentionInDays": "[variables('httpLogsRetentionInDays')]",
+                        "enabled": true
+                    }
+                },
+                "failedRequestsTracing": {
+                    "enabled": false
+                },
+                "detailedErrorMessages": {
+                    "enabled": false
+                }
+            }
+        },
+
+        // Register 1 WebApps slots log settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAppsSettingsSlotsCopy",
+                "count": "[length(variables('webApps_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsSettingsSlotsCopy')], '/', parameters('stagingSlotName'), '/logs')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsSettingsSlotsCopy')]), parameters('stagingSlotName'))]",
+                "webAppsConfigSlotsCopy"
+            ],
+            "properties": {
+                "applicationLogs": {
+                    "fileSystem": {
+                        "level": "Warning"
+                    },
+                    "azureTableStorage": {
+                        "level": "Off",
+                        "sasUrl": null
+                    },
+                    "azureBlobStorage": {
+                        "level": "Information",
+                        "sasUrl": "[format(parameters('applicationLogSasStringFormat'), tolower(concat(variables('webApps_register_asp')[copyIndex('webAppsSettingsSlotsCopy')], '-', parameters('stagingSlotName'))))]",
+                        "retentionInDays": "[parameters('applicationLogRetentionInDays')]"
+                    }
+                },
+                "httpLogs": {
+                    "fileSystem": {
+                        "retentionInMb": "[variables('httpLogsRetentionInMB')]",
+                        "retentionInDays": "[variables('httpLogsRetentionInDays')]",
+                        "enabled": true
+                    }
+                },
+                "failedRequestsTracing": {
+                    "enabled": false
+                },
+                "detailedErrorMessages": {
+                    "enabled": false
+                }
+            }
+        },
+
+        // Register 1 WebApps web settings:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAppsWebSettingsCopy",
+                "count": "[length(variables('webApps_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsWebSettingsCopy')], '/web')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsWebSettingsCopy')]))]"
+            ],
+            "properties": {
+                "alwaysOn": true,
+                "vnetName": "[variables('vNetIntegrationName')]",
+                "vnetRouteAllEnabled": true,
+                "virtualApplications": [
+                    {
+                        "virtualPath": "/",
+                        "physicalPath": "site\\wwwroot",
+                        "preloadEnabled": false
+                    },
+                    {
+                        "virtualPath": "[concat('/', variables('webApps_register_asp')[copyIndex('webAppsWebSettingsCopy')])]",
+                        "physicalPath": "[concat('site\\wwwroot\\', variables('webApps_register_asp')[copyIndex('webAppsWebSettingsCopy')])]",
+                        "preloadEnabled": true
+                    }
+                ]
+            }
+        },
+
+        // Register 1 WebApps slots web settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAppsWebSettingsSlotsCopy",
+                "count": "[length(variables('webApps_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsWebSettingsSlotsCopy')], '/', parameters('stagingSlotName'), '/web')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsWebSettingsSlotsCopy')]), parameters('stagingSlotName'))]"
+            ],
+            "properties": {
+                "alwaysOn": true,
+                "vnetName": "[variables('vNetIntegrationName')]",
+                "vnetRouteAllEnabled": true,
+                "virtualApplications": [
+                    {
+                        "virtualPath": "/",
+                        "physicalPath": "site\\wwwroot",
+                        "preloadEnabled": false
+                    },
+                    {
+                        "virtualPath": "[concat('/', variables('webApps_register_asp')[copyIndex('webAppsWebSettingsSlotsCopy')])]",
+                        "physicalPath": "[concat('site\\wwwroot\\', variables('webApps_register_asp')[copyIndex('webAppsWebSettingsSlotsCopy')])]",
+                        "preloadEnabled": true
+                    }
+                ]
+            }
+        },
+
+        // Register 1 WebApps network settings:
+        {
+            "type": "Microsoft.Web/Sites/networkConfig",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAppsVnetIntegrationCopy",
+                "count": "[length(variables('webApps_register_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsVnetIntegrationCopy')], '/virtualNetwork')]",
+            "dependsOn": [
+                "webAppsCopy"
+            ],
+            "properties": {
+                "subnetResourceId": "[variables('appServicePlans').plans[0].vNetIntegrationSubnetId]"
+            }
+        },
+
+        // Register 1 WebApps slots network settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/networkConfig",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAppsVnetIntegrationSlotsCopy",
+                "count": "[length(variables('webApps_register_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex('webAppsVnetIntegrationSlotsCopy')], '/', parameters('stagingSlotName'), '/virtualNetwork')]",
+            "dependsOn": [
+                "webAppsSlotsCopy"
+            ],
+            "properties": {
+                "subnetResourceId": "[variables('appServicePlans').plans[0].vNetIntegrationSubnetId]"
+            }
+        },
+
+        // Register 1 WebAPIs:
+        {
+            "type": "Microsoft.Web/Sites",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIsCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsCopy')])]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[0].name)]",
+                "[variables('appInsightsresourceId')]"
+            ],
+            "kind": "app",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "tags": {
+                "ServiceType": "[variables('ServiceTypeTagValue')]",
+                "hidden-related:diagnostics/changeAnalysisScanEnabled": "true"
+            },
+            "properties": {
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[0].name)]",
+                "clientAffinityEnabled": false,
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "httpsOnly": true,
+                "siteConfig": {
+                    "ipSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictionsUseMain": false,
+                    "ftpsState": "FtpsOnly",
+                    "healthCheckPath": "[if(contains(variables('webAPIsSetHealthCheckManually'), variables('webAPIs_register_asp')[copyIndex('webAPIsCopy')]), variables('webAPIsSetHealthCheckManually')[variables('webAPIs_register_asp')[copyIndex('webAPIsCopy')]], format('/{0}/HealthCheck/KeepAlive', variables('webAPIs_register_asp')[copyIndex('webAPIsCopy')]))]",
+                    "minTlsVersion": "1.2",
+                    "scmMinTlsVersion": "1.2"
+                }
+            }
+        },
+
+        // Register 1 WebAPIs slots:
+        {
+            "type": "Microsoft.Web/Sites/slots",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIsSlotsCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsSlotsCopy')], '/', parameters('stagingSlotName'))]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[0].name)]",
+                "[variables('appInsightsresourceId')]"
+            ],
+            "kind": "app",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[0].name)]",
+                "clientAffinityEnabled": false,
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "httpsOnly": true,
+                "siteConfig": {
+                    "ipSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictionsUseMain": false,
+                    "ftpsState": "FtpsOnly",
+                    "healthCheckPath": "[if(contains(variables('webAPIsSetHealthCheckManually'), variables('webAPIs_register_asp')[copyIndex('webAPIsSlotsCopy')]), variables('webAPIsSetHealthCheckManually')[variables('webAPIs_register_asp')[copyIndex('webAPIsSlotsCopy')]], format('/{0}/HealthCheck/KeepAlive', variables('webAPIs_register_asp')[copyIndex('webAPIsSlotsCopy')]))]",
+                    "minTlsVersion": "1.2",
+                    "scmMinTlsVersion": "1.2"
+                }
+            }
+        },
+
+        // Register 1 WebAPIs diagnostic settings:
+        {
+            "type": "Microsoft.Web/Sites/providers/diagnosticsettings",
+            "apiVersion": "2017-05-01-preview",
+            "copy": {
+                "name": "webAPIsDiagCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsDiagCopy')]), '/Microsoft.Insights/service')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsDiagCopy')]))]"
+            ],
+            "properties": {
+                "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                "logs": [
+                    {
+                        "category": "AppServiceHTTPLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceConsoleLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAppLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceFileAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "days": "[parameters('diagnosticLogRetentionInDays')]",
+                            "enabled": true
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Register 1 WebAPIs slots diagnostic settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/providers/diagnosticsettings",
+            "apiVersion": "2017-05-01-preview",
+            "copy": {
+                "name": "webAPIsDiagSlotsCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsDiagSlotsCopy')], '/', parameters('stagingSlotName'), '/Microsoft.Insights/service')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsDiagSlotsCopy')]), parameters('stagingSlotName'))]"
+            ],
+            "properties": {
+                "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                "logs": [
+                    {
+                        "category": "AppServiceHTTPLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceConsoleLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAppLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceFileAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "days": "[parameters('diagnosticLogRetentionInDays')]",
+                            "enabled": true
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Register 1 WebAPIs SlotConfigNames:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIsSlotConfigNameCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsSlotConfigNameCopy')], '/slotConfigNames')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsSlotConfigNameCopy')]))]"
+            ],
+            "properties": {
+                "appSettingNames": [
+                    "is-staging"
+                ]
+            }
+        },
+
+        // Register 1 WebAPIs appsettings:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIsConfigCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsConfigCopy')], '/appsettings')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsConfigCopy')]))]",
+                "webAPIsSlotConfigNameCopy"
+            ],
+            "properties": {
+                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey]",
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": "[concat('InstrumentationKey=', reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey)]",
+                "WEBSITE_HTTPLOGGING_RETENTION_DAYS": "[variables('httpLogsRetentionInDays')]",
+                "WEBSITE_HEALTHCHECK_MAXPINGFAILURES": "10",
+                "APPINSIGHTS_PROFILERFEATURE_VERSION": "1.0.0",
+                "APPINSIGHTS_SNAPSHOTFEATURE_VERSION": "1.0.0",
+                "ApplicationInsightsAgent_EXTENSION_VERSION": "~2",
+                "DiagnosticServices_EXTENSION_VERSION": "~3",
+                "DIAGNOSTICS_AZUREBLOBCONTAINERSASURL": "[format(parameters('applicationLogSasStringFormat'), tolower(variables('webAPIs_register_asp')[copyIndex('webAPIsConfigCopy')]))]",
+                "DIAGNOSTICS_AZUREBLOBRETENTIONINDAYS": "[parameters('applicationLogRetentionInDays')]",
+                "InstrumentationEngine_EXTENSION_VERSION": "disabled",
+                "SnapshotDebugger_EXTENSION_VERSION": "disabled",
+                "XDT_MicrosoftApplicationInsights_BaseExtensions": "disabled",
+                "XDT_MicrosoftApplicationInsights_Mode": "recommended",
+                "XDT_MicrosoftApplicationInsights_PreemptSdk": "1",
+                "WEBSITE_VNET_ROUTE_ALL": "1",
+                "WEBSITE_TIME_ZONE": "Eastern Standard Time",
+                "WEBSITE_LOAD_CERTIFICATES": "[if(equals(variables('webAPIs_register_asp')[copyIndex('webAPIsConfigCopy')], 'Central'), parameters('centralCertThumbprint'), '')]",
+                "AppConfigConnectionString": "[listKeys(parameters('appConfigDssResourceId'), '2020-06-01').value[0].connectionString]",
+                "RedisConnectionString": "[concat(reference(parameters('redisDssResourceId'), '2020-12-01').hostName, ':', reference(parameters('redisDssResourceId'), '2020-12-01').sslPort, ',password=', listkeys(parameters('redisDssResourceId'), '2020-12-01').primaryKey, ',ssl=true,abortConnect=false,syncTimeout=5000,allowAdmin=false')]",
+                "is-staging": "false",
+                "DT_TENANT": "[parameters('dynatraceEnvironmentId')]",
+                "DT_API_TOKEN": "[parameters('dynatraceApiToken')]"
+            }
+        },
+
+        // Register 1 WebAPIs slot appsettings:
+        {
+            "type": "Microsoft.Web/Sites/slots/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIsConfigSlotsCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsConfigSlotsCopy')], '/', parameters('stagingSlotName'), '/appsettings')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsConfigSlotsCopy')]), parameters('stagingSlotName'))]",
+                "webAPIsSlotConfigNameCopy"
+            ],
+            "properties": {
+                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey]",
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": "[concat('InstrumentationKey=', reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey)]",
+                "WEBSITE_HTTPLOGGING_RETENTION_DAYS": "[variables('httpLogsRetentionInDays')]",
+                "WEBSITE_HEALTHCHECK_MAXPINGFAILURES": "10",
+                "APPINSIGHTS_PROFILERFEATURE_VERSION": "1.0.0",
+                "APPINSIGHTS_SNAPSHOTFEATURE_VERSION": "1.0.0",
+                "ApplicationInsightsAgent_EXTENSION_VERSION": "~2",
+                "DiagnosticServices_EXTENSION_VERSION": "~3",
+                "DIAGNOSTICS_AZUREBLOBCONTAINERSASURL": "[format(parameters('applicationLogSasStringFormat'), tolower(concat(variables('webAPIs_register_asp')[copyIndex('webAPIsConfigSlotsCopy')], '-', parameters('stagingSlotName'))))]",
+                "DIAGNOSTICS_AZUREBLOBRETENTIONINDAYS": "[parameters('applicationLogRetentionInDays')]",
+                "InstrumentationEngine_EXTENSION_VERSION": "disabled",
+                "SnapshotDebugger_EXTENSION_VERSION": "disabled",
+                "XDT_MicrosoftApplicationInsights_BaseExtensions": "disabled",
+                "XDT_MicrosoftApplicationInsights_Mode": "recommended",
+                "XDT_MicrosoftApplicationInsights_PreemptSdk": "1",
+                "WEBSITE_VNET_ROUTE_ALL": "1",
+                "WEBSITE_TIME_ZONE": "Eastern Standard Time",
+                "WEBSITE_LOAD_CERTIFICATES": "[if(equals(variables('webAPIs_register_asp')[copyIndex('webAPIsConfigSlotsCopy')], 'Central'), parameters('centralCertThumbprint'), '')]",
+                "AppConfigConnectionString": "[listKeys(parameters('appConfigDssResourceId'), '2020-06-01').value[0].connectionString]",
+                "RedisConnectionString": "[concat(reference(parameters('redisDssResourceId'), '2020-12-01').hostName, ':', reference(parameters('redisDssResourceId'), '2020-12-01').sslPort, ',password=', listkeys(parameters('redisDssResourceId'), '2020-12-01').primaryKey, ',ssl=true,abortConnect=false,syncTimeout=5000,allowAdmin=false')]",
+                "is-staging": "true",
+                "DT_TENANT": "[parameters('dynatraceEnvironmentId')]",
+                "DT_API_TOKEN": "[parameters('dynatraceApiToken')]"
+            }
+        },
+
+        // Register 1 WebAPIs log settings:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIsSettingsCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsSettingsCopy')], '/logs')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsSettingsCopy')]))]",
+                "webAPIsConfigCopy"
+            ],
+            "properties": {
+                "applicationLogs": {
+                    "fileSystem": {
+                        "level": "Warning"
+                    },
+                    "azureTableStorage": {
+                        "level": "Off",
+                        "sasUrl": null
+                    },
+                    "azureBlobStorage": {
+                        "level": "Information",
+                        "sasUrl": "[format(parameters('applicationLogSasStringFormat'), tolower(concat(variables('webAPIs_register_asp')[copyIndex('webAPIsSettingsCopy')])))]",
+                        "retentionInDays": "[parameters('applicationLogRetentionInDays')]"
+                    }
+                },
+                "httpLogs": {
+                    "fileSystem": {
+                        "retentionInMb": "[variables('httpLogsRetentionInMB')]",
+                        "retentionInDays": "[variables('httpLogsRetentionInDays')]",
+                        "enabled": true
+                    }
+                },
+                "failedRequestsTracing": {
+                    "enabled": false
+                },
+                "detailedErrorMessages": {
+                    "enabled": false
+                }
+            }
+        },
+
+        // Register 1 WebAPIs slot log settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIsSettingsSlotsCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsSettingsSlotsCopy')], '/', parameters('stagingSlotName'), '/logs')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsSettingsSlotsCopy')]), parameters('stagingSlotName'))]",
+                "webAPIsConfigSlotsCopy"
+            ],
+            "properties": {
+                "applicationLogs": {
+                    "fileSystem": {
+                        "level": "Warning"
+                    },
+                    "azureTableStorage": {
+                        "level": "Off",
+                        "sasUrl": null
+                    },
+                    "azureBlobStorage": {
+                        "level": "Information",
+                        "sasUrl": "[format(parameters('applicationLogSasStringFormat'), tolower(concat(variables('webAPIs_register_asp')[copyIndex('webAPIsSettingsSlotsCopy')], '-', parameters('stagingSlotName'))))]",
+                        "retentionInDays": "[parameters('applicationLogRetentionInDays')]"
+                    }
+                },
+                "httpLogs": {
+                    "fileSystem": {
+                        "retentionInMb": "[variables('httpLogsRetentionInMB')]",
+                        "retentionInDays": "[variables('httpLogsRetentionInDays')]",
+                        "enabled": true
+                    }
+                },
+                "failedRequestsTracing": {
+                    "enabled": false
+                },
+                "detailedErrorMessages": {
+                    "enabled": false
+                }
+            }
+        },
+
+        // Register 1 WebAPIs web settings:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIsWebSettingsCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsWebSettingsCopy')], '/web')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsWebSettingsCopy')]))]"
+            ],
+            "properties": {
+                "alwaysOn": true,
+                "vnetName": "[variables('vNetIntegrationName')]",
+                "vnetRouteAllEnabled": true,
+                "virtualApplications": [
+                    {
+                        "virtualPath": "/",
+                        "physicalPath": "site\\wwwroot",
+                        "preloadEnabled": false
+                    },
+                    {
+                        "virtualPath": "[concat('/', variables('webAPIs_register_asp')[copyIndex('webAPIsWebSettingsCopy')])]",
+                        "physicalPath": "[concat('site\\wwwroot\\', variables('webAPIs_register_asp')[copyIndex('webAPIsWebSettingsCopy')])]",
+                        "preloadEnabled": true
+                    }
+                ]
+            }
+        },
+
+        // Register 1 WebAPIs slot web settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIsWebSettingsSlotCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsWebSettingsSlotCopy')], '/', parameters('stagingSlotName'), '/web')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsWebSettingsSlotCopy')]), parameters('stagingSlotName'))]"
+            ],
+            "properties": {
+                "alwaysOn": true,
+                "vnetName": "[variables('vNetIntegrationName')]",
+                "vnetRouteAllEnabled": true,
+                "virtualApplications": [
+                    {
+                        "virtualPath": "/",
+                        "physicalPath": "site\\wwwroot",
+                        "preloadEnabled": false
+                    },
+                    {
+                        "virtualPath": "[concat('/', variables('webAPIs_register_asp')[copyIndex('webAPIsWebSettingsSlotCopy')])]",
+                        "physicalPath": "[concat('site\\wwwroot\\', variables('webAPIs_register_asp')[copyIndex('webAPIsWebSettingsSlotCopy')])]",
+                        "preloadEnabled": true
+                    }
+                ]
+            }
+        },
+
+        // Register 1 WebAPIs network settings:
+        {
+            "type": "Microsoft.Web/Sites/networkConfig",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIsVnetIntegrationCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsVnetIntegrationCopy')], '/virtualNetwork')]",
+            "dependsOn": [
+                "webAPIsCopy"
+            ],
+            "properties": {
+                "subnetResourceId": "[variables('appServicePlans').plans[0].vNetIntegrationSubnetId]"
+            }
+        },
+
+        // Register 1 WebAPIs slots network settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/networkConfig",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIsVnetIntegrationSlotsCopy",
+                "count": "[length(variables('webAPIs_register_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex('webAPIsVnetIntegrationSlotsCopy')], '/', parameters('stagingSlotName'), '/virtualNetwork')]",
+            "dependsOn": [
+                "webAPIsSlotsCopy"
+            ],
+            "properties": {
+                "subnetResourceId": "[variables('appServicePlans').plans[0].vNetIntegrationSubnetId]"
+            }
+        },
+
+        // Register 2 WebAPIs:
+        {
+            "type": "Microsoft.Web/Sites",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIs2Copy",
+                "count": "[length(variables('webAPIs_register2_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2Copy')])]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[1].name)]",
+                "[variables('appInsightsresourceId')]"
+            ],
+            "kind": "app",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "tags": {
+                "ServiceType": "[variables('ServiceTypeTagValue')]",
+                "hidden-related:diagnostics/changeAnalysisScanEnabled": "true"
+            },
+            "properties": {
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[1].name)]",
+                "clientAffinityEnabled": false,
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "httpsOnly": true,
+                "siteConfig": {
+                    "ipSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictionsUseMain": false,
+                    "ftpsState": "FtpsOnly",
+                    "healthCheckPath": "[if(contains(variables('webAPIsSetHealthCheckManually'), variables('webAPIs_register2_asp')[copyIndex('webAPIs2Copy')]), variables('webAPIsSetHealthCheckManually')[variables('webAPIs_register2_asp')[copyIndex('webAPIs2Copy')]], format('/{0}/HealthCheck/KeepAlive', variables('webAPIs_register2_asp')[copyIndex('webAPIs2Copy')]))]",
+                    "minTlsVersion": "1.2",
+                    "scmMinTlsVersion": "1.2"
+                }
+            }
+        },
+
+        // Register 2 WebAPIs slots:
+        {
+            "type": "Microsoft.Web/Sites/slots",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIs2SlotsCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2SlotsCopy')], '/', parameters('stagingSlotName'))]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[1].name)]",
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2SlotsCopy')]))]",
+                "[variables('appInsightsresourceId')]"
+            ],
+            "kind": "app",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlans').plans[1].name)]",
+                "clientAffinityEnabled": false,
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "httpsOnly": true,
+                "siteConfig": {
+                    "ipSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictions": "[variables('ipSecurityRestrictions')]",
+                    "scmIpSecurityRestrictionsUseMain": false,
+                    "ftpsState": "FtpsOnly",
+                    "healthCheckPath": "[if(contains(variables('webAPIsSetHealthCheckManually'), variables('webAPIs_register2_asp')[copyIndex('webAPIs2SlotsCopy')]), variables('webAPIsSetHealthCheckManually')[variables('webAPIs_register2_asp')[copyIndex('webAPIs2SlotsCopy')]], format('/{0}/HealthCheck/KeepAlive', variables('webAPIs_register2_asp')[copyIndex('webAPIs2SlotsCopy')]))]",
+                    "minTlsVersion": "1.2",
+                    "scmMinTlsVersion": "1.2"
+                }
+            }
+        },
+
+        // Register 2 WebAPIs diagnostic settings:
+        {
+            "type": "Microsoft.Web/Sites/providers/diagnosticsettings",
+            "apiVersion": "2017-05-01-preview",
+            "copy": {
+                "name": "webAPIs2DiagCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2DiagCopy')]), '/Microsoft.Insights/service')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2DiagCopy')]))]"
+            ],
+            "properties": {
+                "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                "logs": [
+                    {
+                        "category": "AppServiceHTTPLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceConsoleLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAppLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceFileAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "days": "[parameters('diagnosticLogRetentionInDays')]",
+                            "enabled": true
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Register 2 WebAPIs slots diagnostic settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/providers/diagnosticsettings",
+            "apiVersion": "2017-05-01-preview",
+            "copy": {
+                "name": "webAPIs2DiagSlotsCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2DiagSlotsCopy')], '/', parameters('stagingSlotName'), '/Microsoft.Insights/service')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2DiagSlotsCopy')]), parameters('stagingSlotName'))]"
+            ],
+            "properties": {
+                "storageAccountId": "[parameters('diagnosticStorageAccountResourceId')]",
+                "workspaceId": "[parameters('logAnalyticsResourceId')]",
+                "logs": [
+                    {
+                        "category": "AppServiceHTTPLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceConsoleLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAppLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceFileAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    },
+                    {
+                        "category": "AppServiceAuditLogs",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "enabled": true,
+                            "days": "[parameters('diagnosticLogRetentionInDays')]"
+                        }
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true,
+                        "retentionPolicy": {
+                            "days": "[parameters('diagnosticLogRetentionInDays')]",
+                            "enabled": true
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Register 2 WebAPIs SlotConfigNames:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIs2SlotConfigNameCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2SlotConfigNameCopy')], '/slotConfigNames')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2SlotConfigNameCopy')]))]"
+            ],
+            "properties": {
+                "appSettingNames": [
+                    "is-staging"
+                ]
+            }
+        },
+
+        // Register 2 WebAPIs appsettings:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIs2ConfigCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2ConfigCopy')], '/appsettings')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2ConfigCopy')]))]",
+                "webAPIsSlotConfigNameCopy"
+            ],
+            "properties": {
+                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey]",
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": "[concat('InstrumentationKey=', reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey)]",
+                "WEBSITE_HTTPLOGGING_RETENTION_DAYS": "[variables('httpLogsRetentionInDays')]",
+                "WEBSITE_HEALTHCHECK_MAXPINGFAILURES": "10",
+                "APPINSIGHTS_PROFILERFEATURE_VERSION": "1.0.0",
+                "APPINSIGHTS_SNAPSHOTFEATURE_VERSION": "1.0.0",
+                "ApplicationInsightsAgent_EXTENSION_VERSION": "~2",
+                "DiagnosticServices_EXTENSION_VERSION": "~3",
+                "DIAGNOSTICS_AZUREBLOBCONTAINERSASURL": "[format(parameters('applicationLogSasStringFormat'), tolower(variables('webAPIs_register2_asp')[copyIndex('webAPIs2ConfigCopy')]))]",
+                "DIAGNOSTICS_AZUREBLOBRETENTIONINDAYS": "[parameters('applicationLogRetentionInDays')]",
+                "InstrumentationEngine_EXTENSION_VERSION": "disabled",
+                "SnapshotDebugger_EXTENSION_VERSION": "disabled",
+                "XDT_MicrosoftApplicationInsights_BaseExtensions": "disabled",
+                "XDT_MicrosoftApplicationInsights_Mode": "recommended",
+                "XDT_MicrosoftApplicationInsights_PreemptSdk": "1",
+                "WEBSITE_VNET_ROUTE_ALL": "1",
+                "WEBSITE_TIME_ZONE": "Eastern Standard Time",
+                "WEBSITE_LOAD_CERTIFICATES": "[if(equals(variables('webAPIs_register2_asp')[copyIndex('webAPIs2ConfigCopy')], 'Central'), parameters('centralCertThumbprint'), '')]",
+                "AppConfigConnectionString": "[listKeys(parameters('appConfigDssResourceId'), '2020-06-01').value[0].connectionString]",
+                "RedisConnectionString": "[concat(reference(parameters('redisDssResourceId'), '2020-12-01').hostName, ':', reference(parameters('redisDssResourceId'), '2020-12-01').sslPort, ',password=', listkeys(parameters('redisDssResourceId'), '2020-12-01').primaryKey, ',ssl=true,abortConnect=false,syncTimeout=5000,allowAdmin=false')]",
+                "is-staging": "false",
+                "DT_TENANT": "[parameters('dynatraceEnvironmentId')]",
+                "DT_API_TOKEN": "[parameters('dynatraceApiToken')]"
+            }
+        },
+
+        // Register 2 WebAPIs slot appsettings:
+        {
+            "type": "Microsoft.Web/Sites/slots/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIs2ConfigSlotsCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2ConfigSlotsCopy')], '/', parameters('stagingSlotName'), '/appsettings')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2ConfigSlotsCopy')]), parameters('stagingSlotName'))]",
+                "webAPIs2SlotConfigNameCopy"
+            ],
+            "properties": {
+                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey]",
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": "[concat('InstrumentationKey=', reference(variables('appInsightsresourceId'), '2020-02-02-preview').instrumentationKey)]",
+                "WEBSITE_HTTPLOGGING_RETENTION_DAYS": "[variables('httpLogsRetentionInDays')]",
+                "WEBSITE_HEALTHCHECK_MAXPINGFAILURES": "10",
+                "APPINSIGHTS_PROFILERFEATURE_VERSION": "1.0.0",
+                "APPINSIGHTS_SNAPSHOTFEATURE_VERSION": "1.0.0",
+                "ApplicationInsightsAgent_EXTENSION_VERSION": "~2",
+                "DiagnosticServices_EXTENSION_VERSION": "~3",
+                "DIAGNOSTICS_AZUREBLOBCONTAINERSASURL": "[format(parameters('applicationLogSasStringFormat'), tolower(concat(variables('webAPIs_register2_asp')[copyIndex('webAPIs2ConfigSlotsCopy')], '-', parameters('stagingSlotName'))))]",
+                "DIAGNOSTICS_AZUREBLOBRETENTIONINDAYS": "[parameters('applicationLogRetentionInDays')]",
+                "InstrumentationEngine_EXTENSION_VERSION": "disabled",
+                "SnapshotDebugger_EXTENSION_VERSION": "disabled",
+                "XDT_MicrosoftApplicationInsights_BaseExtensions": "disabled",
+                "XDT_MicrosoftApplicationInsights_Mode": "recommended",
+                "XDT_MicrosoftApplicationInsights_PreemptSdk": "1",
+                "WEBSITE_VNET_ROUTE_ALL": "1",
+                "WEBSITE_TIME_ZONE": "Eastern Standard Time",
+                "WEBSITE_LOAD_CERTIFICATES": "[if(equals(variables('webAPIs_register2_asp')[copyIndex('webAPIs2ConfigSlotsCopy')], 'Central'), parameters('centralCertThumbprint'), '')]",
+                "AppConfigConnectionString": "[listKeys(parameters('appConfigDssResourceId'), '2020-06-01').value[0].connectionString]",
+                "RedisConnectionString": "[concat(reference(parameters('redisDssResourceId'), '2020-12-01').hostName, ':', reference(parameters('redisDssResourceId'), '2020-12-01').sslPort, ',password=', listkeys(parameters('redisDssResourceId'), '2020-12-01').primaryKey, ',ssl=true,abortConnect=false,syncTimeout=5000,allowAdmin=false')]",
+                "is-staging": "true",
+                "DT_TENANT": "[parameters('dynatraceEnvironmentId')]",
+                "DT_API_TOKEN": "[parameters('dynatraceApiToken')]"
+            }
+        },
+
+        // Register 2 WebAPIs log settings:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIs2SettingsCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2SettingsCopy')], '/logs')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2SettingsCopy')]))]",
+                "webAPIsConfigCopy"
+            ],
+            "properties": {
+                "applicationLogs": {
+                    "fileSystem": {
+                        "level": "Warning"
+                    },
+                    "azureTableStorage": {
+                        "level": "Off",
+                        "sasUrl": null
+                    },
+                    "azureBlobStorage": {
+                        "level": "Information",
+                        "sasUrl": "[format(parameters('applicationLogSasStringFormat'), tolower(concat(variables('webAPIs_register2_asp')[copyIndex('webAPIs2SettingsCopy')])))]",
+                        "retentionInDays": "[parameters('applicationLogRetentionInDays')]"
+                    }
+                },
+                "httpLogs": {
+                    "fileSystem": {
+                        "retentionInMb": "[variables('httpLogsRetentionInMB')]",
+                        "retentionInDays": "[variables('httpLogsRetentionInDays')]",
+                        "enabled": true
+                    }
+                },
+                "failedRequestsTracing": {
+                    "enabled": false
+                },
+                "detailedErrorMessages": {
+                    "enabled": false
+                }
+            }
+        },
+
+        // Register 2 WebAPIs slot log settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIs2SettingsSlotsCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2SettingsSlotsCopy')], '/', parameters('stagingSlotName'), '/logs')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2SettingsSlotsCopy')]), parameters('stagingSlotName'))]",
+                "webAPIs2ConfigSlotsCopy"
+            ],
+            "properties": {
+                "applicationLogs": {
+                    "fileSystem": {
+                        "level": "Warning"
+                    },
+                    "azureTableStorage": {
+                        "level": "Off",
+                        "sasUrl": null
+                    },
+                    "azureBlobStorage": {
+                        "level": "Information",
+                        "sasUrl": "[format(parameters('applicationLogSasStringFormat'), tolower(concat(variables('webAPIs_register2_asp')[copyIndex('webAPIs2SettingsSlotsCopy')], '-', parameters('stagingSlotName'))))]",
+                        "retentionInDays": "[parameters('applicationLogRetentionInDays')]"
+                    }
+                },
+                "httpLogs": {
+                    "fileSystem": {
+                        "retentionInMb": "[variables('httpLogsRetentionInMB')]",
+                        "retentionInDays": "[variables('httpLogsRetentionInDays')]",
+                        "enabled": true
+                    }
+                },
+                "failedRequestsTracing": {
+                    "enabled": false
+                },
+                "detailedErrorMessages": {
+                    "enabled": false
+                }
+            }
+        },
+
+        // Register 2 WebAPIs web settings:
+        {
+            "type": "Microsoft.Web/Sites/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIs2WebSettingsCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2WebSettingsCopy')], '/web')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2WebSettingsCopy')]))]"
+            ],
+            "properties": {
+                "alwaysOn": true,
+                "vnetName": "[variables('vNetIntegrationName')]",
+                "vnetRouteAllEnabled": true,
+                "virtualApplications": [
+                    {
+                        "virtualPath": "/",
+                        "physicalPath": "site\\wwwroot",
+                        "preloadEnabled": false
+                    },
+                    {
+                        "virtualPath": "[concat('/', variables('webAPIs_register2_asp')[copyIndex('webAPIs2WebSettingsCopy')])]",
+                        "physicalPath": "[concat('site\\wwwroot\\', variables('webAPIs_register2_asp')[copyIndex('webAPIs2WebSettingsCopy')])]",
+                        "preloadEnabled": true
+                    }
+                ]
+            }
+        },
+
+        // Register 2 WebAPIs slot web settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/config",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPI2sWebSettingsSlotCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPI2sWebSettingsSlotCopy')], '/', parameters('stagingSlotName'), '/web')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPI2sWebSettingsSlotCopy')]), parameters('stagingSlotName'))]"
+            ],
+            "properties": {
+                "alwaysOn": true,
+                "vnetName": "[variables('vNetIntegrationName')]",
+                "vnetRouteAllEnabled": true,
+                "virtualApplications": [
+                    {
+                        "virtualPath": "/",
+                        "physicalPath": "site\\wwwroot",
+                        "preloadEnabled": false
+                    },
+                    {
+                        "virtualPath": "[concat('/', variables('webAPIs_register2_asp')[copyIndex('webAPI2sWebSettingsSlotCopy')])]",
+                        "physicalPath": "[concat('site\\wwwroot\\', variables('webAPIs_register2_asp')[copyIndex('webAPI2sWebSettingsSlotCopy')])]",
+                        "preloadEnabled": true
+                    }
+                ]
+            }
+        },
+
+        // Register 2 WebAPIs network settings:
+        {
+            "type": "Microsoft.Web/Sites/networkConfig",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIs2VnetIntegrationCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2VnetIntegrationCopy')], '/virtualNetwork')]",
+            "dependsOn": [
+                "webAPIs2Copy"
+            ],
+            "properties": {
+                "subnetResourceId": "[variables('appServicePlans').plans[1].vNetIntegrationSubnetId]"
+            }
+        },
+
+        // Register 2 WebAPIs slots network settings:
+        {
+            "type": "Microsoft.Web/Sites/slots/networkConfig",
+            "apiVersion": "2021-01-01",
+            "copy": {
+                "name": "webAPIs2VnetIntegrationSlotsCopy",
+                "count": "[length(variables('webAPIs_register2_asp'))]",
+                "mode": "Serial"
+            },
+            "name": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register2_asp')[copyIndex('webAPIs2VnetIntegrationSlotsCopy')], '/', parameters('stagingSlotName'), '/virtualNetwork')]",
+            "dependsOn": [
+                "webAPIs2SlotsCopy"
+            ],
+            "properties": {
+                "subnetResourceId": "[variables('appServicePlans').plans[1].vNetIntegrationSubnetId]"
+            }
+        }
+    ],
+    "outputs": {
+        "appInsightsResourceId": {
+            "type": "string",
+            "value": "[variables('appInsightsResourceId')]",
+            "metadata": {
+                "description": "Application Insights Resource Id"
+            }
+        },
+        "appInsightsKey": {
+            "type": "string",
+            "value": "[reference(variables('appInsightsResourceId'), '2015-05-01').instrumentationKey]",
+            "metadata": {
+                "description": "Application Insights Resource Instrumentation Key"
+            }
+        },
+        "appInsightsAppId": {
+            "type": "string",
+            "value": "[reference(variables('appInsightsResourceId'), '2015-05-01').AppId]",
+            "metadata": {
+                "description": "Application Insights Application Id"
+            }
+        },
+        "registerWebs": {
+            "type": "array",
+            "copy": {
+                "count": "[length(variables('webApps_register_asp'))]",
+                "input": "[variables('webApps_register_asp')[copyIndex()]]"
+            }
+        },
+        "registerWebsNames": {
+            "type": "array",
+            "copy": {
+                "count": "[length(variables('webApps_register_asp'))]",
+                "input": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex()])]"
+            }
+        },
+        "registerWebsSlots": {
+            "type": "array",
+            "copy": {
+                "count": "[length(variables('webApps_register_asp'))]",
+                "input": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex()], '-', parameters('stagingSlotName'))]"
+            }
+        },
+        "registerAPIs": {
+            "type": "array",
+            "copy": {
+                "count": "[length(variables('webAPIs_register_asp'))]",
+                "input": "[variables('webAPIs_register_asp')[copyIndex()]]"
+            }
+        },
+        "registerAPIsNames": {
+            "type": "array",
+            "copy": {
+                "count": "[length(variables('webAPIs_register_asp'))]",
+                "input": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex()])]"
+            }
+        },
+        "registerAPIsSlots": {
+            "type": "array",
+            "copy": {
+                "count": "[length(variables('webAPIs_register_asp'))]",
+                "input": "[concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex()], '-', parameters('stagingSlotName'))]"
+            }
+        },
+        "registerWebIds": {
+            "type": "array",
+            "copy": {
+                "count": "[length(variables('webApps_register_asp'))]",
+                "input": "[reference(resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex()])), '2021-01-01', 'full').identity.principalId]"
+            }
+        },
+        "registerWebIdsSlots": {
+            "type": "array",
+            "copy": {
+                "count": "[length(variables('webApps_register_asp'))]",
+                "input": "[reference(resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webApps_register_asp')[copyIndex()]), parameters('stagingSlotName')), '2021-01-01', 'full').identity.principalId]"
+            }
+        },
+        "registerApiIds": {
+            "type": "array",
+            "copy": {
+                "count": "[length(variables('webAPIs_register_asp'))]",
+                "input": "[reference(resourceId('Microsoft.Web/Sites', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex()])), '2021-01-01', 'full').identity.principalId]"
+            }
+        },
+        "registerApiIdsSlots": {
+            "type": "array",
+            "copy": {
+                "count": "[length(variables('webAPIs_register_asp'))]",
+                "input": "[reference(resourceId('Microsoft.Web/Sites/slots', concat(parameters('environment'), variables('applicationPrefix'), '-', variables('webAPIs_register_asp')[copyIndex()]), parameters('stagingSlotName')), '2021-01-01', 'full').identity.principalId]"
+            }
+        }
+    }
+}
