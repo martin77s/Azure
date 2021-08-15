@@ -132,7 +132,7 @@
         "registerFqdn": {
             "type": "string",
             "metadata": {
-                "description": "Required. The FQDN address for the register.waves.com listner"
+                "description": "Required. The FQDN address for the register.contoso.com listner"
             }
         },
         "registerWebs": {
@@ -156,13 +156,13 @@
         "wwwFqdn": {
             "type": "string",
             "metadata": {
-                "description": "Required. The FQDN address for the www.waves.com listner"
+                "description": "Required. The FQDN address for the www.contoso.com listner"
             }
         },
         "internalFqdn": {
             "type": "string",
             "metadata": {
-                "description": "Required. The FQDN address for the internal.waves.com backend hostname"
+                "description": "Required. The FQDN address for the internal.contoso.com backend hostname"
             }
         },
         "wwwWebs": {
@@ -173,7 +173,7 @@
         },
         "wwwAPIsPath": {
             "type": "string",
-            "defaultValue": "/2code/Handlers/IP-Block/waves/*",
+            "defaultValue": "/2code/Handlers/IP-Block/contoso/*",
             "metadata": {
                 "description": "Required. The path to the www APIs"
             }
@@ -181,14 +181,14 @@
         "internalFqdnFormat": {
             "type": "string",
             "metadata": {
-                "description": "Required. The FQDN address format for the internalAppName.waves.com listner"
+                "description": "Required. The FQDN address format for the internalAppName.contoso.com listner"
             }
         },
         "internalRedirectsTo": {
             "type": "string",
             "defaultValue": "StaffConsole",
             "metadata": {
-                "description": "Required. The internal application name that internal.waves.com listner redirects to"
+                "description": "Required. The internal application name that internal.contoso.com listner redirects to"
             }
         },
         "internalWebs": {
@@ -220,7 +220,7 @@
         "msgrsFqdn": {
             "type": "string",
             "metadata": {
-                "description": "Required. The FQDN address for the msgrs.waves.com listner"
+                "description": "Required. The FQDN address for the msgrs.contoso.com listner"
             }
         },
         "msgrsWebs": {
@@ -232,7 +232,7 @@
         "betaFqdn": {
             "type": "string",
             "metadata": {
-                "description": "Required. The FQDN address for the beta.waves.com listner"
+                "description": "Required. The FQDN address for the beta.contoso.com listner"
             }
         },
         "betaAPIs": {
@@ -338,7 +338,7 @@
             "requestBodyCheck": true,
             "maxRequestBodySizeInKb": 128
         },
-        "wafSslCertificateName": "[concat('waves-', parameters('sslCertificateThumbprint'))]",
+        "wafSslCertificateName": "[concat('contoso-', parameters('sslCertificateThumbprint'))]",
         "sslCertificates": [
             {
                 "name": "[variables('wafSslCertificateName')]",
@@ -1113,7 +1113,7 @@
                     "properties": {
                         "backendAddresses": [
                             {
-                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('registerWebs')[copyIndex('registerWebsBackendPools')]))]"
+                                "fqdn": "[tolower(contoso.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('registerWebs')[copyIndex('registerWebsBackendPools')]))]"
                             }
                         ]
                     }
@@ -1128,7 +1128,7 @@
                     "properties": {
                         "backendAddresses": [
                             {
-                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('registerWebs')[copyIndex('registerWebsBackendPools-stg')], '-', parameters('stagingSlotName'))))]"
+                                "fqdn": "[tolower(contoso.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('registerWebs')[copyIndex('registerWebsBackendPools-stg')], '-', parameters('stagingSlotName'))))]"
                             }
                         ]
                     }
@@ -1143,7 +1143,7 @@
                     "properties": {
                         "backendAddresses": [
                             {
-                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('registerAPIs')[copyIndex('registerAPIsBackendPools')]))]"
+                                "fqdn": "[tolower(contoso.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('registerAPIs')[copyIndex('registerAPIsBackendPools')]))]"
                             }
                         ]
                     }
@@ -1158,7 +1158,7 @@
                     "properties": {
                         "backendAddresses": [
                             {
-                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('registerAPIs')[copyIndex('registerAPIsBackendPools-stg')], '-', parameters('stagingSlotName'))))]"
+                                "fqdn": "[tolower(contoso.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('registerAPIs')[copyIndex('registerAPIsBackendPools-stg')], '-', parameters('stagingSlotName'))))]"
                             }
                         ]
                     }
@@ -1173,7 +1173,7 @@
                     "properties": {
                         "backendAddresses": [
                             {
-                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('wwwWebs')[copyIndex('wwwWebsBackendPools')]))]"
+                                "fqdn": "[tolower(contoso.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('wwwWebs')[copyIndex('wwwWebsBackendPools')]))]"
                             }
                         ]
                     }
@@ -1188,7 +1188,7 @@
                     "properties": {
                         "backendAddresses": [
                             {
-                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('wwwWebs')[copyIndex('wwwWebsBackendPools-stg')], '-', parameters('stagingSlotName'))))]"
+                                "fqdn": "[tolower(contoso.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('wwwWebs')[copyIndex('wwwWebsBackendPools-stg')], '-', parameters('stagingSlotName'))))]"
                             }
                         ]
                     }
@@ -1203,7 +1203,7 @@
                     "properties": {
                         "backendAddresses": [
                             {
-                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), variables('internalWebs')[copyIndex('internalWebsBackendPools')]))]"
+                                "fqdn": "[tolower(contoso.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), variables('internalWebs')[copyIndex('internalWebsBackendPools')]))]"
                             }
                         ]
                     }
@@ -1218,7 +1218,7 @@
                     "properties": {
                         "backendAddresses": [
                             {
-                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('betaAPIs')[copyIndex('betaAPIsBackendPools')]))]"
+                                "fqdn": "[tolower(contoso.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('betaAPIs')[copyIndex('betaAPIsBackendPools')]))]"
                             }
                         ]
                     }
@@ -1233,7 +1233,7 @@
                     "properties": {
                         "backendAddresses": [
                             {
-                                "fqdn": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('msgrsWebs')[copyIndex('msgrsWebsBackendPools')]))]"
+                                "fqdn": "[tolower(contoso.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('msgrsWebs')[copyIndex('msgrsWebsBackendPools')]))]"
                             }
                         ]
                     }
@@ -1268,7 +1268,7 @@
                         "protocol": "Https",
                         "path": "[concat('/',parameters('registerWebs')[copyIndex('registerProbes')])]",
                         "pickHostNameFromBackendHttpSettings": false,
-                        "host": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('registerWebs')[copyIndex('registerProbes')]))]"
+                        "host": "[tolower(contoso.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), parameters('registerWebs')[copyIndex('registerProbes')]))]"
                     }
                 }
             },
@@ -1286,7 +1286,7 @@
                         "protocol": "Https",
                         "path": "[concat('/',parameters('registerWebs')[copyIndex('registerProbes-stg')])]",
                         "pickHostNameFromBackendHttpSettings": false,
-                        "host": "[tolower(waves.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('registerWebs')[copyIndex('registerProbes-stg')], '-', parameters('stagingSlotName'))))]"
+                        "host": "[tolower(contoso.concatWebAppFQDN(parameters('environment'), variables('applicationPrefix'), concat(parameters('registerWebs')[copyIndex('registerProbes-stg')], '-', parameters('stagingSlotName'))))]"
                     }
                 }
             },
@@ -2234,7 +2234,7 @@
     ],
     "functions": [
         {
-            "namespace": "waves",
+            "namespace": "contoso",
             "members": {
                 "concatWebAppFQDN": {
                     "parameters": [

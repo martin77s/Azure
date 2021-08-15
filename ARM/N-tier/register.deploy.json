@@ -236,8 +236,8 @@
             "SubletService",
             "TaxService",
             "VSSDServiceSite",
-            "WavesCampaignService",
-            "WavesVssdService"
+            "contosoCampaignService",
+            "contosoVssdService"
         ],
         "webAPIs_register2_asp": [
             "OnlpManagerService",
@@ -255,8 +255,8 @@
             "CAService": "/CAservice/ClientAccount.svc/HealthCheck/KeepAlive",
             "Central": "/Central/Central.svc/HealthCheck/KeepAlive",
             "MacAddressesWService": "/MacAddressesWService/service1.asmx/KeepAlive",
-            "WavesVssdService": "/WavesVSSDService/api/HealthCheck/KeepAlive",
-            "WavesCampaignService": "/WavesCampaignService/api/healthcheck/keepalive",
+            "contosoVssdService": "/contosoVSSDService/api/HealthCheck/KeepAlive",
+            "contosoCampaignService": "/contosoCampaignService/api/healthcheck/keepalive",
             "PriceListServices": "/PriceListServices/ServicePriceList.svc/Healthcheck/KeepAlive",
             "OnlinePresets": "/hostingstart.html"
         },

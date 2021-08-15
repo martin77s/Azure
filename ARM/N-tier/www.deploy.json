@@ -197,7 +197,7 @@
         "httpLogsRetentionInDays": 21,
         "httpLogsRetentionInMB": 50,
         "appInsightsresourceId": "[resourceId('Microsoft.Insights/Components', variables('appInsightsName'))]",
-        "certificateName": "[concat('waves-', parameters('sslCertificateThumbprint'))]",
+        "certificateName": "[concat('contoso-', parameters('sslCertificateThumbprint'))]",
         "allowedPublicIPs": "[if(equals(parameters('allowedPublicIPs'), ''), createArray(), split(parameters('allowedPublicIPs'), ','))]",
         "copy": [
             {
