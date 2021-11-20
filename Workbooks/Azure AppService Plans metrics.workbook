@@ -1,0 +1,304 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "crossComponentResources": [
+          "value::selected"
+        ],
+        "parameters": [
+          {
+            "id": "0f2620ca-2b4c-4073-8958-7608701b5b20",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "label": "Subscriptions",
+            "type": 6,
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "where type =~ \"microsoft.web/serverfarms\"\r\n| summarize Count = count() by subscriptionId\r\n| order by Count desc\r\n| extend Rank = row_number()\r\n| project value = subscriptionId, label = subscriptionId, selected = Rank == 1",
+            "crossComponentResources": [
+              "value::selected"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "c6361106-9280-48c7-a5bf-b0a8b8908575",
+            "version": "KqlParameterItem/1.0",
+            "name": "Resources",
+            "label": "App Service Plans",
+            "type": 5,
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "where type =~ \"microsoft.web/serverfarms\"\n| order by name asc\n| extend Rank = row_number()\n| project value = id, label = id, selected = Rank <= 5",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "value": [
+              "value::all"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "0d637e0f-887b-4ea1-a781-82f96f4fff5a",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time Range",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 3600000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                }
+              ],
+              "allowCustom": true
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 1,
+        "resourceType": "microsoft.resourcegraph/resources"
+      },
+      "name": "parameters - 0"
+    },
+    {
+      "type": 10,
+      "content": {
+        "chartId": "workbook711aa630-d8be-486b-a77d-286e0356c8d6",
+        "version": "MetricsItem/2.0",
+        "size": 2,
+        "chartType": 0,
+        "resourceType": "microsoft.web/serverfarms",
+        "metricScope": 0,
+        "resourceParameter": "Resources",
+        "resourceIds": [
+          "{Resources}"
+        ],
+        "timeContext": {
+          "durationMs": 3600000
+        },
+        "metrics": [
+          {
+            "namespace": "microsoft.web/serverfarms",
+            "metric": "microsoft.web/serverfarms--CpuPercentage",
+            "aggregation": 3
+          },
+          {
+            "namespace": "microsoft.web/serverfarms",
+            "metric": "microsoft.web/serverfarms--MemoryPercentage",
+            "aggregation": 3
+          },
+          {
+            "namespace": "microsoft.web/serverfarms",
+            "metric": "microsoft.web/serverfarms--BytesReceived",
+            "aggregation": 3
+          },
+          {
+            "namespace": "microsoft.web/serverfarms",
+            "metric": "microsoft.web/serverfarms--BytesSent",
+            "aggregation": 3
+          }
+        ],
+        "resourceLimit": 2000,
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Subscription",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "Name",
+              "formatter": 13,
+              "formatOptions": {
+                "linkTarget": "Resource",
+                "showIcon": true
+              }
+            },
+            {
+              "columnMatch": "microsoft.web/serverfarms--CpuPercentage",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "max": 100,
+                "palette": "greenRed"
+              },
+              "numberFormat": {
+                "unit": 1,
+                "options": {
+                  "style": "decimal"
+                }
+              }
+            },
+            {
+              "columnMatch": "microsoft.web/serverfarms--CpuPercentage Timeline",
+              "formatter": 9,
+              "formatOptions": {
+                "min": 0,
+                "max": 100,
+                "palette": "greenRed"
+              }
+            },
+            {
+              "columnMatch": "microsoft.web/serverfarms--MemoryPercentage",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "max": 100,
+                "palette": "greenRed"
+              },
+              "numberFormat": {
+                "unit": 1,
+                "options": {
+                  "style": "decimal"
+                }
+              }
+            },
+            {
+              "columnMatch": "microsoft.web/serverfarms--MemoryPercentage Timeline",
+              "formatter": 9,
+              "formatOptions": {
+                "min": 0,
+                "max": 100,
+                "palette": "greenRed"
+              }
+            },
+            {
+              "columnMatch": "microsoft.web/serverfarms--BytesReceived",
+              "formatter": 8,
+              "formatOptions": {
+                "palette": "blue"
+              },
+              "numberFormat": {
+                "unit": 2,
+                "options": {
+                  "style": "decimal"
+                }
+              }
+            },
+            {
+              "columnMatch": "microsoft.web/serverfarms--BytesReceived Timeline",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "microsoft.web/serverfarms--BytesSent",
+              "formatter": 8,
+              "formatOptions": {
+                "palette": "blueDark"
+              },
+              "numberFormat": {
+                "unit": 2,
+                "options": {
+                  "style": "decimal"
+                }
+              }
+            },
+            {
+              "columnMatch": "microsoft.web/serverfarms--BytesSent Timeline",
+              "formatter": 5
+            }
+          ],
+          "rowLimit": 10000,
+          "sortBy": [
+            {
+              "itemKey": "$gen_heatmap_microsoft.web/serverfarms--CpuPercentage_2",
+              "sortOrder": 2
+            }
+          ],
+          "labelSettings": [
+            {
+              "columnId": "microsoft.web/serverfarms--CpuPercentage",
+              "label": "CPU Percentage (Max)"
+            },
+            {
+              "columnId": "microsoft.web/serverfarms--CpuPercentage Timeline",
+              "label": "CPU Percentage Timeline"
+            },
+            {
+              "columnId": "microsoft.web/serverfarms--MemoryPercentage",
+              "label": "Memory Percentage (Max)"
+            },
+            {
+              "columnId": "microsoft.web/serverfarms--MemoryPercentage Timeline",
+              "label": "Memory Percentage Timeline"
+            },
+            {
+              "columnId": "microsoft.web/serverfarms--BytesReceived",
+              "label": "Data In (Max)"
+            },
+            {
+              "columnId": "microsoft.web/serverfarms--BytesReceived Timeline",
+              "label": "Data In Timeline"
+            },
+            {
+              "columnId": "microsoft.web/serverfarms--BytesSent",
+              "label": "Data Out (Max)"
+            },
+            {
+              "columnId": "microsoft.web/serverfarms--BytesSent Timeline",
+              "label": "Data Out Timeline"
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "$gen_heatmap_microsoft.web/serverfarms--CpuPercentage_2",
+            "sortOrder": 2
+          }
+        ]
+      },
+      "name": "metric - 1"
+    }
+  ],
+  "fallbackResourceIds": [
+    "Azure Monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
